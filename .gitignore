@@ -49,3 +49,12 @@ examples/certs/*.crt
 examples/certs/*.key
 !examples/certs/.gitkeep
 
+# Script binaries
+examples/scripts/dex-debug
+examples/scripts/verify-resources
+examples/scripts/cleanup-leftovers
+examples/scripts/test-delete
+examples/scripts/test-delete-direct
+examples/scripts/test-delete-my-web-app
+examples/scripts/test-verification
+
