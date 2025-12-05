@@ -1,31 +1,53 @@
 import * as pulumi from "@pulumi/pulumi";
-// Note: After generating the SDK, this import will work:
-// import * as dex from "@kotaicode/pulumi-dex";
+import * as dex from "@yournamespace/dex";
 
-// For now, this is a template that shows how to use the provider
-// Once SDKs are generated, uncomment and adjust the imports
-
-/*
-// Configure the Dex provider
+// Configure the Dex provider for local development
+// Note: The SDK currently requires all fields, but for local testing with insecure Dex,
+// we can use empty strings for TLS fields since insecureSkipVerify is true
 const dexProvider = new dex.Provider("dex", {
     host: "localhost:5557", // Dex gRPC endpoint
-    // For development with insecure Dex:
+    // For development with insecure Dex, use empty strings for TLS fields
+    // (These won't be used when insecureSkipVerify is true)
+    caCert: "",
+    clientCert: "",
+    clientKey: "",
     insecureSkipVerify: true,
-    // For production with mTLS:
-    // caCert: fs.readFileSync("certs/ca.crt", "utf-8"),
-    // clientCert: fs.readFileSync("certs/client.crt", "utf-8"),
-    // clientKey: fs.readFileSync("certs/client.key", "utf-8"),
+    timeoutSeconds: 5,
 });
 
 // Example 1: Create an OAuth2 client
+// Use stable IDs so Pulumi can properly manage resource lifecycle (create/update/delete)
 const webClient = new dex.Client("webClient", {
-    clientId: "my-web-app",
+    clientId: "my-web-app", // Stable ID - Pulumi will update existing or create new
     name: "My Web App",
     redirectUris: ["http://localhost:3000/callback"],
-    // secret is optional - will be auto-generated
+    // secret is optional - will be auto-generated if omitted
 }, { provider: dexProvider });
 
-// Example 2: Create an Azure/Entra ID connector using generic OIDC
+// Example 2: Create a generic OIDC connector (simplest example for testing)
+// Use stable IDs so Pulumi can properly manage resource lifecycle (create/update/delete)
+const genericOidcConnector = new dex.Connector("generic-oidc", {
+    connectorId: "generic-oidc", // Stable ID - Pulumi will update existing or create new
+    type: "oidc",
+    name: "Generic OIDC Provider",
+    oidcConfig: {
+        issuer: "https://example.com",
+        clientId: "test-client-id",
+        clientSecret: "test-client-secret",
+        redirectUri: "http://localhost:5556/dex/callback",
+        scopes: ["openid", "email", "profile"],
+    },
+}, { provider: dexProvider });
+
+// Export outputs
+export const webClientId = webClient.clientId;
+export const webClientSecret = webClient.secret; // This is a Pulumi secret
+export const genericConnectorId = genericOidcConnector.connectorId;
+
+// Uncomment these examples when you have actual Azure/Cognito credentials:
+
+/*
+// Example 3: Create an Azure/Entra ID connector using generic OIDC
 const azureConnector = new dex.AzureOidcConnector("azure-tenant", {
     connectorId: "azure-tenant",
     name: "Azure AD",
@@ -36,7 +58,7 @@ const azureConnector = new dex.AzureOidcConnector("azure-tenant", {
     userNameSource: "preferred_username",
 }, { provider: dexProvider });
 
-// Example 3: Create an AWS Cognito connector
+// Example 4: Create an AWS Cognito connector
 const cognitoConnector = new dex.CognitoOidcConnector("cognito", {
     connectorId: "cognito",
     name: "AWS Cognito",
@@ -48,27 +70,6 @@ const cognitoConnector = new dex.CognitoOidcConnector("cognito", {
     userNameSource: "email",
 }, { provider: dexProvider });
 
-// Example 4: Create a generic OIDC connector
-const genericOidcConnector = new dex.Connector("generic-oidc", {
-    connectorId: "generic-oidc",
-    type: "oidc",
-    name: "Generic OIDC Provider",
-    oidcConfig: {
-        issuer: "https://example.com",
-        clientId: "your-client-id",
-        clientSecret: "your-client-secret",
-        redirectUri: "http://localhost:5556/dex/callback",
-        scopes: ["openid", "email", "profile"],
-    },
-}, { provider: dexProvider });
-
-// Export outputs
-export const webClientId = webClient.clientId;
-export const webClientSecret = webClient.secret; // This is a Pulumi secret
-export const azureConnectorId = azureConnector.id;
-export const cognitoConnectorId = cognitoConnector.id;
+export const azureConnectorId = azureConnector.connectorId;
+export const cognitoConnectorId = cognitoConnector.connectorId;
 */
-
-// Placeholder export until SDK is generated
-export const placeholder = "Replace this with actual provider usage after generating SDKs";
-

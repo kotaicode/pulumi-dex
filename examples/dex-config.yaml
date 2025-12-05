@@ -18,8 +18,8 @@ grpc:
   # tlsClientCA: /etc/dex/grpc/client.crt
   reflection: true
 
-# Enable connector CRUD via gRPC API
-enablePasswordDB: false
+# Enable the builtin/local connector (satisfies Dex's requirement for at least one connector)
+enablePasswordDB: true
 
 # Static client for testing (optional)
 staticClients:
@@ -29,14 +29,15 @@ staticClients:
     redirectURIs:
       - http://localhost:5555/callback
 
-# Static connectors (optional - you can manage these via the provider)
-# staticConnectors:
-#   - type: oidc
-#     id: test-oidc
-#     name: Test OIDC
-#     config:
-#       issuer: https://example.com
-#       clientID: test
-#       clientSecret: test
-#       redirectURI: http://localhost:5556/callback
+# Static users for the builtin connector (optional - users can be managed via gRPC API)
+staticPasswords:
+  - email: "admin@example.com"
+    # bcrypt hash of "password" - generate with: echo -n password | htpasswd -BinC 10 admin | cut -d: -f2
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "admin"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+
+# Allow password grants with local users
+oauth2:
+  passwordConnector: local
 

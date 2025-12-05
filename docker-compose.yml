@@ -1,8 +1,7 @@
-version: '3.8'
 
 services:
   dex:
-    image: quay.io/dexidp/dex:v2.40.0
+    image: ghcr.io/dexidp/dex:latest-alpine
     container_name: dex
     ports:
       - "5556:5556"  # Dex web UI
