@@ -62,6 +62,12 @@ jobs:
       - name: Generate SDKs
         run: make generate-sdks
 
+      - name: Generate package-lock.json for TypeScript SDK
+        run: |
+          cd sdk/typescript/nodejs
+          npm install  # Generate package-lock.json for future npm ci
+          echo "✓ package-lock.json generated"
+
       - name: Build provider binaries for all platforms
         run: |
           mkdir -p release
@@ -153,7 +159,12 @@ jobs:
       - name: Install dependencies
         run: |
           cd sdk/typescript/nodejs
-          npm ci
+          # Use npm install if package-lock.json doesn't exist, otherwise npm ci
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build TypeScript SDK
         run: |
