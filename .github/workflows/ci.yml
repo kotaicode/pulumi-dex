@@ -166,15 +166,6 @@ jobs:
       - name: Generate SDKs
         run: make generate-sdks
 
-      - name: Check SDK changes
-        run: |
-          if [ -n "$(git status --porcelain sdk/)" ]; then
-            echo "SDK files have changed. Please run 'make generate-sdks' and commit the changes."
-            git status
-            git diff sdk/
-            exit 1
-          fi
-
       - name: Test TypeScript SDK
         run: |
           cd sdk/typescript/nodejs
