@@ -22,8 +22,14 @@ export {
     types,
 };
 
-// Re-export resources at top level for easier access
-// This exports both the classes (values) and their types
+// Re-export resources at top level for easier access.
+// This allows:
+//   import * as dex from "@kotaicode/pulumi-dex";
+//   const c: dex.AzureOidcConnector = new dex.AzureOidcConnector(...);
+//
+// Note: re-exporting the value symbol is enough; in TypeScript the class name
+// is also usable as a type, so we do NOT need an additional `export type` and
+// avoiding that prevents duplicate-identifier errors with tsc.
 export {
     AzureMicrosoftConnector,
     AzureMicrosoftConnectorArgs,
@@ -43,20 +49,6 @@ export {
     GoogleConnectorArgs,
     LocalConnector,
     LocalConnectorArgs,
-} from "./resources";
-
-// Re-export resource types explicitly for type annotations
-// TypeScript classes can be used as types, but we also export them explicitly here
-export type {
-    AzureMicrosoftConnector,
-    AzureOidcConnector,
-    Client,
-    CognitoOidcConnector,
-    Connector,
-    GitHubConnector,
-    GitLabConnector,
-    GoogleConnector,
-    LocalConnector,
 } from "./resources";
 
 // Re-export input/output types for easier access

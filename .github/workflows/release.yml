@@ -151,12 +151,32 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.1'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@v6
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build provider
+        run: make build
+
+      - name: Generate schema.json
+        run: make generate-schema
+
+      - name: Generate SDKs (with TypeScript export fix)
+        run: make generate-sdks
+
       - name: Update package.json version
         run: |
           cd sdk/typescript/nodejs
           npm version ${{ steps.version.outputs.version }} --no-git-tag-version
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: |
           cd sdk/typescript/nodejs
           # Use npm install if package-lock.json doesn't exist, otherwise npm ci
