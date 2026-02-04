@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
 // Export members:
-export { ProviderArgs } from "./provider";
+export type { ProviderArgs } from "./provider";
 export type Provider = import("./provider").Provider;
 export const Provider: typeof import("./provider").Provider = null as any;
 utilities.lazyLoad(exports, ["Provider"], () => require("./provider"));
@@ -27,27 +27,30 @@ export {
 //   import * as dex from "@kotaicode/pulumi-dex";
 //   const c: dex.AzureOidcConnector = new dex.AzureOidcConnector(...);
 //
-// Note: re-exporting the value symbol is enough; in TypeScript the class name
-// is also usable as a type, so we do NOT need an additional `export type` and
-// avoiding that prevents duplicate-identifier errors with tsc.
+// Note: When isolatedModules is enabled, we must separate value exports from type exports.
+// Classes are exported as values, Args interfaces are exported as types.
 export {
     AzureMicrosoftConnector,
-    AzureMicrosoftConnectorArgs,
     AzureOidcConnector,
-    AzureOidcConnectorArgs,
     Client,
-    ClientArgs,
     CognitoOidcConnector,
-    CognitoOidcConnectorArgs,
     Connector,
-    ConnectorArgs,
     GitHubConnector,
-    GitHubConnectorArgs,
     GitLabConnector,
-    GitLabConnectorArgs,
     GoogleConnector,
-    GoogleConnectorArgs,
     LocalConnector,
+} from "./resources";
+
+// Export Args types separately (required for isolatedModules)
+export type {
+    AzureMicrosoftConnectorArgs,
+    AzureOidcConnectorArgs,
+    ClientArgs,
+    CognitoOidcConnectorArgs,
+    ConnectorArgs,
+    GitHubConnectorArgs,
+    GitLabConnectorArgs,
+    GoogleConnectorArgs,
     LocalConnectorArgs,
 } from "./resources";
 

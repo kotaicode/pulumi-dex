@@ -58,6 +58,8 @@ generate-sdks: build
 	fi
 	@echo "Fixing TypeScript SDK exports..."
 	@./scripts/fix-typescript-exports.sh || echo "⚠ TypeScript exports fix failed (may already be fixed)"
+	@echo "Fixing resources/index.ts exports for isolatedModules..."
+	@./scripts/fix-resources-index-exports.sh || echo "⚠ Resources index exports fix failed (may already be fixed)"
 	@echo "✓ SDKs generated in sdk/"
 
 # Run tests

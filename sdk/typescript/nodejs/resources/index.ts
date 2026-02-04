@@ -5,47 +5,47 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "../utilities";
 
 // Export members:
-export { AzureMicrosoftConnectorArgs } from "./azureMicrosoftConnector";
+export type { AzureMicrosoftConnectorArgs } from "./azureMicrosoftConnector";
 export type AzureMicrosoftConnector = import("./azureMicrosoftConnector").AzureMicrosoftConnector;
 export const AzureMicrosoftConnector: typeof import("./azureMicrosoftConnector").AzureMicrosoftConnector = null as any;
 utilities.lazyLoad(exports, ["AzureMicrosoftConnector"], () => require("./azureMicrosoftConnector"));
 
-export { AzureOidcConnectorArgs } from "./azureOidcConnector";
+export type { AzureOidcConnectorArgs } from "./azureOidcConnector";
 export type AzureOidcConnector = import("./azureOidcConnector").AzureOidcConnector;
 export const AzureOidcConnector: typeof import("./azureOidcConnector").AzureOidcConnector = null as any;
 utilities.lazyLoad(exports, ["AzureOidcConnector"], () => require("./azureOidcConnector"));
 
-export { ClientArgs } from "./client";
+export type { ClientArgs } from "./client";
 export type Client = import("./client").Client;
 export const Client: typeof import("./client").Client = null as any;
 utilities.lazyLoad(exports, ["Client"], () => require("./client"));
 
-export { CognitoOidcConnectorArgs } from "./cognitoOidcConnector";
+export type { CognitoOidcConnectorArgs } from "./cognitoOidcConnector";
 export type CognitoOidcConnector = import("./cognitoOidcConnector").CognitoOidcConnector;
 export const CognitoOidcConnector: typeof import("./cognitoOidcConnector").CognitoOidcConnector = null as any;
 utilities.lazyLoad(exports, ["CognitoOidcConnector"], () => require("./cognitoOidcConnector"));
 
-export { ConnectorArgs } from "./connector";
+export type { ConnectorArgs } from "./connector";
 export type Connector = import("./connector").Connector;
 export const Connector: typeof import("./connector").Connector = null as any;
 utilities.lazyLoad(exports, ["Connector"], () => require("./connector"));
 
-export { GitHubConnectorArgs } from "./gitHubConnector";
+export type { GitHubConnectorArgs } from "./gitHubConnector";
 export type GitHubConnector = import("./gitHubConnector").GitHubConnector;
 export const GitHubConnector: typeof import("./gitHubConnector").GitHubConnector = null as any;
 utilities.lazyLoad(exports, ["GitHubConnector"], () => require("./gitHubConnector"));
 
-export { GitLabConnectorArgs } from "./gitLabConnector";
+export type { GitLabConnectorArgs } from "./gitLabConnector";
 export type GitLabConnector = import("./gitLabConnector").GitLabConnector;
 export const GitLabConnector: typeof import("./gitLabConnector").GitLabConnector = null as any;
 utilities.lazyLoad(exports, ["GitLabConnector"], () => require("./gitLabConnector"));
 
-export { GoogleConnectorArgs } from "./googleConnector";
+export type { GoogleConnectorArgs } from "./googleConnector";
 export type GoogleConnector = import("./googleConnector").GoogleConnector;
 export const GoogleConnector: typeof import("./googleConnector").GoogleConnector = null as any;
 utilities.lazyLoad(exports, ["GoogleConnector"], () => require("./googleConnector"));
 
-export { LocalConnectorArgs } from "./localConnector";
+export type { LocalConnectorArgs } from "./localConnector";
 export type LocalConnector = import("./localConnector").LocalConnector;
 export const LocalConnector: typeof import("./localConnector").LocalConnector = null as any;
 utilities.lazyLoad(exports, ["LocalConnector"], () => require("./localConnector"));

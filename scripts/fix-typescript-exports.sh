@@ -48,27 +48,30 @@ re_exports = """
 //   import * as dex from "@kotaicode/pulumi-dex";
 //   const c: dex.AzureOidcConnector = new dex.AzureOidcConnector(...);
 //
-// Note: re-exporting the value symbol is enough; in TypeScript the class name
-// is also usable as a type, so we do NOT add a separate `export type` block
-// here to avoid duplicate-identifier errors when compiling with tsc.
+// Note: When isolatedModules is enabled, we must separate value exports from type exports.
+// Classes are exported as values, Args interfaces are exported as types.
 export {
     AzureMicrosoftConnector,
-    AzureMicrosoftConnectorArgs,
     AzureOidcConnector,
-    AzureOidcConnectorArgs,
     Client,
-    ClientArgs,
     CognitoOidcConnector,
-    CognitoOidcConnectorArgs,
     Connector,
-    ConnectorArgs,
     GitHubConnector,
-    GitHubConnectorArgs,
     GitLabConnector,
-    GitLabConnectorArgs,
     GoogleConnector,
-    GoogleConnectorArgs,
     LocalConnector,
+} from "./resources";
+
+// Export Args types separately (required for isolatedModules)
+export type {
+    AzureMicrosoftConnectorArgs,
+    AzureOidcConnectorArgs,
+    ClientArgs,
+    CognitoOidcConnectorArgs,
+    ConnectorArgs,
+    GitHubConnectorArgs,
+    GitLabConnectorArgs,
+    GoogleConnectorArgs,
     LocalConnectorArgs,
 } from "./resources";
 
