@@ -27,6 +27,16 @@ generate-schema: build
 generate-sdks: build
 	@echo "Generating SDKs..."
 	@mkdir -p sdk
+	@# Backup README.md if it exists (for TypeScript SDK)
+	@# This preserves our custom README.md when pulumi package gen-sdk overwrites it
+	@mkdir -p sdk/typescript/nodejs
+	@if [ -f sdk/typescript/nodejs/README.md ] && [ -s sdk/typescript/nodejs/README.md ]; then \
+		echo "Backing up TypeScript SDK README.md..."; \
+		cp sdk/typescript/nodejs/README.md sdk/typescript/nodejs/README.md.bak; \
+	elif [ -f README.md ]; then \
+		echo "No SDK README.md found, using repository README.md as backup..."; \
+		cp README.md sdk/typescript/nodejs/README.md.bak; \
+	fi
 	@if [ -f schema.json ]; then \
 		echo "Using schema.json for SDK generation..."; \
 		pulumi package gen-sdk schema.json --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
@@ -38,6 +48,11 @@ generate-sdks: build
 		pulumi package gen-sdk dex --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk dex --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
 		pulumi package gen-sdk dex --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
+	fi
+	@# Always restore our custom README.md (pulumi gen-sdk may overwrite it with a minimal one)
+	@if [ -f sdk/typescript/nodejs/README.md.bak ]; then \
+		echo "Restoring TypeScript SDK README.md from backup (preserving custom content)..."; \
+		mv sdk/typescript/nodejs/README.md.bak sdk/typescript/nodejs/README.md; \
 	fi
 	@echo "Fixing TypeScript SDK exports..."
 	@./scripts/fix-typescript-exports.sh || echo "⚠ TypeScript exports fix failed (may already be fixed)"
