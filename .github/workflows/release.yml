@@ -59,11 +59,39 @@ jobs:
       - name: Generate SDKs
         run: make generate-sdks
 
+      - name: Ensure README.md exists for TypeScript SDK
+        run: |
+          # Ensure README.md exists after SDK generation
+          if [ ! -f sdk/typescript/nodejs/README.md ] || [ ! -s sdk/typescript/nodejs/README.md ]; then
+            echo "⚠ README.md missing or empty after SDK generation"
+            if [ -f README.md ]; then
+              echo "Copying README.md from repository root..."
+              cp README.md sdk/typescript/nodejs/README.md
+            else
+              echo "⚠ ERROR: No README.md found!"
+              exit 1
+            fi
+          fi
+          echo "✓ README.md verified (size: $(wc -c < sdk/typescript/nodejs/README.md) bytes)"
+
+      - name: Upload TypeScript SDK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-sdk
+          path: sdk/typescript/nodejs/**
+          retention-days: 1
+
       - name: Generate package-lock.json for TypeScript SDK
         run: |
           cd sdk/typescript/nodejs
           npm install  # Generate package-lock.json for future npm ci
           echo "✓ package-lock.json generated"
+          # Verify README.md is still present
+          if [ ! -f README.md ] || [ ! -s README.md ]; then
+            echo "⚠ ERROR: README.md missing after npm install!"
+            exit 1
+          fi
+          echo "✓ README.md still present after npm install"
 
       - name: Build provider binaries for all platforms
         run: |
@@ -151,53 +179,27 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - name: Download TypeScript SDK artifact
+        uses: actions/download-artifact@v4
         with:
-          go-version: '1.24.1'
+          name: typescript-sdk
+          path: sdk/typescript/nodejs
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@v6
-
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Build provider
-        run: make build
-
-      - name: Generate schema.json
-        run: make generate-schema
-
-      - name: Generate SDKs (with TypeScript export fix)
-        run: make generate-sdks
-
-      - name: Ensure README.md exists for npm package
+      - name: Verify README.md exists in SDK
         run: |
-          # Check if README.md exists and has content
           if [ ! -f sdk/typescript/nodejs/README.md ] || [ ! -s sdk/typescript/nodejs/README.md ]; then
-            echo "⚠ README.md missing or empty after SDK generation"
-            echo "Checking for backup..."
-            if [ -f sdk/typescript/nodejs/README.md.bak ]; then
-              echo "Restoring from backup..."
-              mv sdk/typescript/nodejs/README.md.bak sdk/typescript/nodejs/README.md
+            echo "⚠ ERROR: README.md missing or empty in downloaded SDK!"
+            echo "Falling back to repository README.md..."
+            if [ -f README.md ]; then
+              cp README.md sdk/typescript/nodejs/README.md
             else
-              echo "No backup found, checking repository root..."
-              if [ -f README.md ]; then
-                echo "Copying README.md from repository root..."
-                cp README.md sdk/typescript/nodejs/README.md
-              else
-                echo "⚠ ERROR: No README.md found anywhere!"
-                exit 1
-              fi
+              echo "⚠ ERROR: No README.md found anywhere!"
+              exit 1
             fi
           fi
-          # Verify README.md has content
-          if [ -s sdk/typescript/nodejs/README.md ]; then
-            echo "✓ README.md verified (size: $(wc -c < sdk/typescript/nodejs/README.md) bytes)"
-          else
-            echo "⚠ ERROR: README.md is empty!"
-            exit 1
-          fi
+          echo "✓ README.md verified (size: $(wc -c < sdk/typescript/nodejs/README.md) bytes)"
+          echo "First 3 lines:"
+          head -3 sdk/typescript/nodejs/README.md
 
       - name: Update package.json version
         run: |
