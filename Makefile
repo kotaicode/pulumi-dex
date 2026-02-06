@@ -7,7 +7,7 @@ VERSION ?= 0.1.0
 build:
 	@echo "Building pulumi-resource-dex (version: $(VERSION))..."
 	@mkdir -p bin
-	@go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
+	@go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
 	@echo "✓ Built bin/pulumi-resource-dex"
 
 # Install the provider locally (requires Pulumi CLI)

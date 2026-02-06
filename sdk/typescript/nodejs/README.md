@@ -1,108 +1,6 @@
 # Pulumi Provider for Dex
 
-A Pulumi provider for managing [Dex](https://dexidp.io/) resources via the Dex gRPC Admin API. This provider allows you to manage Dex OAuth2 clients and connectors (Identity Providers) as infrastructure-as-code.
-
-## Installation
-
-```bash
-npm install @kotaicode/pulumi-dex
-```
-
-## Prerequisites
-
-- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) installed
-- Access to a Dex instance with gRPC API enabled
-- Node.js 14+ and npm
-
-## Quick Start
-
-### 1. Configure the Provider
-
-```typescript
-import * as pulumi from "@pulumi/pulumi";
-import * as dex from "@kotaicode/pulumi-dex";
-import * as fs from "fs";
-
-// Configure the Dex provider
-const provider = new dex.Provider("dex", {
-    host: "dex.internal:5557", // Dex gRPC host:port
-    // For development with insecure Dex:
-    insecureSkipVerify: true,
-    // Or for production with mTLS:
-    // caCert: fs.readFileSync("certs/ca.crt", "utf-8"),
-    // clientCert: fs.readFileSync("certs/client.crt", "utf-8"),
-    // clientKey: fs.readFileSync("certs/client.key", "utf-8"),
-});
-```
-
-### Type Usage
-
-You can use the exported types for type annotations:
-
-```typescript
-import * as dex from "@kotaicode/pulumi-dex";
-
-// Type annotations work with top-level exports
-const connector: dex.AzureOidcConnector = new dex.AzureOidcConnector("azure", {
-    connectorId: "azure",
-    name: "Azure AD",
-    tenantId: "your-tenant-id",
-    clientId: "your-client-id",
-    clientSecret: "your-secret",
-    redirectUri: "https://dex.example.com/callback",
-}, { provider });
-
-// Input types are also available
-function createConnector(args: dex.AzureOidcConnectorArgs): dex.AzureOidcConnector {
-    return new dex.AzureOidcConnector("azure", args, { provider });
-}
-
-// You can also access types via the resources namespace
-const client: dex.resources.Client = new dex.Client("client", {
-    clientId: "my-client",
-    name: "My Client",
-    redirectUris: ["https://app.example.com/callback"],
-}, { provider });
-
-// Input/output types are available via the types namespace
-const inputArgs: dex.types.input.resources.AzureOidcConnectorArgs = {
-    connectorId: "azure",
-    name: "Azure AD",
-    tenantId: "your-tenant-id",
-    clientId: "your-client-id",
-    clientSecret: "your-secret",
-    redirectUri: "https://dex.example.com/callback",
-};
-```
-```
-
-### 2. Create an OAuth2 Client
-
-```typescript
-const webClient = new dex.Client("webClient", {
-    clientId: "my-web-app",
-    name: "My Web App",
-    redirectUris: ["https://app.example.com/callback"],
-    // secret is optional - will be auto-generated if omitted
-}, { provider });
-
-export const clientId = webClient.clientId;
-export const clientSecret = webClient.secret; // Pulumi secret
-```
-
-### 3. Create a Connector
-
-```typescript
-// Example: Azure AD connector
-const azureConnector = new dex.AzureOidcConnector("azure-tenant", {
-    connectorId: "azure-tenant",
-    name: "Azure AD",
-    tenantId: "your-tenant-id",
-    clientId: "your-azure-app-client-id",
-    clientSecret: "your-azure-app-client-secret",
-    redirectUri: "https://dex.example.com/callback",
-}, { provider });
-```
+A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gRPC Admin API. This provider allows you to manage Dex OAuth2 clients and connectors (IdPs) as infrastructure-as-code.
 
 ## Features
 
@@ -118,159 +16,137 @@ const azureConnector = new dex.AzureOidcConnector("azure-tenant", {
 - **Google Integration**: `GoogleConnector` for Google Workspace and Google accounts
 - **Local/Builtin Connector**: `LocalConnector` for local user authentication
 
-## Resources
+## Installation
 
-### `dex.Client`
+### Prerequisites
 
-Manages an OAuth2 client in Dex. OAuth2 clients are applications that can authenticate users through Dex.
+- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) installed
+- Go 1.24+ (for building the provider)
+- Access to a Dex instance with gRPC API enabled
 
-**Example:**
+### Building the Provider
+
+```bash
+# Clone the repository
+git clone https://github.com/kotaicode/pulumi-dex.git
+cd pulumi-dex
+
+# Build the provider binary
+go build -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
+
+# Install the provider locally
+pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex
+```
+
+### Generating Language SDKs
+
+After building the provider, generate SDKs for your preferred language:
+
+```bash
+# Generate TypeScript SDK
+pulumi package gen-sdk bin/pulumi-resource-dex --language typescript --out sdk/typescript
+
+# Generate Go SDK
+pulumi package gen-sdk bin/pulumi-resource-dex --language go --out sdk/go
+
+# Generate Python SDK (optional)
+pulumi package gen-sdk bin/pulumi-resource-dex --language python --out sdk/python
+```
+
+## Configuration
+
+The provider requires configuration to connect to your Dex gRPC API:
+
 ```typescript
-const client = new dex.Client("myClient", {
-    clientId: "my-app",
-    name: "My Application",
+import * as dex from "@kotaicode/pulumi-dex";
+
+const provider = new dex.Provider("dex", {
+    host: "dex.internal:5557", // Dex gRPC host:port
+    // Optional: TLS configuration for mTLS
+    caCert: fs.readFileSync("certs/ca.crt", "utf-8"),
+    clientCert: fs.readFileSync("certs/client.crt", "utf-8"),
+    clientKey: fs.readFileSync("certs/client.key", "utf-8"),
+    // Or for development:
+    // insecureSkipVerify: true,
+});
+```
+
+### Environment Variables
+
+You can also configure the provider using environment variables:
+
+- `DEX_HOST` - Dex gRPC host:port
+- `DEX_CA_CERT` - PEM-encoded CA certificate
+- `DEX_CLIENT_CERT` - PEM-encoded client certificate
+- `DEX_CLIENT_KEY` - PEM-encoded client private key
+- `DEX_INSECURE_SKIP_VERIFY` - Skip TLS verification (development only)
+- `DEX_TIMEOUT_SECONDS` - Per-RPC timeout in seconds
+
+## Usage Examples
+
+### Managing an OAuth2 Client
+
+```typescript
+import * as dex from "@kotaicode/pulumi-dex";
+
+const webClient = new dex.Client("webClient", {
+    clientId: "my-web-app",
+    name: "My Web App",
     redirectUris: ["https://app.example.com/callback"],
-    public: false,
-    logoUrl: "https://app.example.com/logo.png",
+    // secret is optional - will be auto-generated if omitted
 }, { provider });
+
+export const clientSecret = webClient.secret; // Pulumi secret
 ```
 
-**Inputs:**
-- `clientId` (string, required) - Unique identifier for the OAuth2 client. Used as the client_id in OAuth2 flows.
-- `name` (string, required) - Human-readable name for the OAuth2 client.
-- `secret` (string, optional, secret) - Client secret for the OAuth2 client. If not provided, a secure random secret will be generated automatically.
-- `redirectUris` (string[], required) - List of allowed redirect URIs for OAuth2 authorization flows. Must be valid HTTP/HTTPS URLs.
-- `trustedPeers` (string[], optional) - List of trusted peer client IDs that can exchange tokens with this client.
-- `public` (boolean, optional) - If true, this client is a public client (e.g., mobile app) and does not require a client secret.
-- `logoUrl` (string, optional) - URL to a logo image for the OAuth2 client. Used in consent screens.
+### Azure/Entra ID Connector (Generic OIDC)
 
-**Outputs:**
-- `id` - Resource ID (same as clientId)
-- `clientId` - The client ID
-- `secret` - The client secret (Pulumi secret)
-- `createdAt` - Creation timestamp (RFC3339 format)
-
-### `dex.Connector`
-
-Manages a generic connector (upstream identity provider) in Dex. Use this resource for connectors not covered by specific connector types, or when you need full control over the connector configuration.
-
-**Example (OIDC):**
 ```typescript
-const connector = new dex.Connector("github-oidc", {
-    connectorId: "github-oidc",
-    type: "oidc",
-    name: "GitHub OIDC",
-    oidcConfig: {
-        issuer: "https://token.actions.githubusercontent.com",
-        clientId: "your-client-id",
-        clientSecret: "your-secret",
-        redirectUri: "https://dex.example.com/callback",
-        scopes: ["openid", "email", "profile"],
-    },
-}, { provider });
-```
-
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the connector.
-- `type` (string, required) - Type of connector (e.g., 'oidc', 'saml', 'ldap'). Must match a connector type supported by Dex.
-- `name` (string, required) - Human-readable name for the connector, displayed to users during login.
-- `oidcConfig` (OIDCConfig, optional) - OIDC-specific configuration. Use this for OIDC-based connectors.
-- `rawConfig` (string, optional) - Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.
-
-**Note:** Exactly one of `oidcConfig` or `rawConfig` must be provided.
-
-### `dex.AzureOidcConnector`
-
-Manages an Azure AD/Entra ID connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their Azure AD/Entra ID credentials.
-
-**Example:**
-```typescript
-const azure = new dex.AzureOidcConnector("azure", {
-    connectorId: "azure",
-    name: "Azure AD",
-    tenantId: "your-tenant-id", // UUID format
-    clientId: "your-app-id",
-    clientSecret: "your-secret",
+const azureConnector = new dex.AzureOidcConnector("azure-tenant-a", {
+    connectorId: "azure-tenant-a",
+    name: "Azure AD (Tenant A)",
+    tenantId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    clientId: "your-azure-app-client-id",
+    clientSecret: "your-azure-app-client-secret", // Pulumi secret
     redirectUri: "https://dex.example.com/callback",
-    scopes: ["openid", "profile", "email", "offline_access"], // Optional, defaults to these
-    userNameSource: "preferred_username", // Optional: "preferred_username" (default), "upn", or "email"
+    scopes: ["openid", "profile", "email", "offline_access"],
+    userNameSource: "preferred_username", // or "upn" or "email"
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the Azure connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `tenantId` (string, required) - Azure AD tenant ID (UUID format). This identifies your Azure AD organization.
-- `clientId` (string, required) - Azure AD application (client) ID.
-- `clientSecret` (string, required, secret) - Azure AD application client secret.
-- `redirectUri` (string, required) - Redirect URI registered in Azure AD. Must match Dex's callback URL.
-- `scopes` (string[], optional) - OIDC scopes to request from Azure AD. Defaults to `["openid", "profile", "email", "offline_access"]` if not specified.
-- `userNameSource` (string, optional) - Source for the username claim. Valid values: 'preferred_username' (default), 'upn' (User Principal Name), or 'email'.
-- `extraOidc` (map, optional) - Additional OIDC configuration fields as key-value pairs for advanced scenarios.
+### Azure/Entra ID Connector (Microsoft-Specific)
 
-### `dex.AzureMicrosoftConnector`
-
-Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.
-
-**Example:**
 ```typescript
-const azureMs = new dex.AzureMicrosoftConnector("azure-ms", {
+const azureMsConnector = new dex.AzureMicrosoftConnector("azure-ms", {
     connectorId: "azure-ms",
-    name: "Azure AD (Microsoft)",
-    tenant: "common", // or "organizations" or specific tenant ID (UUID)
-    clientId: "your-app-id",
-    clientSecret: "your-secret",
+    name: "Azure AD (Microsoft Connector)",
+    tenant: "common", // or "organizations" or specific tenant ID
+    clientId: "your-azure-app-client-id",
+    clientSecret: "your-azure-app-client-secret",
     redirectUri: "https://dex.example.com/callback",
-    groups: "groups", // Optional: group claim name, e.g., "groups"
+    groups: "groups", // Optional: group claim name
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the Azure Microsoft connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `tenant` (string, required) - Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
-- `clientId` (string, required) - Azure AD application (client) ID.
-- `clientSecret` (string, required, secret) - Azure AD application client secret.
-- `redirectUri` (string, required) - Redirect URI registered in Azure AD. Must match Dex's callback URL.
-- `groups` (string, optional) - Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+### AWS Cognito Connector
 
-### `dex.CognitoOidcConnector`
-
-Manages an AWS Cognito user pool connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their AWS Cognito credentials.
-
-**Example:**
 ```typescript
-const cognito = new dex.CognitoOidcConnector("cognito", {
-    connectorId: "cognito",
-    name: "AWS Cognito",
-    region: "us-east-1",
-    userPoolId: "us-east-1_XXXXXXXXX",
-    clientId: "your-cognito-client-id",
-    clientSecret: "your-secret",
+const cognitoConnector = new dex.CognitoOidcConnector("cognito-eu", {
+    connectorId: "cognito-eu",
+    name: "Cognito (EU)",
+    region: "eu-central-1",
+    userPoolId: "eu-central-1_XXXXXXX",
+    clientId: "your-cognito-app-client-id",
+    clientSecret: "your-cognito-app-client-secret",
     redirectUri: "https://dex.example.com/callback",
-    userNameSource: "email", // Optional: "email" (default) or "sub"
+    userNameSource: "email", // or "sub"
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the Cognito connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `region` (string, required) - AWS region where the Cognito user pool is located (e.g., 'us-east-1', 'eu-west-1').
-- `userPoolId` (string, required) - AWS Cognito user pool ID.
-- `clientId` (string, required) - Cognito app client ID.
-- `clientSecret` (string, required, secret) - Cognito app client secret.
-- `redirectUri` (string, required) - Redirect URI registered in Cognito. Must match Dex's callback URL.
-- `scopes` (string[], optional) - OIDC scopes to request from Cognito. Defaults to `["openid", "email", "profile"]` if not specified.
-- `userNameSource` (string, optional) - Source for the username claim. Valid values: 'email' or 'sub' (subject).
-- `extraOidc` (map, optional) - Additional OIDC configuration fields as key-value pairs for advanced scenarios.
+### GitLab Connector
 
-### `dex.GitLabConnector`
-
-Manages a GitLab connector in Dex. This connector allows users to authenticate using their GitLab accounts and supports group-based access control.
-
-**Example:**
 ```typescript
-const gitlab = new dex.GitLabConnector("gitlab", {
+const gitlabConnector = new dex.GitLabConnector("gitlab", {
     connectorId: "gitlab",
     name: "GitLab",
     clientId: "your-gitlab-client-id",
@@ -278,29 +154,15 @@ const gitlab = new dex.GitLabConnector("gitlab", {
     redirectUri: "https://dex.example.com/callback",
     baseURL: "https://gitlab.com", // Optional, defaults to https://gitlab.com
     groups: ["my-group"], // Optional: groups whitelist
-    useLoginAsID: false, // Optional: use username as ID instead of internal ID, default: false
-    getGroupsPermission: false, // Optional: include group permissions in groups claim, default: false
+    useLoginAsID: false, // Optional: use username as ID instead of internal ID
+    getGroupsPermission: false, // Optional: include group permissions in groups claim
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the GitLab connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `clientId` (string, required) - GitLab OAuth application client ID.
-- `clientSecret` (string, required, secret) - GitLab OAuth application client secret.
-- `redirectUri` (string, required) - Redirect URI registered in GitLab OAuth app. Must match Dex's callback URL.
-- `baseURL` (string, optional) - GitLab instance base URL. Defaults to 'https://gitlab.com' for GitLab.com.
-- `groups` (string[], optional) - List of GitLab group names. Only users in these groups will be allowed to authenticate.
-- `useLoginAsID` (boolean, optional) - If true, use GitLab username as the user ID. Defaults to false.
-- `getGroupsPermission` (boolean, optional) - If true, request 'read_api' scope to fetch group memberships. Defaults to false.
+### GitHub Connector
 
-### `dex.GitHubConnector`
-
-Manages a GitHub connector in Dex. This connector allows users to authenticate using their GitHub accounts and supports organization and team-based access control.
-
-**Example:**
 ```typescript
-const github = new dex.GitHubConnector("github", {
+const githubConnector = new dex.GitHubConnector("github", {
     connectorId: "github",
     name: "GitHub",
     clientId: "your-github-client-id",
@@ -321,29 +183,10 @@ const github = new dex.GitHubConnector("github", {
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the GitHub connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `clientId` (string, required) - GitHub OAuth app client ID.
-- `clientSecret` (string, required, secret) - GitHub OAuth app client secret.
-- `redirectUri` (string, required) - Redirect URI registered in GitHub OAuth app. Must match Dex's callback URL.
-- `orgs` (GitHubOrg[], optional) - List of GitHub organizations with optional team restrictions. Only users in these orgs/teams will be allowed to authenticate.
-  - `name` (string, required) - GitHub organization name.
-  - `teams` (string[], optional) - List of team names within the organization. If empty, all members of the organization can authenticate.
-- `loadAllGroups` (boolean, optional) - If true, load all groups (teams) the user is a member of. Defaults to false.
-- `teamNameField` (string, optional) - Field to use for team names in group claims. Valid values: 'name', 'slug', or 'both'. Defaults to 'slug'.
-- `useLoginAsID` (boolean, optional) - If true, use GitHub login username as the user ID. Defaults to false.
-- `preferredEmailDomain` (string, optional) - Preferred email domain. If set, users with emails in this domain will be preferred.
-- `hostName` (string, optional) - GitHub Enterprise hostname (e.g., 'github.example.com'). Leave empty for github.com.
-- `rootCA` (string, optional) - Root CA certificate for GitHub Enterprise (PEM format). Required if using self-signed certificates.
+### Google Connector
 
-### `dex.GoogleConnector`
-
-Manages a Google connector in Dex. This connector allows users to authenticate using their Google accounts and supports domain and group-based access control.
-
-**Example:**
 ```typescript
-const google = new dex.GoogleConnector("google", {
+const googleConnector = new dex.GoogleConnector("google", {
     connectorId: "google",
     name: "Google",
     clientId: "your-google-client-id",
@@ -361,62 +204,300 @@ const google = new dex.GoogleConnector("google", {
 }, { provider });
 ```
 
-**Inputs:**
-- `connectorId` (string, required) - Unique identifier for the Google connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `clientId` (string, required) - Google OAuth client ID.
-- `clientSecret` (string, required, secret) - Google OAuth client secret.
-- `redirectUri` (string, required) - Redirect URI registered in Google OAuth app. Must match Dex's callback URL.
-- `promptType` (string, optional) - OAuth prompt type. Valid values: 'consent' (default) or 'select_account'.
-- `hostedDomains` (string[], optional) - List of Google Workspace domains. Only users with email addresses in these domains will be allowed to authenticate.
-- `groups` (string[], optional) - List of Google Groups. Only users in these groups will be allowed to authenticate.
-- `serviceAccountFilePath` (string, optional) - Path to Google service account JSON file. Required for group-based access control.
-- `domainToAdminEmail` (map[string]string, optional) - Map of domain names to admin email addresses. Used for group lookups in Google Workspace.
+### Local/Builtin Connector
 
-### `dex.LocalConnector`
-
-Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
-
-**Example:**
 ```typescript
-const local = new dex.LocalConnector("local", {
+const localConnector = new dex.LocalConnector("local", {
     connectorId: "local",
     name: "Local",
     enabled: true, // Optional: default is true
 }, { provider });
 ```
 
+### Generic Connector (OIDC)
+
+```typescript
+const genericOidcConnector = new dex.Connector("github-oidc", {
+    connectorId: "github-oidc",
+    type: "oidc",
+    name: "GitHub OIDC",
+    oidcConfig: {
+        issuer: "https://token.actions.githubusercontent.com",
+        clientId: "your-github-oidc-client-id",
+        clientSecret: "your-secret",
+        redirectUri: "https://dex.example.com/callback",
+        scopes: ["openid", "email", "profile"],
+    },
+}, { provider });
+```
+
+### Generic Connector (Raw JSON)
+
+```typescript
+const githubConnector = new dex.Connector("github", {
+    connectorId: "github",
+    type: "github",
+    name: "GitHub",
+    rawConfig: JSON.stringify({
+        clientID: "your-github-client-id",
+        clientSecret: "your-github-client-secret",
+        redirectURI: "https://dex.example.com/callback",
+        orgs: ["kotaicode"],
+    }),
+}, { provider });
+```
+
+## Resources
+
+### `dex.Client`
+
+Manages an OAuth2 client in Dex.
+
 **Inputs:**
-- `connectorId` (string, required) - Unique identifier for the local connector.
-- `name` (string, required) - Human-readable name for the connector.
-- `enabled` (boolean, optional) - Whether the local connector is enabled. Defaults to true.
+- `clientId` (string, required) - Unique identifier for the client
+- `name` (string, required) - Display name
+- `secret` (string, optional, secret) - Client secret (auto-generated if omitted)
+- `redirectUris` (string[], required) - Allowed redirect URIs
+- `trustedPeers` (string[], optional) - Trusted peer client IDs
+- `public` (boolean, optional) - Public (non-confidential) client
+- `logoUrl` (string, optional) - Logo image URL
+
+**Outputs:**
+- `id` - Resource ID (same as clientId)
+- `clientId` - The client ID
+- `secret` - The client secret (Pulumi secret)
+- `createdAt` - Creation timestamp
+
+### `dex.Connector`
+
+Manages a generic connector in Dex.
+
+**Inputs:**
+- `connectorId` (string, required) - Unique identifier
+- `type` (string, required) - Connector type (e.g., "oidc", "ldap", "saml", "github")
+- `name` (string, required) - Display name
+- `oidcConfig` (OIDCConfig, optional) - OIDC configuration (use when type="oidc")
+- `rawConfig` (string, optional) - Raw JSON configuration (for non-OIDC connectors)
+
+**Note:** Exactly one of `oidcConfig` or `rawConfig` must be provided.
+
+### `dex.AzureOidcConnector`
+
+Manages an Azure AD/Entra ID connector using generic OIDC.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `tenantId` (string, required) - Azure tenant ID (UUID)
+- `clientId` (string, required) - Azure app client ID
+- `clientSecret` (string, required, secret) - Azure app client secret
+- `redirectUri` (string, required)
+- `scopes` (string[], optional) - Defaults to `["openid", "profile", "email", "offline_access"]`
+- `userNameSource` (string, optional) - "preferred_username" (default), "upn", or "email"
+- `extraOidc` (map, optional) - Additional OIDC config fields
+
+### `dex.AzureMicrosoftConnector`
+
+Manages an Azure AD/Entra ID connector using Dex's Microsoft-specific connector.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `tenant` (string, required) - "common", "organizations", or tenant ID (UUID)
+- `clientId` (string, required)
+- `clientSecret` (string, required, secret)
+- `redirectUri` (string, required)
+- `groups` (string, optional) - Group claim name (requires admin consent)
+
+### `dex.CognitoOidcConnector`
+
+Manages an AWS Cognito user pool connector.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `region` (string, required) - AWS region (e.g., "eu-central-1")
+- `userPoolId` (string, required) - Cognito user pool ID
+- `clientId` (string, required) - Cognito app client ID
+- `clientSecret` (string, required, secret) - Cognito app client secret
+- `redirectUri` (string, required)
+- `scopes` (string[], optional) - Defaults to `["openid", "email", "profile"]`
+- `userNameSource` (string, optional) - "email" (default) or "sub"
+- `extraOidc` (map, optional) - Additional OIDC config fields
+
+### `dex.GitLabConnector`
+
+Manages a GitLab connector in Dex.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `clientId` (string, required) - GitLab application client ID
+- `clientSecret` (string, required, secret) - GitLab application client secret
+- `redirectUri` (string, required)
+- `baseURL` (string, optional) - GitLab instance URL, defaults to `https://gitlab.com`
+- `groups` (string[], optional) - Groups whitelist
+- `useLoginAsID` (bool, optional) - Use username as ID instead of internal ID, default: `false`
+- `getGroupsPermission` (bool, optional) - Include group permissions in groups claim, default: `false`
+
+### `dex.GitHubConnector`
+
+Manages a GitHub connector in Dex.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `clientId` (string, required) - GitHub OAuth app client ID
+- `clientSecret` (string, required, secret) - GitHub OAuth app client secret
+- `redirectUri` (string, required)
+- `orgs` (GitHubOrg[], optional) - List of organizations and teams
+  - `name` (string, required) - Organization name
+  - `teams` (string[], optional) - Team names within the organization
+- `loadAllGroups` (bool, optional) - Load all user orgs/teams, default: `false`
+- `teamNameField` (string, optional) - "name", "slug", or "both", default: "slug"
+- `useLoginAsID` (bool, optional) - Use username as ID, default: `false`
+- `preferredEmailDomain` (string, optional) - Preferred email domain
+- `hostName` (string, optional) - GitHub Enterprise hostname
+- `rootCA` (string, optional) - Root CA certificate path for GitHub Enterprise
+
+### `dex.GoogleConnector`
+
+Manages a Google connector in Dex.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `clientId` (string, required) - Google OAuth client ID
+- `clientSecret` (string, required, secret) - Google OAuth client secret
+- `redirectUri` (string, required)
+- `promptType` (string, optional) - OIDC prompt parameter, default: "consent"
+- `hostedDomains` (string[], optional) - Domain whitelist for G Suite
+- `groups` (string[], optional) - Group whitelist for G Suite
+- `serviceAccountFilePath` (string, optional) - Service account JSON file path for group fetching
+- `domainToAdminEmail` (map[string]string, optional) - Domain to admin email mapping for group fetching
+
+### `dex.LocalConnector`
+
+Manages a local/builtin connector in Dex.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `enabled` (bool, optional) - Whether the connector is enabled, default: `true`
 
 **Note:** The local connector requires `enablePasswordDB: true` in Dex configuration. User management is handled separately via Dex's static passwords or gRPC API.
 
-## Configuration
+## Local Development and Testing
 
-The provider supports the following configuration options:
+### Running Dex Locally with Docker Compose
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `host` | string | Yes | Dex gRPC host:port (e.g., `dex.internal:5557`) |
-| `caCert` | string | No | PEM-encoded CA certificate for validating Dex's TLS certificate |
-| `clientCert` | string | No | PEM-encoded client certificate for mTLS |
-| `clientKey` | string | No | PEM-encoded private key for the client certificate |
-| `insecureSkipVerify` | boolean | No | Skip TLS verification (development only) |
-| `timeoutSeconds` | number | No | Per-RPC timeout in seconds (default: 5) |
+See `docker-compose.yml` for a local Dex setup with gRPC API enabled.
 
-## Documentation
+```bash
+# Start Dex
+docker-compose up -d
 
-- [Full Documentation](https://github.com/kotaicode/pulumi-provider-dex#readme)
-- [Dex Documentation](https://dexidp.io/docs/)
-- [Pulumi Documentation](https://www.pulumi.com/docs/)
+# Dex gRPC will be available at localhost:5557
+# Dex web UI will be available at http://localhost:5556
+```
+
+### Example Pulumi Program
+
+See the `examples/` directory for complete example programs.
+
+## Dex Configuration Requirements
+
+Your Dex instance must have the gRPC API enabled. Add this to your Dex configuration:
+
+```yaml
+grpc:
+  addr: 127.0.0.1:5557
+  tlsCert: /etc/dex/grpc.crt
+  tlsKey: /etc/dex/grpc.key
+  tlsClientCA: /etc/dex/client.crt
+  reflection: true
+
+# Enable connector CRUD (required for connector management)
+enablePasswordDB: false
+```
+
+And set the environment variable:
+```bash
+export DEX_API_CONNECTORS_CRUD=true
+```
+
+## Security Considerations
+
+- **Secrets**: All secrets (client secrets, TLS keys) are automatically marked as Pulumi secrets and encrypted in state
+- **mTLS**: Strongly recommended for production use. Configure TLS certificates properly
+- **Network**: Ensure Dex gRPC API is only accessible from trusted networks
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## Dex Version Compatibility
+
+This provider has been tested with:
+- **Dex v2.4.0+** (with `DEX_API_CONNECTORS_CRUD=true`)
+
+The provider requires:
+- Dex gRPC API enabled
+- `DEX_API_CONNECTORS_CRUD=true` environment variable set on Dex (required for connector CRUD operations)
+
+For older Dex versions, connector management may not be available. Client management should work with any Dex version that exposes the gRPC API.
+
+## Development
+
+### Prerequisites
+- Go 1.24.1+
+- Pulumi CLI
+- Docker and Docker Compose (for local testing)
+
+### Building
+
+```bash
+make build
+```
+
+### Running Tests
+
+```bash
+# Unit tests
+make test
+
+# Integration tests (requires Dex running)
+make dex-up
+make test  # Run tests with integration tag
+make dex-down
+```
+
+### Code Quality
+
+```bash
+# Run linter
+golangci-lint run
+
+# Format code
+go fmt ./...
+```
+
+## Contributing
+
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/kotaicode/pulumi-provider-dex/blob/main/LICENSE) file for details.
+[License TBD - Add MIT or Apache 2.0]
 
 ## Support
 
-- [GitHub Issues](https://github.com/kotaicode/pulumi-provider-dex/issues)
-- [Pulumi Community Slack](https://slack.pulumi.com/)
+- **GitHub Issues**: https://github.com/kotaicode/pulumi-dex/issues
+- **Documentation**: https://github.com/kotaicode/pulumi-dex#readme
+

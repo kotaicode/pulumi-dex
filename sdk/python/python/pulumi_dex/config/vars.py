@@ -44,7 +44,7 @@ class _ExportableConfig(types.ModuleType):
     @_builtins.property
     def host(self) -> Optional[str]:
         """
-        Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+        Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         """
         return __config__.get('host')
 

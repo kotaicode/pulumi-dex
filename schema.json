@@ -6,8 +6,8 @@
   "keywords": [
     "category/cloud"
   ],
-  "repository": "github.com/kotaicode/pulumi-provider-dex",
-  "pluginDownloadURL": "github://api.github.com/kotaicode/pulumi-provider-dex",
+  "repository": "github.com/kotaicode/pulumi-dex",
+  "pluginDownloadURL": "github://api.github.com/kotaicode/pulumi-dex",
   "publisher": "Kotaicode GmbH",
   "namespace": "dex",
   "meta": {
@@ -16,7 +16,7 @@
   "language": {
     "go": {
       "generateResourceContainerTypes": true,
-      "importBasePath": "github.com/kotaicode/pulumi-provider-dex/sdk/go/dex",
+      "importBasePath": "github.com/kotaicode/pulumi-dex/sdk/go/dex",
       "respectSchemaVersion": true
     },
     "nodejs": {
@@ -24,7 +24,7 @@
       "respectSchemaVersion": true
     },
     "python": {
-      "packageName": "pulumi_kotaicode_dex",
+      "packageName": "pulumi_dex",
       "respectSchemaVersion": true
     }
   },
@@ -47,7 +47,7 @@
       },
       "host": {
         "type": "string",
-        "description": "Dex gRPC host:port, e.g. dex.internal.kotaicode:5557."
+        "description": "Dex gRPC host:port, e.g. dex.internal.example.com:5557."
       },
       "insecureSkipVerify": {
         "type": "boolean",
@@ -173,7 +173,7 @@
       },
       "host": {
         "type": "string",
-        "description": "Dex gRPC host:port, e.g. dex.internal.kotaicode:5557."
+        "description": "Dex gRPC host:port, e.g. dex.internal.example.com:5557."
       }
     },
     "type": "object",
@@ -198,7 +198,7 @@
       },
       "host": {
         "type": "string",
-        "description": "Dex gRPC host:port, e.g. dex.internal.kotaicode:5557."
+        "description": "Dex gRPC host:port, e.g. dex.internal.example.com:5557."
       },
       "insecureSkipVerify": {
         "type": "boolean",

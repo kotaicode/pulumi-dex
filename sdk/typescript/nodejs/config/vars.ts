@@ -41,7 +41,7 @@ Object.defineProperty(exports, "clientKey", {
 });
 
 /**
- * Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+ * Dex gRPC host:port, e.g. dex.internal.example.com:5557.
  */
 export declare const host: string | undefined;
 Object.defineProperty(exports, "host", {

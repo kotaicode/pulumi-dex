@@ -4,7 +4,7 @@
 package config
 
 import (
-	"github.com/kotaicode/pulumi-provider-dex/sdk/go/dex/internal"
+	"github.com/kotaicode/pulumi-dex/sdk/go/dex/internal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
@@ -26,7 +26,7 @@ func GetClientKey(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:clientKey")
 }
 
-// Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 func GetHost(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:host")
 }

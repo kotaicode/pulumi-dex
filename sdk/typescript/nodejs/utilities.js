@@ -52,7 +52,7 @@ function getVersion() {
 exports.getVersion = getVersion;
 /** @internal */
 function resourceOptsDefaults() {
-    return { version: getVersion(), pluginDownloadURL: "github://api.github.com/kotaicode/pulumi-provider-dex" };
+    return { version: getVersion(), pluginDownloadURL: "github://api.github.com/kotaicode/pulumi-dex" };
 }
 exports.resourceOptsDefaults = resourceOptsDefaults;
 /** @internal */

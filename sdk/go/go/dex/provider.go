@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"errors"
-	"github.com/kotaicode/pulumi-provider-dex/sdk/go/dex/internal"
+	"github.com/kotaicode/pulumi-dex/sdk/go/dex/internal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -21,7 +21,7 @@ type Provider struct {
 	ClientCert pulumi.StringPtrOutput `pulumi:"clientCert"`
 	// PEM-encoded private key for the client certificate.
 	ClientKey pulumi.StringPtrOutput `pulumi:"clientKey"`
-	// Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host pulumi.StringOutput `pulumi:"host"`
 }
 
@@ -66,7 +66,7 @@ type providerArgs struct {
 	ClientCert *string `pulumi:"clientCert"`
 	// PEM-encoded private key for the client certificate.
 	ClientKey *string `pulumi:"clientKey"`
-	// Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host string `pulumi:"host"`
 	// If true, disables TLS verification (development only).
 	InsecureSkipVerify *bool `pulumi:"insecureSkipVerify"`
@@ -82,7 +82,7 @@ type ProviderArgs struct {
 	ClientCert pulumi.StringPtrInput
 	// PEM-encoded private key for the client certificate.
 	ClientKey pulumi.StringPtrInput
-	// Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host pulumi.StringInput
 	// If true, disables TLS verification (development only).
 	InsecureSkipVerify pulumi.BoolPtrInput
@@ -142,7 +142,7 @@ func (o ProviderOutput) ClientKey() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Provider) pulumi.StringPtrOutput { return v.ClientKey }).(pulumi.StringPtrOutput)
 }
 
-// Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 func (o ProviderOutput) Host() pulumi.StringOutput {
 	return o.ApplyT(func(v *Provider) pulumi.StringOutput { return v.Host }).(pulumi.StringOutput)
 }

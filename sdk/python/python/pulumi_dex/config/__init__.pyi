@@ -31,7 +31,7 @@ PEM-encoded private key for the client certificate.
 
 host: Optional[str]
 """
-Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 """
 
 insecureSkipVerify: Optional[bool]

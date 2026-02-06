@@ -11,7 +11,7 @@ export declare const clientCert: string | undefined;
  */
 export declare const clientKey: string | undefined;
 /**
- * Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+ * Dex gRPC host:port, e.g. dex.internal.example.com:5557.
  */
 export declare const host: string | undefined;
 /**

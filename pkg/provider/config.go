@@ -29,7 +29,7 @@ type DexConfig struct {
 
 // Annotate config fields with descriptions & defaults for the schema.
 func (c *DexConfig) Annotate(a infer.Annotator) {
-	a.Describe(&c.Host, "Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.")
+	a.Describe(&c.Host, "Dex gRPC host:port, e.g. dex.internal.example.com:5557.")
 	a.Describe(&c.CACertPEM, "PEM-encoded CA certificate for validating Dex's TLS certificate.")
 	a.Describe(&c.ClientCertPEM, "PEM-encoded client certificate for mTLS to Dex.")
 	a.Describe(&c.ClientKeyPEM, "PEM-encoded private key for the client certificate.")

@@ -1,4 +1,4 @@
-module github.com/kotaicode/pulumi-provider-dex/examples/dex-debug
+module github.com/kotaicode/pulumi-dex/examples/dex-debug
 
 go 1.24.1
 

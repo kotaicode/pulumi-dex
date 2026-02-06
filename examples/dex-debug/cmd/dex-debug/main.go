@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/alecthomas/kong"
-	"github.com/kotaicode/pulumi-provider-dex/examples/dex-debug/internal/commands"
+	"github.com/kotaicode/pulumi-dex/examples/dex-debug/internal/commands"
 )
 
 var cli struct {

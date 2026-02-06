@@ -18,7 +18,7 @@ export declare class Provider extends pulumi.ProviderResource {
      */
     readonly clientKey: pulumi.Output<string | undefined>;
     /**
-     * Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+     * Dex gRPC host:port, e.g. dex.internal.example.com:5557.
      */
     readonly host: pulumi.Output<string>;
     /**
@@ -47,7 +47,7 @@ export interface ProviderArgs {
      */
     clientKey?: pulumi.Input<string>;
     /**
-     * Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+     * Dex gRPC host:port, e.g. dex.internal.example.com:5557.
      */
     host: pulumi.Input<string>;
     /**

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-provider-dex/pkg/provider"
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

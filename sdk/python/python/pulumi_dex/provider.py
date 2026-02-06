@@ -27,7 +27,7 @@ class ProviderArgs:
                  timeout_seconds: Optional[pulumi.Input[_builtins.int]] = None):
         """
         The set of arguments for constructing a Provider resource.
-        :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+        :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
         :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mTLS to Dex.
         :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for the client certificate.
@@ -50,7 +50,7 @@ class ProviderArgs:
     @pulumi.getter
     def host(self) -> pulumi.Input[_builtins.str]:
         """
-        Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+        Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         """
         return pulumi.get(self, "host")
 
@@ -139,7 +139,7 @@ class Provider(pulumi.ProviderResource):
         :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
         :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mTLS to Dex.
         :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for the client certificate.
-        :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+        :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         :param pulumi.Input[_builtins.bool] insecure_skip_verify: If true, disables TLS verification (development only).
         :param pulumi.Input[_builtins.int] timeout_seconds: Per-RPC timeout in seconds when talking to Dex.
         """
@@ -225,7 +225,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter
     def host(self) -> pulumi.Output[_builtins.str]:
         """
-        Dex gRPC host:port, e.g. dex.internal.kotaicode:5557.
+        Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         """
         return pulumi.get(self, "host")
 

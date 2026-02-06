@@ -18,7 +18,7 @@ def readme():
         return "dex Pulumi Package - Development Version"
 
 
-setup(name='pulumi_kotaicode_dex',
+setup(name='pulumi_dex',
       python_requires='>=3.9',
       version=VERSION,
       description="A Pulumi provider for managing Dex resources via the Dex gRPC Admin API",
@@ -26,11 +26,11 @@ setup(name='pulumi_kotaicode_dex',
       long_description_content_type='text/markdown',
       keywords='category/cloud',
       project_urls={
-          'Repository': 'github.com/kotaicode/pulumi-provider-dex'
+          'Repository': 'github.com/kotaicode/pulumi-dex'
       },
       packages=find_packages(),
       package_data={
-          'pulumi_kotaicode_dex': [
+          'pulumi_dex': [
               'py.typed',
               'pulumi-plugin.json',
           ]

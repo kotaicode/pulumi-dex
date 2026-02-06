@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/kotaicode/pulumi-provider-dex/pkg/provider"
-	"github.com/kotaicode/pulumi-provider-dex/pkg/provider/resources"
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
+	"github.com/kotaicode/pulumi-dex/pkg/provider/resources"
 	"github.com/pulumi/pulumi-go-provider/infer"
 )
 
@@ -19,17 +19,17 @@ func main() {
 		WithPublisher("Kotaicode GmbH").
 		WithKeywords("category/cloud").
 		WithDescription("A Pulumi provider for managing Dex resources via the Dex gRPC Admin API").
-		WithPluginDownloadURL("github://api.github.com/kotaicode/pulumi-provider-dex").
+		WithPluginDownloadURL("github://api.github.com/kotaicode/pulumi-dex").
 		WithLanguageMap(map[string]any{
 			"go": map[string]any{
-				"importBasePath":                 "github.com/kotaicode/pulumi-provider-dex/sdk/go/dex",
+				"importBasePath":                 "github.com/kotaicode/pulumi-dex/sdk/go/dex",
 				"respectSchemaVersion":           true,
 				"generateResourceContainerTypes": true,
 			},
 			"nodejs": map[string]any{"packageName": "@kotaicode/pulumi-dex", "respectSchemaVersion": true},
-			"python": map[string]any{"packageName": "pulumi_kotaicode_dex", "respectSchemaVersion": true},
+			"python": map[string]any{"packageName": "pulumi_dex", "respectSchemaVersion": true},
 		}).
-		WithRepository("github.com/kotaicode/pulumi-provider-dex").
+		WithRepository("github.com/kotaicode/pulumi-dex").
 		WithResources(
 			infer.Resource(&resources.Client{}),
 			infer.Resource(&resources.Connector{}),

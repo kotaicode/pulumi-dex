@@ -10,13 +10,13 @@ from .provider import *
 
 # Make subpackages available:
 if typing.TYPE_CHECKING:
-    import pulumi_kotaicode_dex.config as __config
+    import pulumi_dex.config as __config
     config = __config
-    import pulumi_kotaicode_dex.resources as __resources
+    import pulumi_dex.resources as __resources
     resources = __resources
 else:
-    config = _utilities.lazy_import('pulumi_kotaicode_dex.config')
-    resources = _utilities.lazy_import('pulumi_kotaicode_dex.resources')
+    config = _utilities.lazy_import('pulumi_dex.config')
+    resources = _utilities.lazy_import('pulumi_dex.resources')
 
 _utilities.register(
     resource_modules="""
@@ -24,7 +24,7 @@ _utilities.register(
  {
   "pkg": "dex",
   "mod": "resources",
-  "fqn": "pulumi_kotaicode_dex.resources",
+  "fqn": "pulumi_dex.resources",
   "classes": {
    "dex:resources:AzureMicrosoftConnector": "AzureMicrosoftConnector",
    "dex:resources:AzureOidcConnector": "AzureOidcConnector",
@@ -44,7 +44,7 @@ _utilities.register(
  {
   "pkg": "dex",
   "token": "pulumi:providers:dex",
-  "fqn": "pulumi_kotaicode_dex",
+  "fqn": "pulumi_dex",
   "class": "Provider"
  }
 ]

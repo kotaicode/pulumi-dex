@@ -28,8 +28,8 @@ A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gR
 
 ```bash
 # Clone the repository
-git clone https://github.com/kotaicode/pulumi-provider-dex.git
-cd pulumi-provider-dex
+git clone https://github.com/kotaicode/pulumi-dex.git
+cd pulumi-dex
 
 # Build the provider binary
 go build -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
@@ -498,6 +498,6 @@ Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) 
 
 ## Support
 
-- **GitHub Issues**: https://github.com/kotaicode/pulumi-provider-dex/issues
-- **Documentation**: https://github.com/kotaicode/pulumi-provider-dex#readme
+- **GitHub Issues**: https://github.com/kotaicode/pulumi-dex/issues
+- **Documentation**: https://github.com/kotaicode/pulumi-dex#readme
 
