@@ -1,3 +1,9 @@
+---
+title: Installation and Configuration
+meta_desc: Learn how to install and configure the Dex provider for Pulumi.
+layout: package
+---
+
 # Installation and Configuration
 
 ## Installation
