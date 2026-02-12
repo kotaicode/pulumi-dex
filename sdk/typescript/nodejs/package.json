@@ -1,6 +1,6 @@
 {
     "name": "@kotaicode/pulumi-dex",
-    "version": "0.1.0",
+    "version": "0.7.3",
     "keywords": [
         "category/cloud"
     ],
@@ -18,7 +18,7 @@
     "pulumi": {
         "resource": true,
         "name": "dex",
-        "version": "0.1.0",
+        "version": "0.7.3",
         "server": "github://api.github.com/kotaicode/pulumi-dex"
     }
 }
