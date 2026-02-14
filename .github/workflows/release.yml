@@ -201,10 +201,10 @@ jobs:
           echo "First 3 lines:"
           head -3 sdk/typescript/nodejs/README.md
 
-      - name: Update package.json version
-        run: |
-          cd sdk/typescript/nodejs
-          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+      # - name: Update package.json version
+      #   run: |
+      #     cd sdk/typescript/nodejs
+      #     npm version ${{ steps.version.outputs.version }} --no-git-tag-version
 
       - name: Install npm dependencies
         run: |
