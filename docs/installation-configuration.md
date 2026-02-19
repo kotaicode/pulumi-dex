@@ -40,7 +40,7 @@ The provider binary is automatically downloaded by Pulumi when you use the provi
 pulumi plugin install resource dex v0.1.0
 ```
 
-Or download from [GitHub Releases](https://github.com/kotaicode/pulumi-provider-dex/releases).
+Or download from [GitHub Releases](https://github.com/kotaicode/pulumi-dex/releases).
 
 ## Configuration
 

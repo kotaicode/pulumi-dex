@@ -11,7 +11,6 @@
 
 ```bash
 # From the project root
-cd /Users/andreas/dev/kotaicode/pulumi-provider-dex
 docker-compose up -d
 
 # Verify Dex is running

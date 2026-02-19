@@ -20,7 +20,7 @@ Security vulnerabilities should be reported privately to allow us to address the
 
 The preferred method is to use GitHub's Security Advisories feature:
 
-1. Go to the [Security tab](https://github.com/kotaicode/pulumi-provider-dex/security) in the repository
+1. Go to the [Security tab](https://github.com/kotaicode/pulumi-dex/security) in the repository
 2. Click "Report a vulnerability"
 3. Fill out the security advisory form with details about the vulnerability
 

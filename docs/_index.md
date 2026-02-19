@@ -65,7 +65,7 @@ export const clientSecret = client.secret;
 package main
 
 import (
-    "github.com/kotaicode/pulumi-provider-dex/sdk/go/dex"
+    "github.com/kotaicode/pulumi-dex/sdk/go/dex"
     "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
