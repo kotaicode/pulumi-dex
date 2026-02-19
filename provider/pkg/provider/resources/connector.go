@@ -162,10 +162,7 @@ func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[Connecto
 		}
 
 		// Decode the existing connector
-		existingArgs, _, err := decodeConnector(found)
-		if err != nil {
-			return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("failed to decode existing connector: %w", err)
-		}
+		existingArgs, _ := decodeConnector(found)
 
 		state := ConnectorState{
 			ConnectorArgs: existingArgs,
@@ -216,10 +213,7 @@ func (c *Connector) Read(ctx context.Context, req infer.ReadRequest[ConnectorArg
 		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, nil
 	}
 
-	args, state, err := decodeConnector(found)
-	if err != nil {
-		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, err
-	}
+	args, state := decodeConnector(found)
 
 	return infer.ReadResponse[ConnectorArgs, ConnectorState]{
 		ID:     found.Id,
@@ -380,7 +374,7 @@ func buildConnectorConfigBytes(args ConnectorArgs) ([]byte, error) {
 }
 
 // decodeConnector converts a Dex Connector into ConnectorArgs/State.
-func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState, error) {
+func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
 	args := ConnectorArgs{
 		ConnectorId: con.Id,
 		Type:        con.Type,
@@ -436,5 +430,5 @@ func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState, error) 
 	state := ConnectorState{
 		ConnectorArgs: args,
 	}
-	return args, state, nil
+	return args, state
 }

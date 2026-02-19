@@ -1,7 +1,7 @@
 .PHONY: build install generate-schema generate-sdks test clean help
 
 # Default version for local development
-VERSION ?= 0.7.12
+VERSION ?= 0.8.0
 
 # Build the provider binary
 build:

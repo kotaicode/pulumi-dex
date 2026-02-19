@@ -45,7 +45,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          file: provider/coverage.out
+          files: provider/coverage.out
           flags: unittests
           name: codecov-umbrella
 

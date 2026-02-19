@@ -47,5 +47,7 @@ func main() {
 		log.Fatalf("failed to build dex provider: %v", err)
 	}
 
-	prov.Run(context.Background(), providerName, provider.Version)
+	if err := prov.Run(context.Background(), providerName, provider.Version); err != nil {
+		log.Fatalf("provider run failed: %v", err)
+	}
 }

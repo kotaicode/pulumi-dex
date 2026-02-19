@@ -233,11 +233,9 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 		}
 	}
 
+	// userNameKey "email" is the default for Cognito
 	userNameKey, _ := configMap["userNameKey"].(string)
 	userNameSource := &userNameKey
-	if userNameKey == "email" {
-		// This is the default
-	}
 
 	scopes, _ := configMap["scopes"].([]any)
 	scopesStr := make([]string, 0, len(scopes))

@@ -69,7 +69,9 @@ func (c *DexConfig) Configure(ctx context.Context) error {
 		PtrOr(c.InsecureSkipTLS, false)
 
 	if hasTLSMaterial {
-		tlsCfg := &tls.Config{}
+		tlsCfg := &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
 
 		// Root CA for validating Dex's server certificate.
 		if c.CACertPEM != nil && *c.CACertPEM != "" {

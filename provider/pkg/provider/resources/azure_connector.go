@@ -232,12 +232,9 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		}
 	}
 
-	// Extract userNameKey and map to userNameSource
+	// Extract userNameKey and map to userNameSource (preferred_username is the default)
 	userNameKey, _ := configMap["userNameKey"].(string)
 	userNameSource := &userNameKey
-	if userNameKey == "preferred_username" {
-		// This is the default, so we can leave it as is
-	}
 
 	scopes, _ := configMap["scopes"].([]any)
 	scopesStr := make([]string, 0, len(scopes))
