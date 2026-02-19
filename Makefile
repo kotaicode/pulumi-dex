@@ -1,19 +1,13 @@
-.PHONY: build install generate-sdks test clean help
+.PHONY: build install generate-schema generate-sdks test clean help
 
 # Default version for local development
-VERSION ?= 0.7.9
+VERSION ?= 0.7.10
 
 # Build the provider binary
 build:
 	@echo "Building pulumi-resource-dex (version: $(VERSION))..."
 	@mkdir -p bin
-	@if [ ! -d "provider/cmd/pulumi-resource-dex" ]; then \
-		echo "Error: provider/cmd/pulumi-resource-dex directory not found. Current directory: $$(pwd)"; \
-		echo "Directory contents:"; \
-		ls -la provider/cmd/ 2>&1 || echo "provider/cmd/ does not exist"; \
-		exit 1; \
-	fi
-	@bash -c 'cd provider && go build -ldflags "-X '\''github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'\''" -o ../bin/pulumi-resource-dex ./cmd/pulumi-resource-dex'
+	@cd provider && go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
 	@echo "✓ Built bin/pulumi-resource-dex"
 
 # Install the provider locally (requires Pulumi CLI)
@@ -23,72 +17,48 @@ install: build
 	@echo "✓ Provider installed"
 
 # Generate schema.json (requires Pulumi CLI)
-# First install the provider, then get its schema, then fix metadata
 generate-schema: build
 	@echo "Generating schema.json..."
 	@pulumi package get-schema ./bin/pulumi-resource-dex > schema.json || (echo "⚠ Schema generation failed (Pulumi CLI required)" && exit 1)
 
 # Generate language SDKs (requires Pulumi CLI)
-# Use schema.json if available, otherwise install provider and use plugin name
 generate-sdks: build
 	@echo "Generating SDKs..."
 	@mkdir -p sdk
-	@# Backup README.md to a safe location outside SDK directory
-	@# This preserves our custom README.md when pulumi package gen-sdk overwrites/deletes it
-	@mkdir -p sdk/typescript/nodejs
+	@# Backup TypeScript README.md if it exists
 	@if [ -f sdk/typescript/nodejs/README.md ] && [ -s sdk/typescript/nodejs/README.md ]; then \
-		echo "Backing up TypeScript SDK README.md to safe location..."; \
 		cp sdk/typescript/nodejs/README.md /tmp/typescript-sdk-readme.md.bak; \
-	elif [ -f README.md ]; then \
-		echo "No SDK README.md found, using repository README.md as backup..."; \
-		cp README.md /tmp/typescript-sdk-readme.md.bak; \
 	fi
+	@# Generate SDKs from schema.json or provider binary
 	@if [ -f schema.json ]; then \
 		echo "Using schema.json for SDK generation..."; \
 		pulumi package gen-sdk schema.json --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk schema.json --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
-		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
-		[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true); \
 		pulumi package gen-sdk schema.json --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
-		if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
-			if [ -f README.md ]; then \
-				echo "Copying README.md to Python SDK..."; \
-				cp README.md sdk/python/python/README.md; \
-			fi; \
-		fi; \
 	else \
-		echo "schema.json not found, installing provider and using plugin name..."; \
+		echo "schema.json not found, using provider binary..."; \
 		pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex 2>/dev/null || true; \
 		pulumi package gen-sdk dex --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk dex --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
-		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
-		[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true); \
 		pulumi package gen-sdk dex --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
-		if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
-			if [ -f README.md ]; then \
-				echo "Copying README.md to Python SDK..."; \
-				cp README.md sdk/python/python/README.md; \
-			fi; \
-		fi; \
 	fi
-	@# Always restore our custom README.md (pulumi gen-sdk may overwrite/delete it)
+	@# Fix Go SDK directory structure (codegen creates sdk/go/go/dex, we need sdk/go/dex)
+	@rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true
+	@# Ensure sdk/go.mod is at the correct location
+	@[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true)
+	@# Restore TypeScript README.md if it was backed up
 	@if [ -f /tmp/typescript-sdk-readme.md.bak ]; then \
-		echo "Restoring TypeScript SDK README.md from backup (preserving custom content)..."; \
 		mkdir -p sdk/typescript/nodejs; \
 		cp /tmp/typescript-sdk-readme.md.bak sdk/typescript/nodejs/README.md; \
 		rm -f /tmp/typescript-sdk-readme.md.bak; \
 	fi
-	@echo "Fixing TypeScript SDK exports..."
-	@./scripts/fix-typescript-exports.sh || echo "⚠ TypeScript exports fix failed (may already be fixed)"
-	@echo "Fixing resources/index.ts exports for isolatedModules..."
-	@./scripts/fix-resources-index-exports.sh || echo "⚠ Resources index exports fix failed (may already be fixed)"
 	@# Ensure Python SDK has README.md
 	@if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
-		if [ -f README.md ]; then \
-			echo "Copying README.md to Python SDK..."; \
-			cp README.md sdk/python/python/README.md; \
-		fi; \
+		[ -f README.md ] && cp README.md sdk/python/python/README.md || true; \
 	fi
+	@# Apply TypeScript export fixes for isolatedModules
+	@./scripts/fix-typescript-exports.sh || echo "⚠ TypeScript exports fix failed (may already be fixed)"
+	@./scripts/fix-resources-index-exports.sh || echo "⚠ Resources index exports fix failed (may already be fixed)"
 	@echo "✓ SDKs generated in sdk/"
 
 # Run tests
@@ -134,4 +104,3 @@ help:
 	@echo "  dex-up          - Start local Dex with docker-compose"
 	@echo "  dex-down        - Stop local Dex"
 	@echo "  help            - Show this help message"
-
