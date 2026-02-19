@@ -1,12 +1,12 @@
 {
   "name": "dex",
   "displayName": "Dex",
-  "version": "0.7.10",
+  "version": "0.7.11",
   "description": "A Pulumi provider for managing Dex resources via the Dex gRPC Admin API",
   "keywords": [
     "category/cloud"
   ],
-  "repository": "github.com/kotaicode/pulumi-dex",
+  "repository": "https://github.com/kotaicode/pulumi-dex",
   "pluginDownloadURL": "github://api.github.com/kotaicode/pulumi-dex",
   "publisher": "Kotaicode GmbH",
   "namespace": "dex",

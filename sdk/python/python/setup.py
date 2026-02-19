@@ -9,7 +9,7 @@ from setuptools.command.install import install
 from subprocess import check_call
 
 
-VERSION = "0.7.10"
+VERSION = "0.7.11"
 def readme():
     try:
         with open('README.md', encoding='utf-8') as f:
@@ -26,7 +26,7 @@ setup(name='pulumi_dex',
       long_description_content_type='text/markdown',
       keywords='category/cloud',
       project_urls={
-          'Repository': 'github.com/kotaicode/pulumi-dex'
+          'Repository': 'https://github.com/kotaicode/pulumi-dex'
       },
       packages=find_packages(),
       package_data={

@@ -1,10 +1,10 @@
 {
     "name": "@kotaicode/pulumi-dex",
-    "version": "0.7.10",
+    "version": "0.7.11",
     "keywords": [
         "category/cloud"
     ],
-    "repository": "github.com/kotaicode/pulumi-dex",
+    "repository": "https://github.com/kotaicode/pulumi-dex",
     "scripts": {
         "build": "tsc"
     },
@@ -18,7 +18,7 @@
     "pulumi": {
         "resource": true,
         "name": "dex",
-        "version": "0.7.10",
+        "version": "0.7.11",
         "server": "github://api.github.com/kotaicode/pulumi-dex"
     }
 }

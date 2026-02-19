@@ -29,7 +29,7 @@ func main() {
 			"nodejs": map[string]any{"packageName": "@kotaicode/pulumi-dex", "respectSchemaVersion": true},
 			"python": map[string]any{"packageName": "pulumi_dex", "respectSchemaVersion": true},
 		}).
-		WithRepository("github.com/kotaicode/pulumi-dex").
+		WithRepository("https://github.com/kotaicode/pulumi-dex").
 		WithResources(
 			infer.Resource(&resources.Client{}),
 			infer.Resource(&resources.Connector{}),
