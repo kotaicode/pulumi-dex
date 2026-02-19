@@ -15,7 +15,7 @@ const providerName = "dex"
 func main() {
 	prov, err := infer.NewProviderBuilder().
 		WithNamespace("dex").
-		WithDisplayName("Dex Provider").
+		WithDisplayName("Dex").
 		WithPublisher("Kotaicode GmbH").
 		WithKeywords("category/cloud").
 		WithDescription("A Pulumi provider for managing Dex resources via the Dex gRPC Admin API").

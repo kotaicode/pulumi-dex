@@ -1,7 +1,7 @@
 .PHONY: build install generate-sdks test clean help
 
 # Default version for local development
-VERSION ?= 0.7.4
+VERSION ?= 0.7.5
 
 # Build the provider binary
 build:
@@ -41,12 +41,14 @@ generate-sdks: build
 		echo "Using schema.json for SDK generation..."; \
 		pulumi package gen-sdk schema.json --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk schema.json --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
+		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
 		pulumi package gen-sdk schema.json --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
 	else \
 		echo "schema.json not found, installing provider and using plugin name..."; \
 		pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex 2>/dev/null || true; \
 		pulumi package gen-sdk dex --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk dex --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
+		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
 		pulumi package gen-sdk dex --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
 	fi
 	@# Always restore our custom README.md (pulumi gen-sdk may overwrite/delete it)

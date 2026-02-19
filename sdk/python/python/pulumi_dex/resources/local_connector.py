@@ -24,6 +24,7 @@ class LocalConnectorArgs:
                  enabled: Optional[pulumi.Input[_builtins.bool]] = None):
         """
         The set of arguments for constructing a LocalConnector resource.
+
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the local connector.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
         :param pulumi.Input[_builtins.bool] enabled: Whether the local connector is enabled. Defaults to true.
@@ -83,6 +84,7 @@ class LocalConnector(pulumi.CustomResource):
         """
         Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the local connector.
@@ -97,6 +99,7 @@ class LocalConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
+
 
         :param str resource_name: The name of the resource.
         :param LocalConnectorArgs args: The arguments to use to populate this resource's properties.

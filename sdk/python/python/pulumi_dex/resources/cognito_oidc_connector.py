@@ -31,6 +31,7 @@ class CognitoOidcConnectorArgs:
                  user_name_source: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a CognitoOidcConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: Cognito app client ID.
         :param pulumi.Input[_builtins.str] client_secret: Cognito app client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Cognito connector.
@@ -197,6 +198,7 @@ class CognitoOidcConnector(pulumi.CustomResource):
         """
         Manages an AWS Cognito user pool connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their AWS Cognito credentials.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: Cognito app client ID.
@@ -218,6 +220,7 @@ class CognitoOidcConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages an AWS Cognito user pool connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their AWS Cognito credentials.
+
 
         :param str resource_name: The name of the resource.
         :param CognitoOidcConnectorArgs args: The arguments to use to populate this resource's properties.

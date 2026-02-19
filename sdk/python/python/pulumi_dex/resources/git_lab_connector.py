@@ -30,6 +30,7 @@ class GitLabConnectorArgs:
                  use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None):
         """
         The set of arguments for constructing a GitLabConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: GitLab OAuth application client ID.
         :param pulumi.Input[_builtins.str] client_secret: GitLab OAuth application client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the GitLab connector.
@@ -182,6 +183,7 @@ class GitLabConnector(pulumi.CustomResource):
         """
         Manages a GitLab connector in Dex. This connector allows users to authenticate using their GitLab accounts and supports group-based access control.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] base_url: GitLab instance base URL. Defaults to 'https://gitlab.com' for GitLab.com.
@@ -202,6 +204,7 @@ class GitLabConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a GitLab connector in Dex. This connector allows users to authenticate using their GitLab accounts and supports group-based access control.
+
 
         :param str resource_name: The name of the resource.
         :param GitLabConnectorArgs args: The arguments to use to populate this resource's properties.

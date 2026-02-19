@@ -1,7 +1,7 @@
 {
   "name": "dex",
-  "displayName": "Dex Provider",
-  "version": "0.7.4",
+  "displayName": "Dex",
+  "version": "0.7.5",
   "description": "A Pulumi provider for managing Dex resources via the Dex gRPC Admin API",
   "keywords": [
     "category/cloud"
@@ -10,9 +10,6 @@
   "pluginDownloadURL": "github://api.github.com/kotaicode/pulumi-dex",
   "publisher": "Kotaicode GmbH",
   "namespace": "dex",
-  "meta": {
-    "moduleFormat": "(.*)"
-  },
   "language": {
     "go": {
       "generateResourceContainerTypes": true,
@@ -147,9 +144,9 @@
       },
       "type": "object",
       "required": [
+        "issuer",
         "clientId",
         "clientSecret",
-        "issuer",
         "redirectUri"
       ]
     }
@@ -174,9 +171,16 @@
       "host": {
         "type": "string",
         "description": "Dex gRPC host:port, e.g. dex.internal.example.com:5557."
+      },
+      "insecureSkipVerify": {
+        "type": "boolean",
+        "description": "If true, disables TLS verification (development only)."
+      },
+      "timeoutSeconds": {
+        "type": "integer",
+        "description": "Per-RPC timeout in seconds when talking to Dex."
       }
     },
-    "type": "object",
     "required": [
       "host"
     ],
@@ -247,14 +251,13 @@
           "description": "Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format)."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
-        "tenant"
+        "tenant",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ],
       "inputProperties": {
         "clientId": {
@@ -288,12 +291,12 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
-        "tenant"
+        "tenant",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ]
     },
     "dex:resources:AzureOidcConnector": {
@@ -343,14 +346,13 @@
           "description": "Source for the username claim. Valid values: 'preferred_username' (default), 'upn' (User Principal Name), or 'email'."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
-        "tenantId"
+        "tenantId",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ],
       "inputProperties": {
         "clientId": {
@@ -398,12 +400,12 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
-        "tenantId"
+        "tenantId",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ]
     },
     "dex:resources:Client": {
@@ -449,7 +451,6 @@
           "description": "List of trusted peer client IDs that can exchange tokens with this client."
         }
       },
-      "type": "object",
       "required": [
         "clientId",
         "name",
@@ -549,15 +550,14 @@
           "description": "AWS Cognito user pool ID."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
         "region",
-        "userPoolId"
+        "userPoolId",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ],
       "inputProperties": {
         "clientId": {
@@ -609,13 +609,13 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
-        "redirectUri",
         "region",
-        "userPoolId"
+        "userPoolId",
+        "clientId",
+        "clientSecret",
+        "redirectUri"
       ]
     },
     "dex:resources:Connector": {
@@ -642,11 +642,10 @@
           "description": "Type of connector (e.g., 'oidc', 'saml', 'ldap'). Must match a connector type supported by Dex."
         }
       },
-      "type": "object",
       "required": [
         "connectorId",
-        "name",
-        "type"
+        "type",
+        "name"
       ],
       "inputProperties": {
         "connectorId": {
@@ -672,8 +671,8 @@
       },
       "requiredInputs": [
         "connectorId",
-        "name",
-        "type"
+        "type",
+        "name"
       ]
     },
     "dex:resources:GitHubConnector": {
@@ -732,12 +731,11 @@
           "description": "If true, use GitHub login username as the user ID. Defaults to false."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ],
       "inputProperties": {
@@ -795,10 +793,10 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ]
     },
@@ -846,12 +844,11 @@
           "description": "If true, use GitLab username as the user ID. Defaults to false."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ],
       "inputProperties": {
@@ -897,10 +894,10 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ]
     },
@@ -958,12 +955,11 @@
           "description": "Path to Google service account JSON file. Required for group-based access control."
         }
       },
-      "type": "object",
       "required": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ],
       "inputProperties": {
@@ -1019,10 +1015,10 @@
         }
       },
       "requiredInputs": [
-        "clientId",
-        "clientSecret",
         "connectorId",
         "name",
+        "clientId",
+        "clientSecret",
         "redirectUri"
       ]
     },
@@ -1042,7 +1038,6 @@
           "description": "Human-readable name for the connector, displayed to users during login."
         }
       },
-      "type": "object",
       "required": [
         "connectorId",
         "name"

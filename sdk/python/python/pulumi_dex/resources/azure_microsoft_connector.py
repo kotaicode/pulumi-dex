@@ -28,6 +28,7 @@ class AzureMicrosoftConnectorArgs:
                  groups: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a AzureMicrosoftConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: Azure AD application (client) ID.
         :param pulumi.Input[_builtins.str] client_secret: Azure AD application client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Azure Microsoft connector.
@@ -147,6 +148,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
         """
         Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: Azure AD application (client) ID.
@@ -165,6 +167,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.
+
 
         :param str resource_name: The name of the resource.
         :param AzureMicrosoftConnectorArgs args: The arguments to use to populate this resource's properties.

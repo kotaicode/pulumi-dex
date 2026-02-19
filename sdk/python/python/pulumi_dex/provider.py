@@ -27,6 +27,7 @@ class ProviderArgs:
                  timeout_seconds: Optional[pulumi.Input[_builtins.int]] = None):
         """
         The set of arguments for constructing a Provider resource.
+
         :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.example.com:5557.
         :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
         :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mTLS to Dex.
@@ -134,6 +135,7 @@ class Provider(pulumi.ProviderResource):
                  __props__=None):
         """
         Create a Dex resource with the given unique name, props, and options.
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
@@ -151,6 +153,7 @@ class Provider(pulumi.ProviderResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Create a Dex resource with the given unique name, props, and options.
+
         :param str resource_name: The name of the resource.
         :param ProviderArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.

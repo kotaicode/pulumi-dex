@@ -28,6 +28,7 @@ class ConnectorArgs:
                  raw_config: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a Connector resource.
+
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the connector.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
         :param pulumi.Input[_builtins.str] type: Type of connector (e.g., 'oidc', 'saml', 'ldap'). Must match a connector type supported by Dex.
@@ -118,6 +119,7 @@ class Connector(pulumi.CustomResource):
         """
         Manages a generic connector (upstream identity provider) in Dex. Use this resource for connectors not covered by specific connector types, or when you need full control over the connector configuration.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the connector.
@@ -134,6 +136,7 @@ class Connector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a generic connector (upstream identity provider) in Dex. Use this resource for connectors not covered by specific connector types, or when you need full control over the connector configuration.
+
 
         :param str resource_name: The name of the resource.
         :param ConnectorArgs args: The arguments to use to populate this resource's properties.

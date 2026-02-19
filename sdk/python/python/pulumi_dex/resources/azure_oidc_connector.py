@@ -30,6 +30,7 @@ class AzureOidcConnectorArgs:
                  user_name_source: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a AzureOidcConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: Azure AD application (client) ID.
         :param pulumi.Input[_builtins.str] client_secret: Azure AD application client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Azure connector.
@@ -181,6 +182,7 @@ class AzureOidcConnector(pulumi.CustomResource):
         """
         Manages an Azure AD/Entra ID connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their Azure AD/Entra ID credentials.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: Azure AD application (client) ID.
@@ -201,6 +203,7 @@ class AzureOidcConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages an Azure AD/Entra ID connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their Azure AD/Entra ID credentials.
+
 
         :param str resource_name: The name of the resource.
         :param AzureOidcConnectorArgs args: The arguments to use to populate this resource's properties.

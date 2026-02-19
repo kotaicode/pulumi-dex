@@ -23,20 +23,15 @@ __all__ = [
     'OIDCConfigArgsDict',
 ]
 
-MYPY = False
-
-if not MYPY:
-    class GitHubOrgArgsDict(TypedDict):
-        name: pulumi.Input[_builtins.str]
-        """
-        GitHub organization name.
-        """
-        teams: NotRequired[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]
-        """
-        List of team names within the organization. If empty, all members of the organization can authenticate.
-        """
-elif False:
-    GitHubOrgArgsDict: TypeAlias = Mapping[str, Any]
+class GitHubOrgArgsDict(TypedDict):
+    name: pulumi.Input[_builtins.str]
+    """
+    GitHub organization name.
+    """
+    teams: NotRequired[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]
+    """
+    List of team names within the organization. If empty, all members of the organization can authenticate.
+    """
 
 @pulumi.input_type
 class GitHubOrgArgs:
@@ -76,18 +71,15 @@ class GitHubOrgArgs:
         pulumi.set(self, "teams", value)
 
 
-if not MYPY:
-    class OIDCClaimMappingArgsDict(TypedDict):
-        email_key: NotRequired[pulumi.Input[_builtins.str]]
-        """
-        The OIDC claim key that contains the user's email address.
-        """
-        groups_key: NotRequired[pulumi.Input[_builtins.str]]
-        """
-        The OIDC claim key that contains the user's group memberships.
-        """
-elif False:
-    OIDCClaimMappingArgsDict: TypeAlias = Mapping[str, Any]
+class OIDCClaimMappingArgsDict(TypedDict):
+    email_key: NotRequired[pulumi.Input[_builtins.str]]
+    """
+    The OIDC claim key that contains the user's email address.
+    """
+    groups_key: NotRequired[pulumi.Input[_builtins.str]]
+    """
+    The OIDC claim key that contains the user's group memberships.
+    """
 
 @pulumi.input_type
 class OIDCClaimMappingArgs:
@@ -128,50 +120,47 @@ class OIDCClaimMappingArgs:
         pulumi.set(self, "groups_key", value)
 
 
-if not MYPY:
-    class OIDCConfigArgsDict(TypedDict):
-        client_id: pulumi.Input[_builtins.str]
-        """
-        The OIDC client ID.
-        """
-        client_secret: pulumi.Input[_builtins.str]
-        """
-        The OIDC client secret.
-        """
-        issuer: pulumi.Input[_builtins.str]
-        """
-        The OIDC issuer URL (e.g., 'https://accounts.google.com').
-        """
-        redirect_uri: pulumi.Input[_builtins.str]
-        """
-        The redirect URI registered with the OIDC provider. Must match Dex's callback URL.
-        """
-        claim_mapping: NotRequired[pulumi.Input['OIDCClaimMappingArgsDict']]
-        """
-        Mapping of OIDC claims to Dex user attributes.
-        """
-        extra: NotRequired[pulumi.Input[Mapping[str, Any]]]
-        """
-        Additional OIDC configuration fields as key-value pairs.
-        """
-        insecure_issuer: NotRequired[pulumi.Input[_builtins.bool]]
-        """
-        If true, skip verification of the issuer URL. Not recommended for production.
-        """
-        insecure_skip_email_verified: NotRequired[pulumi.Input[_builtins.bool]]
-        """
-        If true, skip verification of the 'email_verified' claim. Not recommended for production.
-        """
-        scopes: NotRequired[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]
-        """
-        List of OIDC scopes to request (e.g., 'openid', 'profile', 'email'). Defaults to ['openid', 'profile', 'email'] if not specified.
-        """
-        user_name_key: NotRequired[pulumi.Input[_builtins.str]]
-        """
-        The claim key to use as the username (e.g., 'preferred_username', 'email', 'sub').
-        """
-elif False:
-    OIDCConfigArgsDict: TypeAlias = Mapping[str, Any]
+class OIDCConfigArgsDict(TypedDict):
+    client_id: pulumi.Input[_builtins.str]
+    """
+    The OIDC client ID.
+    """
+    client_secret: pulumi.Input[_builtins.str]
+    """
+    The OIDC client secret.
+    """
+    issuer: pulumi.Input[_builtins.str]
+    """
+    The OIDC issuer URL (e.g., 'https://accounts.google.com').
+    """
+    redirect_uri: pulumi.Input[_builtins.str]
+    """
+    The redirect URI registered with the OIDC provider. Must match Dex's callback URL.
+    """
+    claim_mapping: NotRequired[pulumi.Input['OIDCClaimMappingArgsDict']]
+    """
+    Mapping of OIDC claims to Dex user attributes.
+    """
+    extra: NotRequired[pulumi.Input[Mapping[str, Any]]]
+    """
+    Additional OIDC configuration fields as key-value pairs.
+    """
+    insecure_issuer: NotRequired[pulumi.Input[_builtins.bool]]
+    """
+    If true, skip verification of the issuer URL. Not recommended for production.
+    """
+    insecure_skip_email_verified: NotRequired[pulumi.Input[_builtins.bool]]
+    """
+    If true, skip verification of the 'email_verified' claim. Not recommended for production.
+    """
+    scopes: NotRequired[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]
+    """
+    List of OIDC scopes to request (e.g., 'openid', 'profile', 'email'). Defaults to ['openid', 'profile', 'email'] if not specified.
+    """
+    user_name_key: NotRequired[pulumi.Input[_builtins.str]]
+    """
+    The claim key to use as the username (e.g., 'preferred_username', 'email', 'sub').
+    """
 
 @pulumi.input_type
 class OIDCConfigArgs:

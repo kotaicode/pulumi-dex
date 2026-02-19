@@ -31,6 +31,7 @@ class GoogleConnectorArgs:
                  service_account_file_path: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a GoogleConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: Google OAuth client ID.
         :param pulumi.Input[_builtins.str] client_secret: Google OAuth client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Google connector.
@@ -199,6 +200,7 @@ class GoogleConnector(pulumi.CustomResource):
         """
         Manages a Google connector in Dex. This connector allows users to authenticate using their Google accounts and supports domain and group-based access control.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: Google OAuth client ID.
@@ -220,6 +222,7 @@ class GoogleConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a Google connector in Dex. This connector allows users to authenticate using their Google accounts and supports domain and group-based access control.
+
 
         :param str resource_name: The name of the resource.
         :param GoogleConnectorArgs args: The arguments to use to populate this resource's properties.

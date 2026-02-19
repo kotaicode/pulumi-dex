@@ -28,6 +28,7 @@ class ClientArgs:
                  trusted_peers: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None):
         """
         The set of arguments for constructing a Client resource.
+
         :param pulumi.Input[_builtins.str] client_id: Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the OAuth2 client.
         :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] redirect_uris: List of allowed redirect URIs for OAuth2 authorization flows. Must be valid HTTP/HTTPS URLs.
@@ -150,6 +151,7 @@ class Client(pulumi.CustomResource):
         """
         Manages an OAuth2 client in Dex. OAuth2 clients are applications that can authenticate users through Dex.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows.
@@ -168,6 +170,7 @@ class Client(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages an OAuth2 client in Dex. OAuth2 clients are applications that can authenticate users through Dex.
+
 
         :param str resource_name: The name of the resource.
         :param ClientArgs args: The arguments to use to populate this resource's properties.

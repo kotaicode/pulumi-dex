@@ -35,6 +35,7 @@ class GitHubConnectorArgs:
                  use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None):
         """
         The set of arguments for constructing a GitHubConnector resource.
+
         :param pulumi.Input[_builtins.str] client_id: GitHub OAuth app client ID.
         :param pulumi.Input[_builtins.str] client_secret: GitHub OAuth app client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the GitHub connector.
@@ -235,6 +236,7 @@ class GitHubConnector(pulumi.CustomResource):
         """
         Manages a GitHub connector in Dex. This connector allows users to authenticate using their GitHub accounts and supports organization and team-based access control.
 
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] client_id: GitHub OAuth app client ID.
@@ -258,6 +260,7 @@ class GitHubConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a GitHub connector in Dex. This connector allows users to authenticate using their GitHub accounts and supports organization and team-based access control.
+
 
         :param str resource_name: The name of the resource.
         :param GitHubConnectorArgs args: The arguments to use to populate this resource's properties.
