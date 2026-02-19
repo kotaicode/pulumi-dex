@@ -1,13 +1,13 @@
 .PHONY: build install generate-sdks test clean help
 
 # Default version for local development
-VERSION ?= 0.7.6
+VERSION ?= 0.7.7
 
 # Build the provider binary
 build:
 	@echo "Building pulumi-resource-dex (version: $(VERSION))..."
 	@mkdir -p bin
-	@go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
+	@cd provider && go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
 	@echo "✓ Built bin/pulumi-resource-dex"
 
 # Install the provider locally (requires Pulumi CLI)
@@ -69,7 +69,7 @@ generate-sdks: build
 # Run tests
 test:
 	@echo "Running tests..."
-	@go test ./... -v
+	@cd provider && go test ./... -v
 
 # Quick local test before publishing: generate SDK (with fix scripts), build TS SDK, run test-npm-package with isolatedModules
 test-npm-package: generate-schema generate-sdks

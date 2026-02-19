@@ -33,12 +33,12 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Install dependencies
-        run: go mod download
+        run: cd provider && go mod download
 
       - name: Build provider
         run: make build
@@ -97,11 +97,12 @@ jobs:
         run: |
           mkdir -p release
           VERSION=${{ steps.version.outputs.version }}
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o release/pulumi-resource-dex-linux-amd64 ./cmd/pulumi-resource-dex
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o release/pulumi-resource-dex-linux-arm64 ./cmd/pulumi-resource-dex
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o release/pulumi-resource-dex-darwin-amd64 ./cmd/pulumi-resource-dex
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o release/pulumi-resource-dex-darwin-arm64 ./cmd/pulumi-resource-dex
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-provider-dex/pkg/provider.Version=$(VERSION)'" -o release/pulumi-resource-dex-windows-amd64.exe ./cmd/pulumi-resource-dex
+          cd provider
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-linux-amd64 ./cmd/pulumi-resource-dex
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-linux-arm64 ./cmd/pulumi-resource-dex
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-darwin-amd64 ./cmd/pulumi-resource-dex
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-darwin-arm64 ./cmd/pulumi-resource-dex
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-windows-amd64.exe ./cmd/pulumi-resource-dex
 
       - name: Package binaries as tar.gz
         run: |

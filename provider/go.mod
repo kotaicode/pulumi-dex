@@ -3,6 +3,12 @@ module github.com/kotaicode/pulumi-dex
 go 1.24.1
 
 require (
+	github.com/dexidp/dex/api/v2 v2.4.0
+	github.com/pulumi/pulumi-go-provider v1.2.0
+	google.golang.org/grpc v1.75.0
+)
+
+require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -21,7 +27,6 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
-	github.com/dexidp/dex/api/v2 v2.4.0 // indirect
 	github.com/djherbis/times v1.5.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -59,7 +64,6 @@ require (
 	github.com/pkg/term v1.1.0 // indirect
 	github.com/pulumi/appdash v0.0.0-20231130102222-75f619a67231 // indirect
 	github.com/pulumi/esc v0.13.0 // indirect
-	github.com/pulumi/pulumi-go-provider v1.2.0 // indirect
 	github.com/pulumi/pulumi/pkg/v3 v3.169.0 // indirect
 	github.com/pulumi/pulumi/sdk/v3 v3.169.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
@@ -88,7 +92,6 @@ require (
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/grpc v1.75.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
