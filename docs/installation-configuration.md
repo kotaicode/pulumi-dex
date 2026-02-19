@@ -284,7 +284,7 @@ To build, generate SDKs, and test against a local Dex instance:
 
 ## Next Steps
 
-- See [Resource Documentation](../README.md#resources) for available resources
-- Check [Examples](../examples/) for complete working examples
+- See [Resource Documentation](../api-docs) for available resources
+- Check [Examples](https://github.com/kotaicode/pulumi-dex/tree/main/examples) for complete working examples
 - Review [Dex Documentation](https://dexidp.io/docs/) for Dex-specific configuration
 

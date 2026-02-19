@@ -6,7 +6,7 @@ layout: package
 
 # Dex Provider
 
-The Dex provider for Pulumi allows you to manage Dex (https://dexidp.io/) resources using infrastructure as code. This provider uses the Dex gRPC Admin API to manage OAuth2 clients and identity provider (IdP) connectors.
+The Dex provider for Pulumi allows you to manage [Dex](https://dexidp.io) resources using infrastructure as code. This provider uses the Dex gRPC Admin API to manage OAuth2 clients and identity provider (IdP) connectors.
 
 ## Features
 
@@ -164,7 +164,7 @@ pulumi.export("client_secret", client.secret)
 
 ## Learn More
 
-- [Installation and Configuration](installation-configuration.md)
-- [GitHub Repository](https://github.com/kotaicode/pulumi-provider-dex)
+- [Installation and Configuration](./installation-configuration)
+- [GitHub Repository](https://github.com/kotaicode/pulumi-dex)
 - [Dex Documentation](https://dexidp.io/docs/)
 
