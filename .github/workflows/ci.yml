@@ -25,26 +25,27 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Install dependencies
-        run: go mod download
+        run: cd provider && go mod download
 
       - name: Run linter
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
+          working-directory: provider
           args: --timeout=5m
 
       - name: Run tests
-        run: go test ./... -v -race -coverprofile=coverage.out
+        run: cd provider && go test ./... -v -race -coverprofile=coverage.out
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          file: provider/coverage.out
           flags: unittests
           name: codecov-umbrella
 
@@ -69,12 +70,12 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Install dependencies
-        run: go mod download
+        run: cd provider && go mod download
 
       - name: Build provider
         run: make build
@@ -99,7 +100,7 @@ jobs:
 
       - name: Set up Docker Compose
         run: |
-          docker-compose version
+          docker compose version
 
       - name: Start Dex
         run: make dex-up
@@ -113,7 +114,7 @@ jobs:
           while ! timeout 1 bash -c "echo > /dev/tcp/localhost/5557" 2>/dev/null; do
             if [ $elapsed -ge $timeout ]; then
               echo "Dex failed to start within $timeout seconds"
-              docker-compose logs
+              docker compose logs
               exit 1
             fi
             sleep 1
@@ -123,7 +124,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          go test ./... -tags=integration -v
+          cd provider && go test ./... -tags=integration -v
         env:
           DEX_HOST: "localhost:5557"
           DEX_INSECURE_SKIP_VERIFY: "true"
@@ -153,12 +154,12 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Install dependencies
-        run: go mod download
+        run: cd provider && go mod download
 
       - name: Build provider
         run: make build

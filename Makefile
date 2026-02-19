@@ -79,16 +79,19 @@ clean:
 	@rm -f pulumi-resource-dex
 	@echo "✓ Cleaned"
 
+# Docker Compose: prefer v2 (docker compose), fall back to v1 (docker-compose)
+DOCKER_COMPOSE = $(shell docker compose version 2>/dev/null && echo "docker compose" || echo "docker-compose")
+
 # Start local Dex for testing
 dex-up:
-	@echo "Starting Dex with docker-compose..."
-	@docker-compose up -d
+	@echo "Starting Dex with docker compose..."
+	@$(DOCKER_COMPOSE) up -d
 	@echo "✓ Dex started at localhost:5557 (gRPC) and http://localhost:5556 (web)"
 
 # Stop local Dex
 dex-down:
 	@echo "Stopping Dex..."
-	@docker-compose down
+	@$(DOCKER_COMPOSE) down
 	@echo "✓ Dex stopped"
 
 # Show help
