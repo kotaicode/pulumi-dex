@@ -1,7 +1,7 @@
 .PHONY: build install generate-sdks test clean help
 
 # Default version for local development
-VERSION ?= 0.7.7
+VERSION ?= 0.7.8
 
 # Build the provider binary
 build:
@@ -44,6 +44,12 @@ generate-sdks: build
 		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
 		[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true); \
 		pulumi package gen-sdk schema.json --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
+		if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
+			if [ -f README.md ]; then \
+				echo "Copying README.md to Python SDK..."; \
+				cp README.md sdk/python/python/README.md; \
+			fi; \
+		fi; \
 	else \
 		echo "schema.json not found, installing provider and using plugin name..."; \
 		pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex 2>/dev/null || true; \
@@ -52,6 +58,12 @@ generate-sdks: build
 		rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true; \
 		[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true); \
 		pulumi package gen-sdk dex --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
+		if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
+			if [ -f README.md ]; then \
+				echo "Copying README.md to Python SDK..."; \
+				cp README.md sdk/python/python/README.md; \
+			fi; \
+		fi; \
 	fi
 	@# Always restore our custom README.md (pulumi gen-sdk may overwrite/delete it)
 	@if [ -f /tmp/typescript-sdk-readme.md.bak ]; then \
@@ -64,6 +76,13 @@ generate-sdks: build
 	@./scripts/fix-typescript-exports.sh || echo "⚠ TypeScript exports fix failed (may already be fixed)"
 	@echo "Fixing resources/index.ts exports for isolatedModules..."
 	@./scripts/fix-resources-index-exports.sh || echo "⚠ Resources index exports fix failed (may already be fixed)"
+	@# Ensure Python SDK has README.md
+	@if [ ! -f sdk/python/python/README.md ] || [ ! -s sdk/python/python/README.md ]; then \
+		if [ -f README.md ]; then \
+			echo "Copying README.md to Python SDK..."; \
+			cp README.md sdk/python/python/README.md; \
+		fi; \
+	fi
 	@echo "✓ SDKs generated in sdk/"
 
 # Run tests
