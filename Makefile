@@ -7,7 +7,13 @@ VERSION ?= 0.7.8
 build:
 	@echo "Building pulumi-resource-dex (version: $(VERSION))..."
 	@mkdir -p bin
-	@cd provider && go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
+	@if [ ! -d "provider/cmd/pulumi-resource-dex" ]; then \
+		echo "Error: provider/cmd/pulumi-resource-dex directory not found. Current directory: $$(pwd)"; \
+		echo "Directory contents:"; \
+		ls -la provider/cmd/ 2>&1 || echo "provider/cmd/ does not exist"; \
+		exit 1; \
+	fi
+	@bash -c 'cd provider && go build -ldflags "-X '\''github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'\''" -o ../bin/pulumi-resource-dex ./cmd/pulumi-resource-dex'
 	@echo "✓ Built bin/pulumi-resource-dex"
 
 # Install the provider locally (requires Pulumi CLI)
