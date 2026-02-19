@@ -4,9 +4,10 @@ import (
 	"context"
 	"log"
 
+	"github.com/pulumi/pulumi-go-provider/infer"
+
 	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/kotaicode/pulumi-dex/pkg/provider/resources"
-	"github.com/pulumi/pulumi-go-provider/infer"
 )
 
 // providerName is the logical name Pulumi will use for this provider.

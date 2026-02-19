@@ -9,11 +9,12 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -26,7 +27,7 @@ type AzureOidcConnectorArgs struct {
 	Name           string         `pulumi:"name"`
 	TenantId       string         `pulumi:"tenantId"`
 	ClientId       string         `pulumi:"clientId"`
-	ClientSecret   string         `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret   string         `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri    string         `pulumi:"redirectUri"`
 	Scopes         []string       `pulumi:"scopes,optional"`
 	UserNameSource *string        `pulumi:"userNameSource,optional"` // "preferred_username" | "upn" | "email"
@@ -122,7 +123,7 @@ func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Derive issuer from tenantId
@@ -190,7 +191,7 @@ func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest
 func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[AzureOidcConnectorArgs, AzureOidcConnectorState]) (infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// List connectors and find by ID
@@ -223,7 +224,7 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 	}
 
 	// Extract tenantId from issuer
-	issuer, _ := configMap["issuer"].(string)
+	issuer, _ := configMap["issuer"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
 	tenantId := ""
 	if strings.HasPrefix(issuer, "https://login.microsoftonline.com/") {
 		parts := strings.Split(issuer, "/")
@@ -233,10 +234,10 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 	}
 
 	// Extract userNameKey and map to userNameSource (preferred_username is the default)
-	userNameKey, _ := configMap["userNameKey"].(string)
+	userNameKey, _ := configMap["userNameKey"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled
 	userNameSource := &userNameKey
 
-	scopes, _ := configMap["scopes"].([]any)
+	scopes, _ := configMap["scopes"].([]any) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
 	scopesStr := make([]string, 0, len(scopes))
 	for _, s := range scopes {
 		if str, ok := s.(string); ok {
@@ -285,7 +286,7 @@ func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Validate immutable fields
@@ -347,7 +348,7 @@ func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest
 func (c *AzureOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest[AzureOidcConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID
@@ -383,7 +384,7 @@ type AzureMicrosoftConnectorArgs struct {
 	Name         string  `pulumi:"name"`
 	Tenant       string  `pulumi:"tenant"` // "common", "organizations", or tenant ID
 	ClientId     string  `pulumi:"clientId"`
-	ClientSecret string  `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret string  `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri  string  `pulumi:"redirectUri"`
 	Groups       *string `pulumi:"groups,optional"` // Group claim name, e.g., "groups"
 }
@@ -460,7 +461,7 @@ func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRe
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Build Microsoft connector config
@@ -515,7 +516,7 @@ func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRe
 func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadRequest[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]) (infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
@@ -584,7 +585,7 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != oldState.ConnectorId {
@@ -636,7 +637,7 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 func (c *AzureMicrosoftConnector) Delete(ctx context.Context, req infer.DeleteRequest[AzureMicrosoftConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID

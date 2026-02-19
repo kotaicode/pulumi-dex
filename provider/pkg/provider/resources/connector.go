@@ -7,10 +7,11 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ConnectorArgs defines the inputs for a dex.Connector resource.
@@ -32,9 +33,9 @@ type ConnectorState struct {
 // Note: JSON tags match pulumi tags (camelCase) for proper decoding. We convert to Dex format in buildConnectorConfigBytes.
 type OIDCConfig struct {
 	Issuer                    string            `pulumi:"issuer" json:"issuer"`
-	ClientId                  string            `pulumi:"clientId" json:"clientId"` // Match pulumi tag for decoder
-	ClientSecret              string            `pulumi:"clientSecret" json:"clientSecret" provider:"secret"`
-	RedirectUri               string            `pulumi:"redirectUri" json:"redirectUri"` // Match pulumi tag for decoder
+	ClientId                  string            `pulumi:"clientId" json:"clientId"`                           // Match pulumi tag for decoder
+	ClientSecret              string            `pulumi:"clientSecret" json:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
+	RedirectUri               string            `pulumi:"redirectUri" json:"redirectUri"`                     // Match pulumi tag for decoder
 	Scopes                    []string          `pulumi:"scopes,optional" json:"scopes,omitempty"`
 	InsecureSkipEmailVerified *bool             `pulumi:"insecureSkipEmailVerified,optional" json:"insecureSkipEmailVerified,omitempty"`
 	InsecureIssuer            *bool             `pulumi:"insecureIssuer,optional" json:"insecureIssuer,omitempty"`
@@ -109,7 +110,7 @@ func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[Connecto
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if err := validateConnectorArgs(args); err != nil {
@@ -188,7 +189,7 @@ func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[Connecto
 func (c *Connector) Read(ctx context.Context, req infer.ReadRequest[ConnectorArgs, ConnectorState]) (infer.ReadResponse[ConnectorArgs, ConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Dex API doesn't expose GetConnector; we list and filter by ID.
@@ -238,7 +239,7 @@ func (c *Connector) Update(ctx context.Context, req infer.UpdateRequest[Connecto
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[ConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[ConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != old.ConnectorId {
@@ -280,7 +281,7 @@ func (c *Connector) Update(ctx context.Context, req infer.UpdateRequest[Connecto
 func (c *Connector) Delete(ctx context.Context, req infer.DeleteRequest[ConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID
@@ -389,7 +390,7 @@ func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
 			oidc := &OIDCConfig{}
 			// Marshal back into JSON and unmarshal into typed struct for known fields.
 			if data, err := json.Marshal(base); err == nil {
-				_ = json.Unmarshal(data, oidc)
+				_ = json.Unmarshal(data, oidc) //nolint:errcheck // Best-effort parse, errors are acceptable here
 			}
 
 			// Convert from Dex format (clientID, redirectURI) to Pulumi format (clientId, redirectUri)

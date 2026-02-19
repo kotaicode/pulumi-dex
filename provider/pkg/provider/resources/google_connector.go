@@ -7,10 +7,11 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -22,7 +23,7 @@ type GoogleConnectorArgs struct {
 	ConnectorId            string            `pulumi:"connectorId"`
 	Name                   string            `pulumi:"name"`
 	ClientId               string            `pulumi:"clientId"`
-	ClientSecret           string            `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret           string            `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri            string            `pulumi:"redirectUri"`
 	PromptType             *string           `pulumi:"promptType,optional"`
 	HostedDomains          []string          `pulumi:"hostedDomains,optional"`
@@ -99,7 +100,7 @@ func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[Go
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[GoogleConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Build Google connector config
@@ -165,7 +166,7 @@ func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[Go
 func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[GoogleConnectorArgs, GoogleConnectorState]) (infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
@@ -263,7 +264,7 @@ func (c *GoogleConnector) Update(ctx context.Context, req infer.UpdateRequest[Go
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[GoogleConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != oldState.ConnectorId {
@@ -323,7 +324,7 @@ func (c *GoogleConnector) Update(ctx context.Context, req infer.UpdateRequest[Go
 func (c *GoogleConnector) Delete(ctx context.Context, req infer.DeleteRequest[GoogleConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID

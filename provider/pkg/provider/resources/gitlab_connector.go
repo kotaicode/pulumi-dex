@@ -7,10 +7,11 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -23,7 +24,7 @@ type GitLabConnectorArgs struct {
 	Name                string   `pulumi:"name"`
 	BaseURL             *string  `pulumi:"baseURL,optional"`
 	ClientId            string   `pulumi:"clientId"`
-	ClientSecret        string   `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret        string   `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri         string   `pulumi:"redirectUri"`
 	Groups              []string `pulumi:"groups,optional"`
 	UseLoginAsID        *bool    `pulumi:"useLoginAsID,optional"`
@@ -105,7 +106,7 @@ func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[GitLabConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Build GitLab connector config
@@ -168,7 +169,7 @@ func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLabConnectorArgs, GitLabConnectorState]) (infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
@@ -250,7 +251,7 @@ func (c *GitLabConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != oldState.ConnectorId {
@@ -310,7 +311,7 @@ func (c *GitLabConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 func (c *GitLabConnector) Delete(ctx context.Context, req infer.DeleteRequest[GitLabConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID

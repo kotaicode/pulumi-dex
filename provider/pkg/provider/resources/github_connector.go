@@ -7,11 +7,12 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -29,7 +30,7 @@ type GitHubConnectorArgs struct {
 	ConnectorId          string      `pulumi:"connectorId"`
 	Name                 string      `pulumi:"name"`
 	ClientId             string      `pulumi:"clientId"`
-	ClientSecret         string      `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret         string      `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri          string      `pulumi:"redirectUri"`
 	Orgs                 []GitHubOrg `pulumi:"orgs,optional"`
 	LoadAllGroups        *bool       `pulumi:"loadAllGroups,optional"`
@@ -135,7 +136,7 @@ func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[GitHubConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Build GitHub connector config
@@ -215,7 +216,7 @@ func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHubConnectorArgs, GitHubConnectorState]) (infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
@@ -306,7 +307,7 @@ func (c *GitHubConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != oldState.ConnectorId {
@@ -383,7 +384,7 @@ func (c *GitHubConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 func (c *GitHubConnector) Delete(ctx context.Context, req infer.DeleteRequest[GitHubConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID

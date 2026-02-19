@@ -8,17 +8,18 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ClientArgs defines the inputs for a dex.Client resource.
 type ClientArgs struct {
 	ClientId     string   `pulumi:"clientId"`
 	Name         string   `pulumi:"name"`
-	Secret       *string  `pulumi:"secret,optional" provider:"secret"`
+	Secret       *string  `pulumi:"secret,optional" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUris []string `pulumi:"redirectUris"`
 	TrustedPeers []string `pulumi:"trustedPeers,optional"`
 	Public       *bool    `pulumi:"public,optional"`
@@ -74,7 +75,7 @@ func (c *Client) Create(ctx context.Context, req infer.CreateRequest[ClientArgs]
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[ClientState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[ClientState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Generate secret if not provided
@@ -171,7 +172,7 @@ func (c *Client) Create(ctx context.Context, req infer.CreateRequest[ClientArgs]
 func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, ClientState]) (infer.ReadResponse[ClientArgs, ClientState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[ClientArgs, ClientState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[ClientArgs, ClientState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Call Dex GetClient
@@ -246,7 +247,7 @@ func (c *Client) Update(ctx context.Context, req infer.UpdateRequest[ClientArgs,
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[ClientState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[ClientState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Validate that clientId hasn't changed (it's immutable)
@@ -297,7 +298,7 @@ func (c *Client) Update(ctx context.Context, req infer.UpdateRequest[ClientArgs,
 func (c *Client) Delete(ctx context.Context, req infer.DeleteRequest[ClientState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Use the ID from the request, or fall back to the state if available

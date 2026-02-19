@@ -7,7 +7,6 @@ run:
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
@@ -20,11 +19,6 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
-    gci:
-      sections:
-        - standard
-        - default
-        - prefix(github.com/kotaicode/pulumi-provider-dex)
     gosec:
       severity: medium
       confidence: medium
@@ -33,6 +27,13 @@ formatters:
   enable:
     - gofmt
     - goimports
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/kotaicode/pulumi-dex)
 
 issues:
   max-issues-per-linter: 0

@@ -9,11 +9,12 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -27,7 +28,7 @@ type CognitoOidcConnectorArgs struct {
 	Region         string         `pulumi:"region"`
 	UserPoolId     string         `pulumi:"userPoolId"`
 	ClientId       string         `pulumi:"clientId"`
-	ClientSecret   string         `pulumi:"clientSecret" provider:"secret"`
+	ClientSecret   string         `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri    string         `pulumi:"redirectUri"`
 	Scopes         []string       `pulumi:"scopes,optional"`
 	UserNameSource *string        `pulumi:"userNameSource,optional"` // "email" | "sub"
@@ -124,7 +125,7 @@ func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateReque
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.CreateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	// Derive issuer from region and userPoolId
@@ -190,7 +191,7 @@ func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateReque
 func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[CognitoOidcConnectorArgs, CognitoOidcConnectorState]) (infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState], error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
@@ -219,7 +220,7 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 	}
 
 	// Extract region and userPoolId from issuer
-	issuer, _ := configMap["issuer"].(string)
+	issuer, _ := configMap["issuer"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
 	region := ""
 	userPoolId := ""
 	if strings.HasPrefix(issuer, "https://cognito-idp.") && strings.Contains(issuer, ".amazonaws.com/") {
@@ -234,10 +235,10 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 	}
 
 	// userNameKey "email" is the default for Cognito
-	userNameKey, _ := configMap["userNameKey"].(string)
+	userNameKey, _ := configMap["userNameKey"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled
 	userNameSource := &userNameKey
 
-	scopes, _ := configMap["scopes"].([]any)
+	scopes, _ := configMap["scopes"].([]any) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
 	scopesStr := make([]string, 0, len(scopes))
 	for _, s := range scopes {
 		if str, ok := s.(string); ok {
@@ -286,7 +287,7 @@ func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateReque
 
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("Dex client not configured")
+		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
 	}
 
 	if args.ConnectorId != oldState.ConnectorId {
@@ -346,7 +347,7 @@ func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateReque
 func (c *CognitoOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest[CognitoOidcConnectorState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[provider.DexConfig](ctx)
 	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("Dex client not configured")
+		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
 	}
 
 	deleteID := req.ID
