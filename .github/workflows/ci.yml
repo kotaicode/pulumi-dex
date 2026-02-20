@@ -44,10 +44,13 @@ jobs:
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
+        continue-on-error: true
         with:
           files: provider/coverage.out
           flags: unittests
           name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build
