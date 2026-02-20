@@ -12,11 +12,11 @@ func TestGitHubConnector_Create_dryRun(t *testing.T) {
 	r := &GitHubConnector{}
 	args := GitHubConnectorArgs{
 		ConnectorId:  "github",
-		Name:        "GitHub",
+		Name:         "GitHub",
 		ClientId:     "client-id",
 		ClientSecret: "secret",
 		RedirectUri:  "https://dex.example.com/callback",
-		Orgs:        []GitHubOrg{{Name: "my-org"}},
+		Orgs:         []GitHubOrg{{Name: "my-org"}},
 	}
 	req := infer.CreateRequest[GitHubConnectorArgs]{
 		Name:   "githubConnector",

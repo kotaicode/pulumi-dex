@@ -1,4 +1,4 @@
-.PHONY: build install generate-schema generate-sdks test clean help
+.PHONY: build install generate-schema generate-sdks test lint lint-fix clean help
 
 # Default version for local development
 VERSION ?= 0.8.1
@@ -61,10 +61,19 @@ generate-sdks: build
 	@./scripts/fix-resources-index-exports.sh || echo "⚠ Resources index exports fix failed (may already be fixed)"
 	@echo "✓ SDKs generated in sdk/"
 
-# Run tests
+# Run tests (same scope as CI: provider library only)
 test:
 	@echo "Running tests..."
-	@cd provider && go test ./... -v
+	@cd provider && go test ./pkg/... -v
+
+# Run linter (same as CI)
+lint:
+	@cd provider && golangci-lint run ./pkg/... --timeout=5m
+
+# Auto-fix linter issues (gci, gofmt, goimports)
+lint-fix:
+	@cd provider && golangci-lint run ./pkg/... --fix --timeout=5m
+	@echo "✓ Lint fixes applied"
 
 # Quick local test before publishing: generate SDK (with fix scripts), build TS SDK, run test-npm-package with isolatedModules
 test-npm-package: generate-schema generate-sdks
@@ -108,6 +117,8 @@ help:
 	@echo "  generate-sdks   - Generate language SDKs (requires Pulumi CLI)"
 	@echo "  test            - Run tests"
 	@echo "  test-npm-package - Generate SDK, build TS, run test-npm-package (isolatedModules)"
+	@echo "  lint            - Run golangci-lint (CI checks)"
+	@echo "  lint-fix        - Auto-fix linter issues (gci, gofmt, goimports)"
 	@echo "  clean           - Clean build artifacts"
 	@echo "  dex-up          - Start local Dex with docker-compose"
 	@echo "  dex-down        - Stop local Dex"

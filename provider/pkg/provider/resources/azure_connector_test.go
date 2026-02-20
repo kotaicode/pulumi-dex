@@ -12,9 +12,9 @@ func TestAzureOidcConnector_Create_dryRun(t *testing.T) {
 	r := &AzureOidcConnector{}
 	args := AzureOidcConnectorArgs{
 		ConnectorId:  "azure-oidc",
-		Name:        "Azure AD",
-		TenantId:    "00000000-0000-0000-0000-000000000001",
-		ClientId:    "client-id",
+		Name:         "Azure AD",
+		TenantId:     "00000000-0000-0000-0000-000000000001",
+		ClientId:     "client-id",
 		ClientSecret: "secret",
 		RedirectUri:  "https://dex.example.com/callback",
 	}
@@ -48,9 +48,9 @@ func TestAzureOidcConnector_Update_dryRun(t *testing.T) {
 		},
 		Inputs: AzureOidcConnectorArgs{
 			ConnectorId:  "azure-oidc",
-			Name:        "Azure AD (updated)",
-			TenantId:    "00000000-0000-0000-0000-000000000001",
-			ClientId:    "x",
+			Name:         "Azure AD (updated)",
+			TenantId:     "00000000-0000-0000-0000-000000000001",
+			ClientId:     "x",
 			ClientSecret: "y",
 			RedirectUri:  "https://dex/cb",
 		},

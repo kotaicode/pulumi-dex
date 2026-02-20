@@ -12,12 +12,12 @@ func TestCognitoOidcConnector_Create_dryRun(t *testing.T) {
 	r := &CognitoOidcConnector{}
 	args := CognitoOidcConnectorArgs{
 		ConnectorId:  "cognito",
-		Name:        "Cognito",
-		Region:      "us-east-1",
-		UserPoolId:  "us-east-1_abc",
-		ClientId:    "client-id",
+		Name:         "Cognito",
+		Region:       "us-east-1",
+		UserPoolId:   "us-east-1_abc",
+		ClientId:     "client-id",
 		ClientSecret: "secret",
-		RedirectUri: "https://dex.example.com/callback",
+		RedirectUri:  "https://dex.example.com/callback",
 	}
 	req := infer.CreateRequest[CognitoOidcConnectorArgs]{
 		Name:   "cognitoConnector",

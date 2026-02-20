@@ -6,10 +6,10 @@ import (
 
 func TestGetString(t *testing.T) {
 	tests := []struct {
-		name     string
-		m        map[string]any
-		key      string
-		want     string
+		name string
+		m    map[string]any
+		key  string
+		want string
 	}{
 		{"missing key", map[string]any{}, "x", ""},
 		{"nil map", nil, "x", ""},
@@ -30,11 +30,11 @@ func TestGetString(t *testing.T) {
 
 func TestGetStringPtr(t *testing.T) {
 	tests := []struct {
-		name     string
-		m        map[string]any
-		key      string
-		wantNil  bool
-		wantVal  string
+		name    string
+		m       map[string]any
+		key     string
+		wantNil bool
+		wantVal string
 	}{
 		{"missing key", map[string]any{}, "x", true, ""},
 		{"nil map", nil, "x", true, ""},
@@ -65,11 +65,11 @@ func TestGetStringPtr(t *testing.T) {
 
 func TestGetBoolPtr(t *testing.T) {
 	tests := []struct {
-		name     string
-		m        map[string]any
-		key      string
-		wantNil  bool
-		wantVal  bool
+		name    string
+		m       map[string]any
+		key     string
+		wantNil bool
+		wantVal bool
 	}{
 		{"missing key", map[string]any{}, "x", true, false},
 		{"nil map", nil, "x", true, false},

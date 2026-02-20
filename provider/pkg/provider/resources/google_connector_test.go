@@ -11,12 +11,12 @@ func TestGoogleConnector_Create_dryRun(t *testing.T) {
 	ctx := context.Background()
 	r := &GoogleConnector{}
 	args := GoogleConnectorArgs{
-		ConnectorId:     "google",
-		Name:            "Google",
-		ClientId:        "client-id",
-		ClientSecret:    "secret",
-		RedirectUri:     "https://dex.example.com/callback",
-		HostedDomains:   []string{"example.com"},
+		ConnectorId:   "google",
+		Name:          "Google",
+		ClientId:      "client-id",
+		ClientSecret:  "secret",
+		RedirectUri:   "https://dex.example.com/callback",
+		HostedDomains: []string{"example.com"},
 	}
 	req := infer.CreateRequest[GoogleConnectorArgs]{
 		Name:   "googleConnector",
@@ -48,9 +48,9 @@ func TestGoogleConnector_Update_dryRun(t *testing.T) {
 		},
 	}
 	newInputs := GoogleConnectorArgs{
-		ConnectorId:  "google",
-		Name:         "Google (updated)",
-		ClientId:     "x",
+		ConnectorId:   "google",
+		Name:          "Google (updated)",
+		ClientId:      "x",
 		ClientSecret:  "y",
 		RedirectUri:   "https://dex/cb",
 		HostedDomains: []string{"example.com", "other.com"},

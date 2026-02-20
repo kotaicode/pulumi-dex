@@ -55,9 +55,9 @@ func TestClient_Create_dryRun(t *testing.T) {
 		TrustedPeers: []string{"other-client"},
 	}
 	req := infer.CreateRequest[ClientArgs]{
-		Name:    "testClient",
-		Inputs:  args,
-		DryRun:  true,
+		Name:   "testClient",
+		Inputs: args,
+		DryRun: true,
 	}
 	resp, err := r.Create(ctx, req)
 	if err != nil {

@@ -11,12 +11,12 @@ func TestGitLabConnector_Create_dryRun(t *testing.T) {
 	ctx := context.Background()
 	r := &GitLabConnector{}
 	args := GitLabConnectorArgs{
-		ConnectorId:   "gitlab",
-		Name:          "GitLab",
-		ClientId:      "client-id",
-		ClientSecret:  "secret",
-		RedirectUri:   "https://dex.example.com/callback",
-		Groups:        []string{"my-group"},
+		ConnectorId:  "gitlab",
+		Name:         "GitLab",
+		ClientId:     "client-id",
+		ClientSecret: "secret",
+		RedirectUri:  "https://dex.example.com/callback",
+		Groups:       []string{"my-group"},
 	}
 	req := infer.CreateRequest[GitLabConnectorArgs]{
 		Name:   "gitlabConnector",
