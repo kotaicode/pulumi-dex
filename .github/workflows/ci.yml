@@ -40,7 +40,7 @@ jobs:
           args: --timeout=5m
 
       - name: Run tests
-        run: cd provider && go test ./... -v -race -coverprofile=coverage.out
+        run: cd provider && go test ./pkg/... -v -race -coverprofile=coverage.out
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
