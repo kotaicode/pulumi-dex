@@ -75,7 +75,7 @@ jobs:
           echo "✓ README.md verified (size: $(wc -c < sdk/typescript/nodejs/README.md) bytes)"
 
       - name: Upload TypeScript SDK as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: typescript-sdk
           path: sdk/typescript/nodejs/**
@@ -97,7 +97,7 @@ jobs:
           echo "✓ README.md verified (size: $(wc -c < sdk/python/python/README.md) bytes)"
 
       - name: Upload Python SDK as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-sdk
           path: sdk/python/python/**
