@@ -43,7 +43,7 @@ jobs:
         run: cd provider && go test ./pkg/... -v -race -coverprofile=coverage.out
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         continue-on-error: true
         with:
           files: provider/coverage.out
