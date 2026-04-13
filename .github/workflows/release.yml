@@ -147,7 +147,7 @@ jobs:
           echo "✓ Checksums created"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             release/pulumi-resource-dex-v*.tar.gz
