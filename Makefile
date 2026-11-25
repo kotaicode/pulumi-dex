@@ -1,6 +1,8 @@
 .PHONY: build install generate-schema generate-sdks test lint lint-fix clean help
 
-# Default version for local development
+# Default version for local development only. Releases always pass the
+# version from the git tag (make build VERSION=x.y.z); never rely on this
+# default for anything that gets published.
 VERSION ?= 0.8.1
 
 # Build the provider binary
@@ -13,7 +15,7 @@ build:
 # Install the provider locally (requires Pulumi CLI)
 install: build
 	@echo "Installing provider..."
-	@pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex || true
+	@pulumi plugin install resource dex v$(VERSION) --file bin/pulumi-resource-dex || true
 	@echo "✓ Provider installed"
 
 # Generate schema.json (requires Pulumi CLI)
@@ -37,13 +39,16 @@ generate-sdks: build
 		pulumi package gen-sdk schema.json --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
 	else \
 		echo "schema.json not found, using provider binary..."; \
-		pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex 2>/dev/null || true; \
+		pulumi plugin install resource dex v$(VERSION) --file bin/pulumi-resource-dex 2>/dev/null || true; \
 		pulumi package gen-sdk dex --language typescript --out sdk/typescript || echo "⚠ TypeScript SDK generation failed"; \
 		pulumi package gen-sdk dex --language go --out sdk/go || echo "⚠ Go SDK generation failed"; \
 		pulumi package gen-sdk dex --language python --out sdk/python || echo "⚠ Python SDK generation failed"; \
 	fi
 	@# Fix Go SDK directory structure (codegen creates sdk/go/go/dex, we need sdk/go/dex)
-	@rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex && rmdir sdk/go/go 2>/dev/null || true
+	@rm -rf sdk/go/dex && [ -d sdk/go/go/dex ] && mv sdk/go/go/dex sdk/go/dex || true
+	@# codegen also writes sdk/go/go/.gitattributes (marks files as generated); keep it one level up
+	@[ -f sdk/go/go/.gitattributes ] && mv -f sdk/go/go/.gitattributes sdk/go/.gitattributes || true
+	@rmdir sdk/go/go 2>/dev/null || true
 	@# Ensure sdk/go.mod is at the correct location
 	@[ -f sdk/go.mod ] || ([ -f sdk/go/go.mod ] && mv sdk/go/go.mod sdk/go.mod && mv sdk/go/go.sum sdk/go.sum 2>/dev/null || true)
 	@# Restore TypeScript README.md if it was backed up

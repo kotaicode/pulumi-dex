@@ -31,11 +31,8 @@ A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gR
 git clone https://github.com/kotaicode/pulumi-dex.git
 cd pulumi-dex
 
-# Build the provider binary
-go build -o bin/pulumi-resource-dex ./cmd/pulumi-resource-dex
-
-# Install the provider locally
-pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex
+# Build the provider binary and install it as a local plugin
+make install
 ```
 
 ### Generating Language SDKs

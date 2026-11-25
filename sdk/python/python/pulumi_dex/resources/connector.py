@@ -24,8 +24,8 @@ class ConnectorArgs:
                  connector_id: pulumi.Input[_builtins.str],
                  name: pulumi.Input[_builtins.str],
                  type: pulumi.Input[_builtins.str],
-                 oidc_config: Optional[pulumi.Input['OIDCConfigArgs']] = None,
-                 raw_config: Optional[pulumi.Input[_builtins.str]] = None):
+                 oidc_config: pulumi.Input[Optional['OIDCConfigArgs']] = None,
+                 raw_config: pulumi.Input[Optional[_builtins.str]] = None):
         """
         The set of arguments for constructing a Connector resource.
 
@@ -81,26 +81,26 @@ class ConnectorArgs:
 
     @_builtins.property
     @pulumi.getter(name="oidcConfig")
-    def oidc_config(self) -> Optional[pulumi.Input['OIDCConfigArgs']]:
+    def oidc_config(self) -> pulumi.Input[Optional['OIDCConfigArgs']]:
         """
         OIDC-specific configuration. Use this for OIDC-based connectors.
         """
         return pulumi.get(self, "oidc_config")
 
     @oidc_config.setter
-    def oidc_config(self, value: Optional[pulumi.Input['OIDCConfigArgs']]):
+    def oidc_config(self, value: pulumi.Input[Optional['OIDCConfigArgs']]):
         pulumi.set(self, "oidc_config", value)
 
     @_builtins.property
     @pulumi.getter(name="rawConfig")
-    def raw_config(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def raw_config(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.
         """
         return pulumi.get(self, "raw_config")
 
     @raw_config.setter
-    def raw_config(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def raw_config(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "raw_config", value)
 
 
@@ -110,21 +110,20 @@ class Connector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 oidc_config: Optional[pulumi.Input[Union['OIDCConfigArgs', 'OIDCConfigArgsDict']]] = None,
-                 raw_config: Optional[pulumi.Input[_builtins.str]] = None,
-                 type: Optional[pulumi.Input[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 oidc_config: pulumi.Input[Optional[Union['OIDCConfigArgs', 'OIDCConfigArgsDict', 'outputs.OIDCConfig']]] = None,
+                 raw_config: pulumi.Input[Optional[_builtins.str]] = None,
+                 type: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         """
         Manages a generic connector (upstream identity provider) in Dex. Use this resource for connectors not covered by specific connector types, or when you need full control over the connector configuration.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the connector.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
-        :param pulumi.Input[Union['OIDCConfigArgs', 'OIDCConfigArgsDict']] oidc_config: OIDC-specific configuration. Use this for OIDC-based connectors.
+        :param pulumi.Input[Union['OIDCConfigArgs', 'OIDCConfigArgsDict', 'outputs.OIDCConfig']] oidc_config: OIDC-specific configuration. Use this for OIDC-based connectors.
         :param pulumi.Input[_builtins.str] raw_config: Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.
         :param pulumi.Input[_builtins.str] type: Type of connector (e.g., 'oidc', 'saml', 'ldap'). Must match a connector type supported by Dex.
         """
@@ -136,7 +135,6 @@ class Connector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a generic connector (upstream identity provider) in Dex. Use this resource for connectors not covered by specific connector types, or when you need full control over the connector configuration.
-
 
         :param str resource_name: The name of the resource.
         :param ConnectorArgs args: The arguments to use to populate this resource's properties.
@@ -153,11 +151,11 @@ class Connector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 oidc_config: Optional[pulumi.Input[Union['OIDCConfigArgs', 'OIDCConfigArgsDict']]] = None,
-                 raw_config: Optional[pulumi.Input[_builtins.str]] = None,
-                 type: Optional[pulumi.Input[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 oidc_config: pulumi.Input[Optional[Union['OIDCConfigArgs', 'OIDCConfigArgsDict', 'outputs.OIDCConfig']]] = None,
+                 raw_config: pulumi.Input[Optional[_builtins.str]] = None,
+                 type: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -206,6 +204,12 @@ class Connector(pulumi.CustomResource):
         __props__.__dict__["raw_config"] = None
         __props__.__dict__["type"] = None
         return Connector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:Connector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="connectorId")

@@ -103,6 +103,12 @@ func (GitHubConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*gitHubConnectorState)(nil)).Elem()
 }
 
+// GitHubConnectorExists checks whether an existing GitHubConnector resource with the given ID exists.
+func GitHubConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *GitHubConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:GitHubConnector", id, state, "", opts...)
+}
+
 type gitHubConnectorArgs struct {
 	// GitHub OAuth app client ID.
 	ClientId string `pulumi:"clientId"`

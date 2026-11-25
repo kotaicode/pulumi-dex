@@ -20,6 +20,16 @@ export class GitLabConnector extends pulumi.CustomResource {
         return new GitLabConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing GitLabConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:GitLabConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:GitLabConnector';
 
@@ -131,7 +141,7 @@ export interface GitLabConnectorArgs {
     /**
      * GitLab instance base URL. Defaults to 'https://gitlab.com' for GitLab.com.
      */
-    baseURL?: pulumi.Input<string>;
+    baseURL?: pulumi.Input<string | undefined>;
     /**
      * GitLab OAuth application client ID.
      */
@@ -147,11 +157,11 @@ export interface GitLabConnectorArgs {
     /**
      * If true, request 'read_api' scope to fetch group memberships. Defaults to false.
      */
-    getGroupsPermission?: pulumi.Input<boolean>;
+    getGroupsPermission?: pulumi.Input<boolean | undefined>;
     /**
      * List of GitLab group names. Only users in these groups will be allowed to authenticate.
      */
-    groups?: pulumi.Input<pulumi.Input<string>[]>;
+    groups?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
@@ -163,5 +173,5 @@ export interface GitLabConnectorArgs {
     /**
      * If true, use GitLab username as the user ID. Defaults to false.
      */
-    useLoginAsID?: pulumi.Input<boolean>;
+    useLoginAsID?: pulumi.Input<boolean | undefined>;
 }

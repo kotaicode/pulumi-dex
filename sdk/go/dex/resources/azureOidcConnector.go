@@ -100,6 +100,12 @@ func (AzureOidcConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*azureOidcConnectorState)(nil)).Elem()
 }
 
+// AzureOidcConnectorExists checks whether an existing AzureOidcConnector resource with the given ID exists.
+func AzureOidcConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *AzureOidcConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:AzureOidcConnector", id, state, "", opts...)
+}
+
 type azureOidcConnectorArgs struct {
 	// Azure AD application (client) ID.
 	ClientId string `pulumi:"clientId"`

@@ -96,6 +96,12 @@ func (AzureMicrosoftConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*azureMicrosoftConnectorState)(nil)).Elem()
 }
 
+// AzureMicrosoftConnectorExists checks whether an existing AzureMicrosoftConnector resource with the given ID exists.
+func AzureMicrosoftConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *AzureMicrosoftConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:AzureMicrosoftConnector", id, state, "", opts...)
+}
+
 type azureMicrosoftConnectorArgs struct {
 	// Azure AD application (client) ID.
 	ClientId string `pulumi:"clientId"`

@@ -1,11 +1,17 @@
 version: 2
 updates:
-  # Enable version updates for Go modules
+  # Go modules. go.mod lives in /provider (and /sdk for the Go SDK), not at the
+  # repository root, so "/" never found anything to update.
   - package-ecosystem: "gomod"
-    directory: "/"
+    directories:
+      - "/provider"
+      - "/sdk"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      go-minor-and-patch:
+        update-types: ["minor", "patch"]
     labels:
       - "dependencies"
       - "go"
@@ -13,25 +19,15 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  # Enable version updates for npm (TypeScript SDK)
-  - package-ecosystem: "npm"
-    directory: "/sdk/typescript/nodejs"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "typescript"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-
-  # Enable version updates for GitHub Actions
+  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
     labels:
       - "dependencies"
       - "github-actions"
@@ -39,3 +35,7 @@ updates:
       prefix: "chore"
       include: "scope"
 
+  # No npm entry on purpose: sdk/typescript/nodejs/package.json is regenerated
+  # by `pulumi package gen-sdk` on every release, so bumps there are thrown away.
+  # TypeScript and @types/node versions for the published SDK are set in the
+  # nodejs language map in provider/cmd/pulumi-resource-dex/main.go.

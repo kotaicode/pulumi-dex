@@ -20,6 +20,16 @@ export class AzureOidcConnector extends pulumi.CustomResource {
         return new AzureOidcConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing AzureOidcConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:AzureOidcConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:AzureOidcConnector';
 
@@ -146,7 +156,7 @@ export interface AzureOidcConnectorArgs {
     /**
      * Additional OIDC configuration fields as key-value pairs for advanced scenarios.
      */
-    extraOidc?: pulumi.Input<{[key: string]: any}>;
+    extraOidc?: pulumi.Input<{[key: string]: any} | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
@@ -158,7 +168,7 @@ export interface AzureOidcConnectorArgs {
     /**
      * OIDC scopes to request from Azure AD. Defaults to ['openid', 'profile', 'email', 'offline_access'] if not specified.
      */
-    scopes?: pulumi.Input<pulumi.Input<string>[]>;
+    scopes?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     /**
      * Azure AD tenant ID (UUID format). This identifies your Azure AD organization.
      */
@@ -166,5 +176,5 @@ export interface AzureOidcConnectorArgs {
     /**
      * Source for the username claim. Valid values: 'preferred_username' (default), 'upn' (User Principal Name), or 'email'.
      */
-    userNameSource?: pulumi.Input<string>;
+    userNameSource?: pulumi.Input<string | undefined>;
 }

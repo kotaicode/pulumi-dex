@@ -20,6 +20,16 @@ export class Client extends pulumi.CustomResource {
         return new Client(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing Client resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:Client", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:Client';
 
@@ -123,7 +133,7 @@ export interface ClientArgs {
     /**
      * URL to a logo image for the OAuth2 client. Used in consent screens.
      */
-    logoUrl?: pulumi.Input<string>;
+    logoUrl?: pulumi.Input<string | undefined>;
     /**
      * Human-readable name for the OAuth2 client.
      */
@@ -131,7 +141,7 @@ export interface ClientArgs {
     /**
      * If true, this client is a public client (e.g., mobile app) and does not require a client secret.
      */
-    public?: pulumi.Input<boolean>;
+    public?: pulumi.Input<boolean | undefined>;
     /**
      * List of allowed redirect URIs for OAuth2 authorization flows. Must be valid HTTP/HTTPS URLs.
      */
@@ -139,9 +149,9 @@ export interface ClientArgs {
     /**
      * Client secret for the OAuth2 client. If not provided, a secure random secret will be generated automatically.
      */
-    secret?: pulumi.Input<string>;
+    secret?: pulumi.Input<string | undefined>;
     /**
      * List of trusted peer client IDs that can exchange tokens with this client.
      */
-    trustedPeers?: pulumi.Input<pulumi.Input<string>[]>;
+    trustedPeers?: pulumi.Input<pulumi.Input<string>[] | undefined>;
 }

@@ -339,7 +339,7 @@ func buildConnectorConfigBytes(args ConnectorArgs) ([]byte, error) {
 	if args.OIDCConfig != nil {
 		// Convert from Pulumi format (camelCase) to Dex format (PascalCase for clientID/redirectURI).
 		base := map[string]any{}
-		raw, err := json.Marshal(args.OIDCConfig)
+		raw, err := json.Marshal(args.OIDCConfig) //nolint:gosec // G117: the secret is meant to go into the Dex connector config
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal OIDC config: %w", err)
 		}

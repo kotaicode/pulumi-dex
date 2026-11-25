@@ -105,6 +105,12 @@ func (CognitoOidcConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*cognitoOidcConnectorState)(nil)).Elem()
 }
 
+// CognitoOidcConnectorExists checks whether an existing CognitoOidcConnector resource with the given ID exists.
+func CognitoOidcConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *CognitoOidcConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:CognitoOidcConnector", id, state, "", opts...)
+}
+
 type cognitoOidcConnectorArgs struct {
 	// Cognito app client ID.
 	ClientId string `pulumi:"clientId"`

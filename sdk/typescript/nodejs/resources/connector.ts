@@ -22,6 +22,16 @@ export class Connector extends pulumi.CustomResource {
         return new Connector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing Connector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:Connector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:Connector';
 
@@ -109,11 +119,11 @@ export interface ConnectorArgs {
     /**
      * OIDC-specific configuration. Use this for OIDC-based connectors.
      */
-    oidcConfig?: pulumi.Input<inputs.resources.OIDCConfigArgs>;
+    oidcConfig?: pulumi.Input<inputs.resources.OIDCConfigArgs | undefined>;
     /**
      * Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.
      */
-    rawConfig?: pulumi.Input<string>;
+    rawConfig?: pulumi.Input<string | undefined>;
     /**
      * Type of connector (e.g., 'oidc', 'saml', 'ldap'). Must match a connector type supported by Dex.
      */

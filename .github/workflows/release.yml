@@ -14,20 +14,20 @@ jobs:
       id-token: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.24.1'
+          go-version-file: provider/go.mod
 
       - name: Install Pulumi CLI
-        uses: pulumi/actions@v6
+        uses: pulumi/actions@v7
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         continue-on-error: true
         with:
           path: |
@@ -40,9 +40,6 @@ jobs:
       - name: Install dependencies
         run: cd provider && go mod download
 
-      - name: Build provider
-        run: make build
-
       - name: Extract version from tag
         id: version
         run: |
@@ -50,14 +47,48 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
+      # The provider binary reports provider.Version, and that value becomes the
+      # schema version and therefore the plugin version stamped into every SDK
+      # (package.json "pulumi.version", pulumi-plugin.json). It MUST come from the
+      # tag, never from the Makefile/version.go default, or `pulumi install` will
+      # try to download a release that does not exist.
+      - name: Build provider
+        run: make build VERSION=${{ steps.version.outputs.version }}
+
       - name: Install provider for schema generation
         run: |
           pulumi plugin install resource dex ${{ steps.version.outputs.version }} --file bin/pulumi-resource-dex
 
       - name: Generate schema.json
-        run: make generate-schema
+        run: make generate-schema VERSION=${{ steps.version.outputs.version }}
       - name: Generate SDKs
-        run: make generate-sdks
+        run: make generate-sdks VERSION=${{ steps.version.outputs.version }}
+
+      - name: Verify plugin version in schema and SDKs matches the tag
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          fail=0
+          check() {
+            if [ "$2" != "$VERSION" ]; then
+              echo "::error::$1 has version '$2', expected '$VERSION'"
+              fail=1
+            else
+              echo "✓ $1 = $2"
+            fi
+          }
+          check schema.json "$(jq -r .version schema.json)"
+          check "nodejs package.json version" "$(jq -r .version sdk/typescript/nodejs/package.json)"
+          check "nodejs package.json pulumi.version" "$(jq -r .pulumi.version sdk/typescript/nodejs/package.json)"
+          check "python pulumi-plugin.json" "$(jq -r .version sdk/python/python/pulumi_dex/pulumi-plugin.json)"
+          check "go pulumi-plugin.json" "$(jq -r .version sdk/go/dex/pulumi-plugin.json)"
+          # Go users download the committed sdk/ at the tag, not the files regenerated above
+          check "go pulumi-plugin.json (committed)" "$(git show HEAD:sdk/go/dex/pulumi-plugin.json | jq -r .version)"
+          mod=$(git show HEAD:sdk/go.mod | awk '/^module /{print $2}')
+          if [ "$mod" != "github.com/kotaicode/pulumi-dex/sdk" ]; then
+            echo "::error::sdk/go.mod declares module '$mod', expected github.com/kotaicode/pulumi-dex/sdk"
+            fail=1
+          fi
+          exit $fail
 
       - name: Ensure README.md exists for TypeScript SDK
         run: |
@@ -74,8 +105,20 @@ jobs:
           fi
           echo "✓ README.md verified (size: $(wc -c < sdk/typescript/nodejs/README.md) bytes)"
 
+      # The Go SDK is a nested module in sdk/, so `go get .../sdk@vX.Y.Z`
+      # resolves the tag sdk/vX.Y.Z, not vX.Y.Z.
+      - name: Tag Go SDK module
+        run: |
+          TAG=sdk/v${{ steps.version.outputs.version }}
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists (re-run), skipping"
+          else
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+
       - name: Upload TypeScript SDK as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: typescript-sdk
           path: sdk/typescript/nodejs/**
@@ -97,7 +140,7 @@ jobs:
           echo "✓ README.md verified (size: $(wc -c < sdk/python/python/README.md) bytes)"
 
       - name: Upload Python SDK as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-sdk
           path: sdk/python/python/**
@@ -120,11 +163,11 @@ jobs:
           mkdir -p release
           VERSION=${{ steps.version.outputs.version }}
           cd provider
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-linux-amd64 ./cmd/pulumi-resource-dex
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-linux-arm64 ./cmd/pulumi-resource-dex
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-darwin-amd64 ./cmd/pulumi-resource-dex
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-darwin-arm64 ./cmd/pulumi-resource-dex
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=$(VERSION)'" -o ../release/pulumi-resource-dex-windows-amd64.exe ./cmd/pulumi-resource-dex
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=${VERSION}'" -o ../release/pulumi-resource-dex-linux-amd64 ./cmd/pulumi-resource-dex
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=${VERSION}'" -o ../release/pulumi-resource-dex-linux-arm64 ./cmd/pulumi-resource-dex
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=${VERSION}'" -o ../release/pulumi-resource-dex-darwin-amd64 ./cmd/pulumi-resource-dex
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=${VERSION}'" -o ../release/pulumi-resource-dex-darwin-arm64 ./cmd/pulumi-resource-dex
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'github.com/kotaicode/pulumi-dex/pkg/provider.Version=${VERSION}'" -o ../release/pulumi-resource-dex-windows-amd64.exe ./cmd/pulumi-resource-dex
 
       - name: Package binaries as tar.gz
         run: |
@@ -147,7 +190,7 @@ jobs:
           echo "✓ Checksums created"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             release/pulumi-resource-dex-v*.tar.gz
@@ -169,11 +212,15 @@ jobs:
 
             ### Go SDK
 
-            ```go
-            import "github.com/kotaicode/pulumi-provider-dex/sdk/go/dex"
+            ```bash
+            go get github.com/kotaicode/pulumi-dex/sdk@v${{ steps.version.outputs.version }}
             ```
 
-            See [README.md](https://github.com/kotaicode/pulumi-provider-dex#readme) for full installation and usage instructions.
+            ```go
+            import "github.com/kotaicode/pulumi-dex/sdk/go/dex"
+            ```
+
+            See [README.md](https://github.com/kotaicode/pulumi-dex#readme) for full installation and usage instructions.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -186,12 +233,12 @@ jobs:
       id-token: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '18'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -203,7 +250,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download TypeScript SDK artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: typescript-sdk
           path: sdk/typescript/nodejs
@@ -267,9 +314,33 @@ jobs:
             echo "✓ NPM_TOKEN is set, will publish"
           fi
 
-      - name: Publish to NPM
+      # Publish the compiled output, the way Pulumi's own providers do. The
+      # generated package.json has no "main", so the package root must BE the
+      # build output. Publishing from sdk/typescript/nodejs shipped only .ts
+      # sources (bin/ is excluded by the generated .gitignore), which Node and
+      # ts-node refuse to load from node_modules.
+      - name: Assemble npm package from build output
         run: |
           cd sdk/typescript/nodejs
+          cp package.json README.md bin/
+          test -f bin/index.js
+          test -f bin/index.d.ts
+          echo "✓ bin/ contains compiled JS and type declarations"
+
+      - name: Smoke-test the packed package
+        run: |
+          cd sdk/typescript/nodejs/bin
+          npm pack
+          mkdir -p /tmp/consumer && cd /tmp/consumer
+          npm init -y >/dev/null
+          npm install "$GITHUB_WORKSPACE"/sdk/typescript/nodejs/bin/*.tgz
+          node -e "const d=require('@kotaicode/pulumi-dex'); if (typeof d.resources.Client !== 'function') process.exit(1)"
+          echo "✓ package loads with plain Node"
+          rm "$GITHUB_WORKSPACE"/sdk/typescript/nodejs/bin/*.tgz
+
+      - name: Publish to NPM
+        run: |
+          cd sdk/typescript/nodejs/bin
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -285,10 +356,10 @@ jobs:
       id-token: write  # Required for PyPI trusted publishing
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -299,7 +370,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download Python SDK artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: python-sdk
           path: sdk/python/python

@@ -37,11 +37,11 @@ fi
 # Check if provider is installed
 echo ""
 echo "3. Checking if provider is installed..."
-if pulumi plugin ls | grep -q "dex.*v0.1.0"; then
+if pulumi plugin ls | grep -qE "^dex[[:space:]]+resource"; then
     echo -e "${GREEN}✓ Provider is installed${NC}"
 else
     echo -e "${YELLOW}⚠ Provider not installed. Installing...${NC}"
-    pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex || true
+    make install
     echo -e "${GREEN}✓ Provider installed${NC}"
 fi
 

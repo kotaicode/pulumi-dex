@@ -24,11 +24,11 @@ class GoogleConnectorArgs:
                  connector_id: pulumi.Input[_builtins.str],
                  name: pulumi.Input[_builtins.str],
                  redirect_uri: pulumi.Input[_builtins.str],
-                 domain_to_admin_email: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 hosted_domains: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 prompt_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 service_account_file_path: Optional[pulumi.Input[_builtins.str]] = None):
+                 domain_to_admin_email: pulumi.Input[Optional[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 hosted_domains: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 prompt_type: pulumi.Input[Optional[_builtins.str]] = None,
+                 service_account_file_path: pulumi.Input[Optional[_builtins.str]] = None):
         """
         The set of arguments for constructing a GoogleConnector resource.
 
@@ -121,62 +121,62 @@ class GoogleConnectorArgs:
 
     @_builtins.property
     @pulumi.getter(name="domainToAdminEmail")
-    def domain_to_admin_email(self) -> Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]:
+    def domain_to_admin_email(self) -> pulumi.Input[Optional[Mapping[str, pulumi.Input[_builtins.str]]]]:
         """
         Map of domain names to admin email addresses. Used for group lookups in Google Workspace.
         """
         return pulumi.get(self, "domain_to_admin_email")
 
     @domain_to_admin_email.setter
-    def domain_to_admin_email(self, value: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]):
+    def domain_to_admin_email(self, value: pulumi.Input[Optional[Mapping[str, pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "domain_to_admin_email", value)
 
     @_builtins.property
     @pulumi.getter
-    def groups(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]:
+    def groups(self) -> pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]:
         """
         List of Google Groups. Only users in these groups will be allowed to authenticate.
         """
         return pulumi.get(self, "groups")
 
     @groups.setter
-    def groups(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]):
+    def groups(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "groups", value)
 
     @_builtins.property
     @pulumi.getter(name="hostedDomains")
-    def hosted_domains(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]:
+    def hosted_domains(self) -> pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]:
         """
         List of Google Workspace domains. Only users with email addresses in these domains will be allowed to authenticate.
         """
         return pulumi.get(self, "hosted_domains")
 
     @hosted_domains.setter
-    def hosted_domains(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]):
+    def hosted_domains(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "hosted_domains", value)
 
     @_builtins.property
     @pulumi.getter(name="promptType")
-    def prompt_type(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def prompt_type(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         OAuth prompt type. Valid values: 'consent' (default) or 'select_account'.
         """
         return pulumi.get(self, "prompt_type")
 
     @prompt_type.setter
-    def prompt_type(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def prompt_type(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "prompt_type", value)
 
     @_builtins.property
     @pulumi.getter(name="serviceAccountFilePath")
-    def service_account_file_path(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def service_account_file_path(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Path to Google service account JSON file. Required for group-based access control.
         """
         return pulumi.get(self, "service_account_file_path")
 
     @service_account_file_path.setter
-    def service_account_file_path(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def service_account_file_path(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "service_account_file_path", value)
 
 
@@ -186,20 +186,19 @@ class GoogleConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 domain_to_admin_email: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 hosted_domains: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 prompt_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 service_account_file_path: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 domain_to_admin_email: pulumi.Input[Optional[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 hosted_domains: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 prompt_type: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 service_account_file_path: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         """
         Manages a Google connector in Dex. This connector allows users to authenticate using their Google accounts and supports domain and group-based access control.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -223,7 +222,6 @@ class GoogleConnector(pulumi.CustomResource):
         """
         Manages a Google connector in Dex. This connector allows users to authenticate using their Google accounts and supports domain and group-based access control.
 
-
         :param str resource_name: The name of the resource.
         :param GoogleConnectorArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -239,16 +237,16 @@ class GoogleConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 domain_to_admin_email: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 hosted_domains: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 prompt_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 service_account_file_path: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 domain_to_admin_email: pulumi.Input[Optional[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 hosted_domains: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 prompt_type: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 service_account_file_path: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -313,6 +311,12 @@ class GoogleConnector(pulumi.CustomResource):
         __props__.__dict__["redirect_uri"] = None
         __props__.__dict__["service_account_file_path"] = None
         return GoogleConnector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:GoogleConnector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="clientId")
