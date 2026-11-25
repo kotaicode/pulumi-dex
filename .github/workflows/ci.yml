@@ -18,16 +18,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: provider/go.mod
-
-      - name: Cache Go modules
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: provider/go.sum
 
       - name: Install dependencies
         run: cd provider && go mod download
@@ -66,16 +57,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: provider/go.mod
-
-      - name: Cache Go modules
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: provider/go.sum
 
       - name: Install dependencies
         run: cd provider && go mod download
@@ -100,6 +82,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: provider/go.mod
+          cache-dependency-path: provider/go.sum
 
       - name: Set up Docker Compose
         run: |
@@ -147,19 +130,10 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: provider/go.mod
+          cache-dependency-path: provider/go.sum
 
       - name: Install Pulumi CLI
         uses: pulumi/actions@v7
-
-      - name: Cache Go modules
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: cd provider && go mod download
