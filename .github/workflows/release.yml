@@ -22,20 +22,10 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: provider/go.mod
+          cache-dependency-path: provider/go.sum
 
       - name: Install Pulumi CLI
         uses: pulumi/actions@v7
-
-      - name: Cache Go modules
-        uses: actions/cache@v6
-        continue-on-error: true
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('provider/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: cd provider && go mod download
@@ -240,8 +230,6 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract version from tag
         id: version
@@ -303,17 +291,6 @@ jobs:
           echo "First 5 lines of README.md:"
           head -5 README.md
 
-      - name: Check if NPM_TOKEN is set
-        id: check-npm-token
-        run: |
-          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "has_token=false" >> $GITHUB_OUTPUT
-            echo "⚠ NPM_TOKEN not set, skipping publish"
-          else
-            echo "has_token=true" >> $GITHUB_OUTPUT
-            echo "✓ NPM_TOKEN is set, will publish"
-          fi
-
       # Publish the compiled output, the way Pulumi's own providers do. The
       # generated package.json has no "main", so the package root must BE the
       # build output. Publishing from sdk/typescript/nodejs shipped only .ts
@@ -338,14 +315,13 @@ jobs:
           echo "✓ package loads with plain Node"
           rm "$GITHUB_WORKSPACE"/sdk/typescript/nodejs/bin/*.tgz
 
+      # npm trusted publishing (OIDC): no token. npmjs.com trusts
+      # kotaicode/pulumi-dex + release.yml, authenticated through this job's
+      # id-token permission; npm also attaches a signed provenance statement.
       - name: Publish to NPM
         run: |
           cd sdk/typescript/nodejs/bin
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        # Only publish if NPM_TOKEN secret is set (optional for first release)
-        if: steps.check-npm-token.outputs.has_token == 'true'
 
   publish-pypi:
     name: Publish to PyPI

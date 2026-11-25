@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- npm publishing uses trusted publishing (OIDC) only; the `NPM_TOKEN` secret is no longer
+  read, and publishing no longer silently skips when it is missing.
+- Go module caching uses `setup-go`'s built-in cache keyed on `provider/go.sum`; the
+  duplicate `actions/cache` steps (and the "Restore cache failed" warning) are gone.
+
 ### Fixed
 - **npm package now ships compiled JavaScript.** Published versions up to and including 0.8.0
   contained only TypeScript sources and no `main`, so `require("@kotaicode/pulumi-dex")` failed
