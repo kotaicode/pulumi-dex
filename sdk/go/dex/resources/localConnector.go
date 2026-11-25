@@ -69,6 +69,12 @@ func (LocalConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*localConnectorState)(nil)).Elem()
 }
 
+// LocalConnectorExists checks whether an existing LocalConnector resource with the given ID exists.
+func LocalConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *LocalConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:LocalConnector", id, state, "", opts...)
+}
+
 type localConnectorArgs struct {
 	// Unique identifier for the local connector.
 	ConnectorId string `pulumi:"connectorId"`

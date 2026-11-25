@@ -97,6 +97,12 @@ func (GitLabConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*gitLabConnectorState)(nil)).Elem()
 }
 
+// GitLabConnectorExists checks whether an existing GitLabConnector resource with the given ID exists.
+func GitLabConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *GitLabConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:GitLabConnector", id, state, "", opts...)
+}
+
 type gitLabConnectorArgs struct {
 	// GitLab instance base URL. Defaults to 'https://gitlab.com' for GitLab.com.
 	BaseURL *string `pulumi:"baseURL"`

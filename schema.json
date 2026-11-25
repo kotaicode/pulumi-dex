@@ -17,8 +17,12 @@
       "respectSchemaVersion": true
     },
     "nodejs": {
+      "devDependencies": {
+        "@types/node": "^24"
+      },
       "packageName": "@kotaicode/pulumi-dex",
-      "respectSchemaVersion": true
+      "respectSchemaVersion": true,
+      "typescriptVersion": "^6.0.0"
     },
     "python": {
       "packageName": "pulumi_dex",

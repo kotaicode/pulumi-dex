@@ -22,6 +22,16 @@ export class GitHubConnector extends pulumi.CustomResource {
         return new GitHubConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing GitHubConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:GitHubConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:GitHubConnector';
 
@@ -163,11 +173,11 @@ export interface GitHubConnectorArgs {
     /**
      * GitHub Enterprise hostname (e.g., 'github.example.com'). Leave empty for github.com.
      */
-    hostName?: pulumi.Input<string>;
+    hostName?: pulumi.Input<string | undefined>;
     /**
      * If true, load all groups (teams) the user is a member of. Defaults to false.
      */
-    loadAllGroups?: pulumi.Input<boolean>;
+    loadAllGroups?: pulumi.Input<boolean | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
@@ -175,11 +185,11 @@ export interface GitHubConnectorArgs {
     /**
      * List of GitHub organizations with optional team restrictions. Only users in these orgs/teams will be allowed to authenticate.
      */
-    orgs?: pulumi.Input<pulumi.Input<inputs.resources.GitHubOrgArgs>[]>;
+    orgs?: pulumi.Input<pulumi.Input<inputs.resources.GitHubOrgArgs>[] | undefined>;
     /**
      * Preferred email domain. If set, users with emails in this domain will be preferred.
      */
-    preferredEmailDomain?: pulumi.Input<string>;
+    preferredEmailDomain?: pulumi.Input<string | undefined>;
     /**
      * Redirect URI registered in GitHub OAuth app. Must match Dex's callback URL.
      */
@@ -187,13 +197,13 @@ export interface GitHubConnectorArgs {
     /**
      * Root CA certificate for GitHub Enterprise (PEM format). Required if using self-signed certificates.
      */
-    rootCA?: pulumi.Input<string>;
+    rootCA?: pulumi.Input<string | undefined>;
     /**
      * Field to use for team names in group claims. Valid values: 'name', 'slug', or 'both'. Defaults to 'slug'.
      */
-    teamNameField?: pulumi.Input<string>;
+    teamNameField?: pulumi.Input<string | undefined>;
     /**
      * If true, use GitHub login username as the user ID. Defaults to false.
      */
-    useLoginAsID?: pulumi.Input<boolean>;
+    useLoginAsID?: pulumi.Input<boolean | undefined>;
 }

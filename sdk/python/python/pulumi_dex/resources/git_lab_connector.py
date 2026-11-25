@@ -24,10 +24,10 @@ class GitLabConnectorArgs:
                  connector_id: pulumi.Input[_builtins.str],
                  name: pulumi.Input[_builtins.str],
                  redirect_uri: pulumi.Input[_builtins.str],
-                 base_url: Optional[pulumi.Input[_builtins.str]] = None,
-                 get_groups_permission: Optional[pulumi.Input[_builtins.bool]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None):
+                 base_url: pulumi.Input[Optional[_builtins.str]] = None,
+                 get_groups_permission: pulumi.Input[Optional[_builtins.bool]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None):
         """
         The set of arguments for constructing a GitLabConnector resource.
 
@@ -117,50 +117,50 @@ class GitLabConnectorArgs:
 
     @_builtins.property
     @pulumi.getter(name="baseURL")
-    def base_url(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def base_url(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         GitLab instance base URL. Defaults to 'https://gitlab.com' for GitLab.com.
         """
         return pulumi.get(self, "base_url")
 
     @base_url.setter
-    def base_url(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def base_url(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "base_url", value)
 
     @_builtins.property
     @pulumi.getter(name="getGroupsPermission")
-    def get_groups_permission(self) -> Optional[pulumi.Input[_builtins.bool]]:
+    def get_groups_permission(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
         If true, request 'read_api' scope to fetch group memberships. Defaults to false.
         """
         return pulumi.get(self, "get_groups_permission")
 
     @get_groups_permission.setter
-    def get_groups_permission(self, value: Optional[pulumi.Input[_builtins.bool]]):
+    def get_groups_permission(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "get_groups_permission", value)
 
     @_builtins.property
     @pulumi.getter
-    def groups(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]:
+    def groups(self) -> pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]:
         """
         List of GitLab group names. Only users in these groups will be allowed to authenticate.
         """
         return pulumi.get(self, "groups")
 
     @groups.setter
-    def groups(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]):
+    def groups(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "groups", value)
 
     @_builtins.property
     @pulumi.getter(name="useLoginAsID")
-    def use_login_as_id(self) -> Optional[pulumi.Input[_builtins.bool]]:
+    def use_login_as_id(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
         If true, use GitLab username as the user ID. Defaults to false.
         """
         return pulumi.get(self, "use_login_as_id")
 
     @use_login_as_id.setter
-    def use_login_as_id(self, value: Optional[pulumi.Input[_builtins.bool]]):
+    def use_login_as_id(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "use_login_as_id", value)
 
 
@@ -170,19 +170,18 @@ class GitLabConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 base_url: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 get_groups_permission: Optional[pulumi.Input[_builtins.bool]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None,
+                 base_url: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 get_groups_permission: pulumi.Input[Optional[_builtins.bool]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None,
                  __props__=None):
         """
         Manages a GitLab connector in Dex. This connector allows users to authenticate using their GitLab accounts and supports group-based access control.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -205,7 +204,6 @@ class GitLabConnector(pulumi.CustomResource):
         """
         Manages a GitLab connector in Dex. This connector allows users to authenticate using their GitLab accounts and supports group-based access control.
 
-
         :param str resource_name: The name of the resource.
         :param GitLabConnectorArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -221,15 +219,15 @@ class GitLabConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 base_url: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 get_groups_permission: Optional[pulumi.Input[_builtins.bool]] = None,
-                 groups: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None,
+                 base_url: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 get_groups_permission: pulumi.Input[Optional[_builtins.bool]] = None,
+                 groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -292,6 +290,12 @@ class GitLabConnector(pulumi.CustomResource):
         __props__.__dict__["redirect_uri"] = None
         __props__.__dict__["use_login_as_id"] = None
         return GitLabConnector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:GitLabConnector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="baseURL")

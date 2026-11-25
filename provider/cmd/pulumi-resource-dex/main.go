@@ -27,7 +27,16 @@ func main() {
 				"respectSchemaVersion":           true,
 				"generateResourceContainerTypes": true,
 			},
-			"nodejs": map[string]any{"packageName": "@kotaicode/pulumi-dex", "respectSchemaVersion": true},
+			"nodejs": map[string]any{
+				"packageName":          "@kotaicode/pulumi-dex",
+				"respectSchemaVersion": true,
+				// Build-time tooling for the generated SDK. Pulumi's codegen defaults
+				// (typescript ^4.7, @types/node ^20) lag behind; the committed
+				// sdk/typescript/nodejs/package.json is regenerated on every release,
+				// so this is the only place these versions can be changed.
+				"typescriptVersion": "^6.0.0",
+				"devDependencies":   map[string]string{"@types/node": "^24"},
+			},
 			"python": map[string]any{"packageName": "pulumi_dex", "respectSchemaVersion": true},
 		}).
 		WithRepository("https://github.com/kotaicode/pulumi-dex").

@@ -25,7 +25,7 @@ class AzureMicrosoftConnectorArgs:
                  name: pulumi.Input[_builtins.str],
                  redirect_uri: pulumi.Input[_builtins.str],
                  tenant: pulumi.Input[_builtins.str],
-                 groups: Optional[pulumi.Input[_builtins.str]] = None):
+                 groups: pulumi.Input[Optional[_builtins.str]] = None):
         """
         The set of arguments for constructing a AzureMicrosoftConnector resource.
 
@@ -120,14 +120,14 @@ class AzureMicrosoftConnectorArgs:
 
     @_builtins.property
     @pulumi.getter
-    def groups(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def groups(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
         """
         return pulumi.get(self, "groups")
 
     @groups.setter
-    def groups(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def groups(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "groups", value)
 
 
@@ -137,17 +137,16 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 groups: Optional[pulumi.Input[_builtins.str]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 tenant: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 groups: pulumi.Input[Optional[_builtins.str]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 tenant: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         """
         Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -168,7 +167,6 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
         """
         Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.
 
-
         :param str resource_name: The name of the resource.
         :param AzureMicrosoftConnectorArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -184,13 +182,13 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 groups: Optional[pulumi.Input[_builtins.str]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 tenant: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 groups: pulumi.Input[Optional[_builtins.str]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 tenant: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -251,6 +249,12 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
         __props__.__dict__["redirect_uri"] = None
         __props__.__dict__["tenant"] = None
         return AzureMicrosoftConnector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:AzureMicrosoftConnector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="clientId")

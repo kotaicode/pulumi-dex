@@ -26,13 +26,13 @@ class GitHubConnectorArgs:
                  connector_id: pulumi.Input[_builtins.str],
                  name: pulumi.Input[_builtins.str],
                  redirect_uri: pulumi.Input[_builtins.str],
-                 host_name: Optional[pulumi.Input[_builtins.str]] = None,
-                 load_all_groups: Optional[pulumi.Input[_builtins.bool]] = None,
-                 orgs: Optional[pulumi.Input[Sequence[pulumi.Input['GitHubOrgArgs']]]] = None,
-                 preferred_email_domain: Optional[pulumi.Input[_builtins.str]] = None,
-                 root_ca: Optional[pulumi.Input[_builtins.str]] = None,
-                 team_name_field: Optional[pulumi.Input[_builtins.str]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None):
+                 host_name: pulumi.Input[Optional[_builtins.str]] = None,
+                 load_all_groups: pulumi.Input[Optional[_builtins.bool]] = None,
+                 orgs: pulumi.Input[Optional[Sequence[pulumi.Input['GitHubOrgArgs']]]] = None,
+                 preferred_email_domain: pulumi.Input[Optional[_builtins.str]] = None,
+                 root_ca: pulumi.Input[Optional[_builtins.str]] = None,
+                 team_name_field: pulumi.Input[Optional[_builtins.str]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None):
         """
         The set of arguments for constructing a GitHubConnector resource.
 
@@ -131,86 +131,86 @@ class GitHubConnectorArgs:
 
     @_builtins.property
     @pulumi.getter(name="hostName")
-    def host_name(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def host_name(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         GitHub Enterprise hostname (e.g., 'github.example.com'). Leave empty for github.com.
         """
         return pulumi.get(self, "host_name")
 
     @host_name.setter
-    def host_name(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def host_name(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "host_name", value)
 
     @_builtins.property
     @pulumi.getter(name="loadAllGroups")
-    def load_all_groups(self) -> Optional[pulumi.Input[_builtins.bool]]:
+    def load_all_groups(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
         If true, load all groups (teams) the user is a member of. Defaults to false.
         """
         return pulumi.get(self, "load_all_groups")
 
     @load_all_groups.setter
-    def load_all_groups(self, value: Optional[pulumi.Input[_builtins.bool]]):
+    def load_all_groups(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "load_all_groups", value)
 
     @_builtins.property
     @pulumi.getter
-    def orgs(self) -> Optional[pulumi.Input[Sequence[pulumi.Input['GitHubOrgArgs']]]]:
+    def orgs(self) -> pulumi.Input[Optional[Sequence[pulumi.Input['GitHubOrgArgs']]]]:
         """
         List of GitHub organizations with optional team restrictions. Only users in these orgs/teams will be allowed to authenticate.
         """
         return pulumi.get(self, "orgs")
 
     @orgs.setter
-    def orgs(self, value: Optional[pulumi.Input[Sequence[pulumi.Input['GitHubOrgArgs']]]]):
+    def orgs(self, value: pulumi.Input[Optional[Sequence[pulumi.Input['GitHubOrgArgs']]]]):
         pulumi.set(self, "orgs", value)
 
     @_builtins.property
     @pulumi.getter(name="preferredEmailDomain")
-    def preferred_email_domain(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def preferred_email_domain(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Preferred email domain. If set, users with emails in this domain will be preferred.
         """
         return pulumi.get(self, "preferred_email_domain")
 
     @preferred_email_domain.setter
-    def preferred_email_domain(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def preferred_email_domain(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "preferred_email_domain", value)
 
     @_builtins.property
     @pulumi.getter(name="rootCA")
-    def root_ca(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def root_ca(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Root CA certificate for GitHub Enterprise (PEM format). Required if using self-signed certificates.
         """
         return pulumi.get(self, "root_ca")
 
     @root_ca.setter
-    def root_ca(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def root_ca(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "root_ca", value)
 
     @_builtins.property
     @pulumi.getter(name="teamNameField")
-    def team_name_field(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def team_name_field(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Field to use for team names in group claims. Valid values: 'name', 'slug', or 'both'. Defaults to 'slug'.
         """
         return pulumi.get(self, "team_name_field")
 
     @team_name_field.setter
-    def team_name_field(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def team_name_field(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "team_name_field", value)
 
     @_builtins.property
     @pulumi.getter(name="useLoginAsID")
-    def use_login_as_id(self) -> Optional[pulumi.Input[_builtins.bool]]:
+    def use_login_as_id(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
         If true, use GitHub login username as the user ID. Defaults to false.
         """
         return pulumi.get(self, "use_login_as_id")
 
     @use_login_as_id.setter
-    def use_login_as_id(self, value: Optional[pulumi.Input[_builtins.bool]]):
+    def use_login_as_id(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "use_login_as_id", value)
 
 
@@ -220,22 +220,21 @@ class GitHubConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 host_name: Optional[pulumi.Input[_builtins.str]] = None,
-                 load_all_groups: Optional[pulumi.Input[_builtins.bool]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 orgs: Optional[pulumi.Input[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict']]]]] = None,
-                 preferred_email_domain: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 root_ca: Optional[pulumi.Input[_builtins.str]] = None,
-                 team_name_field: Optional[pulumi.Input[_builtins.str]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 host_name: pulumi.Input[Optional[_builtins.str]] = None,
+                 load_all_groups: pulumi.Input[Optional[_builtins.bool]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 orgs: pulumi.Input[Optional[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict', 'outputs.GitHubOrg']]]]] = None,
+                 preferred_email_domain: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 root_ca: pulumi.Input[Optional[_builtins.str]] = None,
+                 team_name_field: pulumi.Input[Optional[_builtins.str]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None,
                  __props__=None):
         """
         Manages a GitHub connector in Dex. This connector allows users to authenticate using their GitHub accounts and supports organization and team-based access control.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -245,7 +244,7 @@ class GitHubConnector(pulumi.CustomResource):
         :param pulumi.Input[_builtins.str] host_name: GitHub Enterprise hostname (e.g., 'github.example.com'). Leave empty for github.com.
         :param pulumi.Input[_builtins.bool] load_all_groups: If true, load all groups (teams) the user is a member of. Defaults to false.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
-        :param pulumi.Input[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict']]]] orgs: List of GitHub organizations with optional team restrictions. Only users in these orgs/teams will be allowed to authenticate.
+        :param pulumi.Input[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict', 'outputs.GitHubOrg']]]] orgs: List of GitHub organizations with optional team restrictions. Only users in these orgs/teams will be allowed to authenticate.
         :param pulumi.Input[_builtins.str] preferred_email_domain: Preferred email domain. If set, users with emails in this domain will be preferred.
         :param pulumi.Input[_builtins.str] redirect_uri: Redirect URI registered in GitHub OAuth app. Must match Dex's callback URL.
         :param pulumi.Input[_builtins.str] root_ca: Root CA certificate for GitHub Enterprise (PEM format). Required if using self-signed certificates.
@@ -260,7 +259,6 @@ class GitHubConnector(pulumi.CustomResource):
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
         Manages a GitHub connector in Dex. This connector allows users to authenticate using their GitHub accounts and supports organization and team-based access control.
-
 
         :param str resource_name: The name of the resource.
         :param GitHubConnectorArgs args: The arguments to use to populate this resource's properties.
@@ -277,18 +275,18 @@ class GitHubConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 host_name: Optional[pulumi.Input[_builtins.str]] = None,
-                 load_all_groups: Optional[pulumi.Input[_builtins.bool]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 orgs: Optional[pulumi.Input[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict']]]]] = None,
-                 preferred_email_domain: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 root_ca: Optional[pulumi.Input[_builtins.str]] = None,
-                 team_name_field: Optional[pulumi.Input[_builtins.str]] = None,
-                 use_login_as_id: Optional[pulumi.Input[_builtins.bool]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 host_name: pulumi.Input[Optional[_builtins.str]] = None,
+                 load_all_groups: pulumi.Input[Optional[_builtins.bool]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 orgs: pulumi.Input[Optional[Sequence[pulumi.Input[Union['GitHubOrgArgs', 'GitHubOrgArgsDict', 'outputs.GitHubOrg']]]]] = None,
+                 preferred_email_domain: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 root_ca: pulumi.Input[Optional[_builtins.str]] = None,
+                 team_name_field: pulumi.Input[Optional[_builtins.str]] = None,
+                 use_login_as_id: pulumi.Input[Optional[_builtins.bool]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -357,6 +355,12 @@ class GitHubConnector(pulumi.CustomResource):
         __props__.__dict__["team_name_field"] = None
         __props__.__dict__["use_login_as_id"] = None
         return GitHubConnector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:GitHubConnector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="clientId")

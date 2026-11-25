@@ -14,25 +14,25 @@ export namespace resources {
         /**
          * List of team names within the organization. If empty, all members of the organization can authenticate.
          */
-        teams?: pulumi.Input<pulumi.Input<string>[]>;
+        teams?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     }
 
     export interface OIDCClaimMappingArgs {
         /**
          * The OIDC claim key that contains the user's email address.
          */
-        emailKey?: pulumi.Input<string>;
+        emailKey?: pulumi.Input<string | undefined>;
         /**
          * The OIDC claim key that contains the user's group memberships.
          */
-        groupsKey?: pulumi.Input<string>;
+        groupsKey?: pulumi.Input<string | undefined>;
     }
 
     export interface OIDCConfigArgs {
         /**
          * Mapping of OIDC claims to Dex user attributes.
          */
-        claimMapping?: pulumi.Input<inputs.resources.OIDCClaimMappingArgs>;
+        claimMapping?: pulumi.Input<inputs.resources.OIDCClaimMappingArgs | undefined>;
         /**
          * The OIDC client ID.
          */
@@ -44,15 +44,15 @@ export namespace resources {
         /**
          * Additional OIDC configuration fields as key-value pairs.
          */
-        extra?: pulumi.Input<{[key: string]: any}>;
+        extra?: pulumi.Input<{[key: string]: any} | undefined>;
         /**
          * If true, skip verification of the issuer URL. Not recommended for production.
          */
-        insecureIssuer?: pulumi.Input<boolean>;
+        insecureIssuer?: pulumi.Input<boolean | undefined>;
         /**
          * If true, skip verification of the 'email_verified' claim. Not recommended for production.
          */
-        insecureSkipEmailVerified?: pulumi.Input<boolean>;
+        insecureSkipEmailVerified?: pulumi.Input<boolean | undefined>;
         /**
          * The OIDC issuer URL (e.g., 'https://accounts.google.com').
          */
@@ -64,10 +64,10 @@ export namespace resources {
         /**
          * List of OIDC scopes to request (e.g., 'openid', 'profile', 'email'). Defaults to ['openid', 'profile', 'email'] if not specified.
          */
-        scopes?: pulumi.Input<pulumi.Input<string>[]>;
+        scopes?: pulumi.Input<pulumi.Input<string>[] | undefined>;
         /**
          * The claim key to use as the username (e.g., 'preferred_username', 'email', 'sub').
          */
-        userNameKey?: pulumi.Input<string>;
+        userNameKey?: pulumi.Input<string | undefined>;
     }
 }

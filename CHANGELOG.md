@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **npm package now ships compiled JavaScript.** Published versions up to and including 0.8.0
+  contained only TypeScript sources and no `main`, so `require("@kotaicode/pulumi-dex")` failed
+  and ts-node refused to compile it from `node_modules`. The release now publishes the
+  compiled `bin/` output, and both CI and the release smoke-test loading the package.
+- **Plugin version always matches the release tag.** The release built the provider (and
+  generated the schema) with the Makefile's default `VERSION`, not the tag. npm versions
+  0.2.0–0.7.2 therefore declared plugin version `0.1.0`, which was never released, and
+  `pulumi install` failed with a 404. Fixed for 0.7.4+ by manual bumps; now enforced: every
+  build step receives the tag version and a release check fails if the schema or any SDK
+  disagrees with the tag.
+- Docs (including the page the Pulumi Registry pulls in) told users to run
+  `pulumi plugin install resource dex v0.1.0`, a version that was never released. They now
+  use a version placeholder, and local-dev instructions use `make install`.
+- **Go SDK can be installed again.** `sdk/go.mod` sits in `sdk/` but declared the module as
+  `.../sdk/go`, so `go get` failed and the SDK's own `internal` import did not resolve. The
+  module is now `github.com/kotaicode/pulumi-dex/sdk` (import path unchanged:
+  `.../sdk/go/dex`), and each release also pushes the `sdk/vX.Y.Z` tag that Go needs.
+- Cross-platform release binaries were built with an empty provider version (`$(VERSION)`
+  was evaluated as a shell command substitution).
+
+### Changed
+- GitHub Actions bumped to current majors (checkout v7, setup-go v7, cache v6,
+  upload-artifact v7, download-artifact v8, setup-node v7, setup-python v7,
+  action-gh-release v3, codecov v7, pulumi/actions v7). Publishing runs on Node 24.
+- Go version in CI and release follows `provider/go.mod` instead of a hardcoded value.
+- Generated TypeScript SDK builds with TypeScript ^6.0 and @types/node ^24.
+- Dependabot now watches `/provider` and `/sdk` for Go modules (it previously watched the
+  repository root, where there is no `go.mod`); the no-op npm entry was removed.
+
 ### Added
 - `dex.GitLabConnector` resource for GitLab.com and self-hosted GitLab instances
 - `dex.GitHubConnector` resource for GitHub.com and GitHub Enterprise

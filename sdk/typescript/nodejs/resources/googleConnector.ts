@@ -20,6 +20,16 @@ export class GoogleConnector extends pulumi.CustomResource {
         return new GoogleConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing GoogleConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:GoogleConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:GoogleConnector';
 
@@ -149,15 +159,15 @@ export interface GoogleConnectorArgs {
     /**
      * Map of domain names to admin email addresses. Used for group lookups in Google Workspace.
      */
-    domainToAdminEmail?: pulumi.Input<{[key: string]: pulumi.Input<string>}>;
+    domainToAdminEmail?: pulumi.Input<{[key: string]: pulumi.Input<string>} | undefined>;
     /**
      * List of Google Groups. Only users in these groups will be allowed to authenticate.
      */
-    groups?: pulumi.Input<pulumi.Input<string>[]>;
+    groups?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     /**
      * List of Google Workspace domains. Only users with email addresses in these domains will be allowed to authenticate.
      */
-    hostedDomains?: pulumi.Input<pulumi.Input<string>[]>;
+    hostedDomains?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
@@ -165,7 +175,7 @@ export interface GoogleConnectorArgs {
     /**
      * OAuth prompt type. Valid values: 'consent' (default) or 'select_account'.
      */
-    promptType?: pulumi.Input<string>;
+    promptType?: pulumi.Input<string | undefined>;
     /**
      * Redirect URI registered in Google OAuth app. Must match Dex's callback URL.
      */
@@ -173,5 +183,5 @@ export interface GoogleConnectorArgs {
     /**
      * Path to Google service account JSON file. Required for group-based access control.
      */
-    serviceAccountFilePath?: pulumi.Input<string>;
+    serviceAccountFilePath?: pulumi.Input<string | undefined>;
 }

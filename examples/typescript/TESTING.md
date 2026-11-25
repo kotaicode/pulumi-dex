@@ -99,7 +99,7 @@ docker-compose down
 ```bash
 # Reinstall the provider
 cd ../..
-pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex
+make install
 ```
 
 ### "Connection refused" error

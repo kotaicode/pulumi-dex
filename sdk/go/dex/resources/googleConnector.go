@@ -99,6 +99,12 @@ func (GoogleConnectorState) ElementType() reflect.Type {
 	return reflect.TypeOf((*googleConnectorState)(nil)).Elem()
 }
 
+// GoogleConnectorExists checks whether an existing GoogleConnector resource with the given ID exists.
+func GoogleConnectorExists(ctx *pulumi.Context,
+	id pulumi.StringInput, state *GoogleConnectorState, opts ...pulumi.ResourceOption) pulumi.BoolOutput {
+	return ctx.ExistsResource("dex:resources:GoogleConnector", id, state, "", opts...)
+}
+
 type googleConnectorArgs struct {
 	// Google OAuth client ID.
 	ClientId string `pulumi:"clientId"`

@@ -40,8 +40,8 @@ Dex will be available at:
 ```bash
 # Install the provider locally
 make install
-# or manually:
-pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex
+# or manually (<version> = VERSION in the Makefile):
+pulumi plugin install resource dex v<version> --file bin/pulumi-resource-dex
 ```
 
 ## Step 4: Generate SDKs (Optional)
@@ -146,7 +146,7 @@ If you get "provider not found" errors:
 
 ```bash
 # Reinstall the provider
-pulumi plugin install resource dex v0.1.0 --file bin/pulumi-resource-dex
+make install
 
 # Or check installed plugins
 pulumi plugin ls

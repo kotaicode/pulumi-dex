@@ -20,6 +20,16 @@ export class CognitoOidcConnector extends pulumi.CustomResource {
         return new CognitoOidcConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing CognitoOidcConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:CognitoOidcConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:CognitoOidcConnector';
 
@@ -155,7 +165,7 @@ export interface CognitoOidcConnectorArgs {
     /**
      * Additional OIDC configuration fields as key-value pairs for advanced scenarios.
      */
-    extraOidc?: pulumi.Input<{[key: string]: any}>;
+    extraOidc?: pulumi.Input<{[key: string]: any} | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
@@ -171,11 +181,11 @@ export interface CognitoOidcConnectorArgs {
     /**
      * OIDC scopes to request from Cognito. Defaults to ['openid', 'email', 'profile'] if not specified.
      */
-    scopes?: pulumi.Input<pulumi.Input<string>[]>;
+    scopes?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     /**
      * Source for the username claim. Valid values: 'email' or 'sub' (subject).
      */
-    userNameSource?: pulumi.Input<string>;
+    userNameSource?: pulumi.Input<string | undefined>;
     /**
      * AWS Cognito user pool ID.
      */

@@ -71,15 +71,15 @@ export interface ProviderArgs {
     /**
      * PEM-encoded CA certificate for validating Dex's TLS certificate.
      */
-    caCert?: pulumi.Input<string>;
+    caCert?: pulumi.Input<string | undefined>;
     /**
      * PEM-encoded client certificate for mTLS to Dex.
      */
-    clientCert?: pulumi.Input<string>;
+    clientCert?: pulumi.Input<string | undefined>;
     /**
      * PEM-encoded private key for the client certificate.
      */
-    clientKey?: pulumi.Input<string>;
+    clientKey?: pulumi.Input<string | undefined>;
     /**
      * Dex gRPC host:port, e.g. dex.internal.example.com:5557.
      */
@@ -87,9 +87,9 @@ export interface ProviderArgs {
     /**
      * If true, disables TLS verification (development only).
      */
-    insecureSkipVerify?: pulumi.Input<boolean>;
+    insecureSkipVerify?: pulumi.Input<boolean | undefined>;
     /**
      * Per-RPC timeout in seconds when talking to Dex.
      */
-    timeoutSeconds?: pulumi.Input<number>;
+    timeoutSeconds?: pulumi.Input<number | undefined>;
 }

@@ -20,11 +20,11 @@ __all__ = ['ProviderArgs', 'Provider']
 class ProviderArgs:
     def __init__(__self__, *,
                  host: pulumi.Input[_builtins.str],
-                 ca_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_key: Optional[pulumi.Input[_builtins.str]] = None,
-                 insecure_skip_verify: Optional[pulumi.Input[_builtins.bool]] = None,
-                 timeout_seconds: Optional[pulumi.Input[_builtins.int]] = None):
+                 ca_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_key: pulumi.Input[Optional[_builtins.str]] = None,
+                 insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None):
         """
         The set of arguments for constructing a Provider resource.
 
@@ -61,62 +61,62 @@ class ProviderArgs:
 
     @_builtins.property
     @pulumi.getter(name="caCert")
-    def ca_cert(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def ca_cert(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         PEM-encoded CA certificate for validating Dex's TLS certificate.
         """
         return pulumi.get(self, "ca_cert")
 
     @ca_cert.setter
-    def ca_cert(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def ca_cert(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "ca_cert", value)
 
     @_builtins.property
     @pulumi.getter(name="clientCert")
-    def client_cert(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def client_cert(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         PEM-encoded client certificate for mTLS to Dex.
         """
         return pulumi.get(self, "client_cert")
 
     @client_cert.setter
-    def client_cert(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def client_cert(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "client_cert", value)
 
     @_builtins.property
     @pulumi.getter(name="clientKey")
-    def client_key(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def client_key(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         PEM-encoded private key for the client certificate.
         """
         return pulumi.get(self, "client_key")
 
     @client_key.setter
-    def client_key(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def client_key(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "client_key", value)
 
     @_builtins.property
     @pulumi.getter(name="insecureSkipVerify")
-    def insecure_skip_verify(self) -> Optional[pulumi.Input[_builtins.bool]]:
+    def insecure_skip_verify(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
         If true, disables TLS verification (development only).
         """
         return pulumi.get(self, "insecure_skip_verify")
 
     @insecure_skip_verify.setter
-    def insecure_skip_verify(self, value: Optional[pulumi.Input[_builtins.bool]]):
+    def insecure_skip_verify(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "insecure_skip_verify", value)
 
     @_builtins.property
     @pulumi.getter(name="timeoutSeconds")
-    def timeout_seconds(self) -> Optional[pulumi.Input[_builtins.int]]:
+    def timeout_seconds(self) -> pulumi.Input[Optional[_builtins.int]]:
         """
         Per-RPC timeout in seconds when talking to Dex.
         """
         return pulumi.get(self, "timeout_seconds")
 
     @timeout_seconds.setter
-    def timeout_seconds(self, value: Optional[pulumi.Input[_builtins.int]]):
+    def timeout_seconds(self, value: pulumi.Input[Optional[_builtins.int]]):
         pulumi.set(self, "timeout_seconds", value)
 
 
@@ -126,12 +126,12 @@ class Provider(pulumi.ProviderResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 ca_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_key: Optional[pulumi.Input[_builtins.str]] = None,
-                 host: Optional[pulumi.Input[_builtins.str]] = None,
-                 insecure_skip_verify: Optional[pulumi.Input[_builtins.bool]] = None,
-                 timeout_seconds: Optional[pulumi.Input[_builtins.int]] = None,
+                 ca_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_key: pulumi.Input[Optional[_builtins.str]] = None,
+                 host: pulumi.Input[Optional[_builtins.str]] = None,
+                 insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None,
                  __props__=None):
         """
         Create a Dex resource with the given unique name, props, and options.
@@ -169,12 +169,12 @@ class Provider(pulumi.ProviderResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 ca_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_cert: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_key: Optional[pulumi.Input[_builtins.str]] = None,
-                 host: Optional[pulumi.Input[_builtins.str]] = None,
-                 insecure_skip_verify: Optional[pulumi.Input[_builtins.bool]] = None,
-                 timeout_seconds: Optional[pulumi.Input[_builtins.int]] = None,
+                 ca_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_cert: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_key: pulumi.Input[Optional[_builtins.str]] = None,
+                 host: pulumi.Input[Optional[_builtins.str]] = None,
+                 insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):

@@ -26,9 +26,9 @@ class CognitoOidcConnectorArgs:
                  redirect_uri: pulumi.Input[_builtins.str],
                  region: pulumi.Input[_builtins.str],
                  user_pool_id: pulumi.Input[_builtins.str],
-                 extra_oidc: Optional[pulumi.Input[Mapping[str, Any]]] = None,
-                 scopes: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 user_name_source: Optional[pulumi.Input[_builtins.str]] = None):
+                 extra_oidc: pulumi.Input[Optional[Mapping[str, Any]]] = None,
+                 scopes: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 user_name_source: pulumi.Input[Optional[_builtins.str]] = None):
         """
         The set of arguments for constructing a CognitoOidcConnector resource.
 
@@ -143,38 +143,38 @@ class CognitoOidcConnectorArgs:
 
     @_builtins.property
     @pulumi.getter(name="extraOidc")
-    def extra_oidc(self) -> Optional[pulumi.Input[Mapping[str, Any]]]:
+    def extra_oidc(self) -> pulumi.Input[Optional[Mapping[str, Any]]]:
         """
         Additional OIDC configuration fields as key-value pairs for advanced scenarios.
         """
         return pulumi.get(self, "extra_oidc")
 
     @extra_oidc.setter
-    def extra_oidc(self, value: Optional[pulumi.Input[Mapping[str, Any]]]):
+    def extra_oidc(self, value: pulumi.Input[Optional[Mapping[str, Any]]]):
         pulumi.set(self, "extra_oidc", value)
 
     @_builtins.property
     @pulumi.getter
-    def scopes(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]:
+    def scopes(self) -> pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]:
         """
         OIDC scopes to request from Cognito. Defaults to ['openid', 'email', 'profile'] if not specified.
         """
         return pulumi.get(self, "scopes")
 
     @scopes.setter
-    def scopes(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]):
+    def scopes(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "scopes", value)
 
     @_builtins.property
     @pulumi.getter(name="userNameSource")
-    def user_name_source(self) -> Optional[pulumi.Input[_builtins.str]]:
+    def user_name_source(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
         Source for the username claim. Valid values: 'email' or 'sub' (subject).
         """
         return pulumi.get(self, "user_name_source")
 
     @user_name_source.setter
-    def user_name_source(self, value: Optional[pulumi.Input[_builtins.str]]):
+    def user_name_source(self, value: pulumi.Input[Optional[_builtins.str]]):
         pulumi.set(self, "user_name_source", value)
 
 
@@ -184,20 +184,19 @@ class CognitoOidcConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 extra_oidc: Optional[pulumi.Input[Mapping[str, Any]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 region: Optional[pulumi.Input[_builtins.str]] = None,
-                 scopes: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 user_name_source: Optional[pulumi.Input[_builtins.str]] = None,
-                 user_pool_id: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 extra_oidc: pulumi.Input[Optional[Mapping[str, Any]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 region: pulumi.Input[Optional[_builtins.str]] = None,
+                 scopes: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 user_name_source: pulumi.Input[Optional[_builtins.str]] = None,
+                 user_pool_id: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         """
         Manages an AWS Cognito user pool connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their AWS Cognito credentials.
-
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -221,7 +220,6 @@ class CognitoOidcConnector(pulumi.CustomResource):
         """
         Manages an AWS Cognito user pool connector in Dex using the generic OIDC connector (type: oidc). This connector allows users to authenticate using their AWS Cognito credentials.
 
-
         :param str resource_name: The name of the resource.
         :param CognitoOidcConnectorArgs args: The arguments to use to populate this resource's properties.
         :param pulumi.ResourceOptions opts: Options for the resource.
@@ -237,16 +235,16 @@ class CognitoOidcConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 client_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 client_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 connector_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 extra_oidc: Optional[pulumi.Input[Mapping[str, Any]]] = None,
-                 name: Optional[pulumi.Input[_builtins.str]] = None,
-                 redirect_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 region: Optional[pulumi.Input[_builtins.str]] = None,
-                 scopes: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
-                 user_name_source: Optional[pulumi.Input[_builtins.str]] = None,
-                 user_pool_id: Optional[pulumi.Input[_builtins.str]] = None,
+                 client_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 client_secret: pulumi.Input[Optional[_builtins.str]] = None,
+                 connector_id: pulumi.Input[Optional[_builtins.str]] = None,
+                 extra_oidc: pulumi.Input[Optional[Mapping[str, Any]]] = None,
+                 name: pulumi.Input[Optional[_builtins.str]] = None,
+                 redirect_uri: pulumi.Input[Optional[_builtins.str]] = None,
+                 region: pulumi.Input[Optional[_builtins.str]] = None,
+                 scopes: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
+                 user_name_source: pulumi.Input[Optional[_builtins.str]] = None,
+                 user_pool_id: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -315,6 +313,12 @@ class CognitoOidcConnector(pulumi.CustomResource):
         __props__.__dict__["user_name_source"] = None
         __props__.__dict__["user_pool_id"] = None
         return CognitoOidcConnector(resource_name, opts=opts, __props__=__props__)
+
+    @staticmethod
+    def exists(id: pulumi.Input[str],
+            opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
+        __props__: dict = {}
+        return pulumi.runtime.exists_resource(None, 'dex:resources:CognitoOidcConnector', id, __props__, opts or pulumi.ResourceOptions())
 
     @_builtins.property
     @pulumi.getter(name="clientId")

@@ -20,6 +20,16 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
         return new AzureMicrosoftConnector(name, undefined as any, { ...opts, id: id });
     }
 
+    /**
+     * Check whether an existing AzureMicrosoftConnector resource with the given ID exists.
+     *
+     * @param id The _unique_ provider ID of the resource to check.
+     * @param opts Optional settings to control the behavior of the CustomResource.
+     */
+    public static exists(id: pulumi.Input<string>, opts?: pulumi.CustomResourceOptions): pulumi.Output<boolean> {
+        return pulumi.runtime.existsResource("dex:resources:AzureMicrosoftConnector", id, {}, { ...opts }, undefined);
+    }
+
     /** @internal */
     public static readonly __pulumiType = 'dex:resources:AzureMicrosoftConnector';
 
@@ -134,7 +144,7 @@ export interface AzureMicrosoftConnectorArgs {
     /**
      * Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
      */
-    groups?: pulumi.Input<string>;
+    groups?: pulumi.Input<string | undefined>;
     /**
      * Human-readable name for the connector, displayed to users during login.
      */
