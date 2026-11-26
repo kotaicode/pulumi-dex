@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-26
+
 **Security: a `LocalConnector` with `enabled: false` has password login enabled.** Dex offers password
 login through every connector of type `local`, and the provider never sent `enabled` to Dex. A stack
 that declares a `LocalConnector` with `enabled: false` therefore lets users log in with their Dex
@@ -49,6 +51,18 @@ inside a cluster.
   `allowedGroups` must not be empty (Dex would treat that as no restriction) and needs a specific
   tenant ID or domain, because Dex ignores it for `common`, `organizations` and `consumers`.
   To migrate, replace `groups: "..."` with `allowedGroups: ["group-a", ...]`, or remove it.
+- **Changing a client's `secret` or `public` fails at preview.** Dex's `UpdateClient` cannot change
+  either. A new explicit `secret` was silently ignored, so a rotation never happened; a new `public`
+  value was recorded in state although Dex kept the old one, and every refresh brought the difference
+  back. The preview now explains that Dex cannot change them and how to rotate: create a client with
+  a new client ID, move its users to it, then remove the old client. An omitted, generated secret
+  stays unchanged and shows no change. A `public` value changed directly in Dex also stops the
+  preview after a refresh, instead of proposing an update that would not apply.
+- **Changing `clientId` or `connectorId` replaces the object.** Before, the preview proposed an
+  update that then failed with "cannot be changed". Now Pulumi creates the object with the new ID and
+  deletes the old one; the IDs differ, so creating first cannot collide. A replaced client without an
+  explicit `secret` gets a newly generated one. The schema marks `clientId` and every `connectorId` as
+  `replaceOnChanges`, so the generated SDKs request the replacement as well.
 - **Extension keys can no longer override typed connector settings.** `extraOidc`
   (`AzureOidcConnector`, `CognitoOidcConnector`) and `oidcConfig.extra` (generic `Connector`) were
   merged over the typed fields, so a key such as `clientID`, `issuer` or `redirectURI` silently
@@ -63,19 +77,14 @@ inside a cluster.
   in Dex always offers password login (see the security note above), so the only way to turn it off
   is to remove the resource. Refresh reports `enabled: true` for every existing local connector, which
   is what Dex does with it.
-- **Changing a client's `secret` or `public` fails at preview.** Dex's `UpdateClient` cannot change
-  either. A new explicit `secret` was silently ignored, so a rotation never happened; a new `public`
-  value was recorded in state although Dex kept the old one, and every refresh brought the difference
-  back. The preview now explains that Dex cannot change them and how to rotate: create a client with
-  a new client ID, move its users to it, then remove the old client. An omitted, generated secret
-  stays unchanged and shows no change. A `public` value changed directly in Dex also stops the
-  preview after a refresh, instead of proposing an update that would not apply.
-- **Changing `clientId` or `connectorId` replaces the object.** Before, the preview proposed an
-  update that then failed with "cannot be changed". Now Pulumi creates the object with the new ID and
-  deletes the old one; the IDs differ, so creating first cannot collide. A replaced client without an
-  explicit `secret` gets a newly generated one.
 
 ### Fixed
+- **Release binaries are built with Go 1.26.11 instead of 1.26.6.** The `go.mod` files named only
+  Go 1.26.6, so CI and releases built with it. `govulncheck` reports 12 standard library
+  vulnerabilities in 1.26.6 that the provider's code can reach, among them HTTP/2 server crashes and
+  memory exhaustion in `net/http` and missing distrust of compromised intermediate certificates in
+  `crypto/x509`. A `toolchain go1.26.11` line now sets the build version; the minimum Go version for
+  Go SDK users stays 1.26.6.
 - Connection failures caused by TLS are reported with their cause and fix instead of only "timed
   out": a Dex without TLS (set `plaintext: true`), a certificate the system does not trust (set
   `caCert`), a certificate that does not cover the host name, and a Dex that rejects the client
@@ -109,12 +118,6 @@ inside a cluster.
 - The README listed `DEX_*` environment variables that the provider never read. It now says that the
   provider reads no environment variables and shows how to pass settings through the program or
   Pulumi config.
-- **Release binaries are built with Go 1.26.11 instead of 1.26.6.** The `go.mod` files named only
-  Go 1.26.6, so CI and releases built with it. `govulncheck` reports 12 standard library
-  vulnerabilities in 1.26.6 that the provider's code can reach, among them HTTP/2 server crashes and
-  memory exhaustion in `net/http` and missing distrust of compromised intermediate certificates in
-  `crypto/x509`. A `toolchain go1.26.11` line now sets the build version; the minimum Go version for
-  Go SDK users stays 1.26.6.
 
 ### Changed
 - New `Security` workflow: `govulncheck` (pinned to v1.10.0) scans the provider and the Go SDK on
