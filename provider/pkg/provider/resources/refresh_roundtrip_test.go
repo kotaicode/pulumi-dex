@@ -11,7 +11,7 @@ import (
 )
 
 // =============================================================================
-// Create → refresh → preview round trip (DEX-009, slice 1)
+// Create → refresh → preview round trip
 //
 // Replays the engine's sequence through the provider protocol against the fake
 // Dex, which stores connector config verbatim like Dex v2.46.1:

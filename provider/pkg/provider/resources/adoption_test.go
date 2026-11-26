@@ -14,7 +14,7 @@ import (
 )
 
 // =============================================================================
-// Explicit adoption (DEX-004)
+// Existing objects are only taken over by explicit import
 //
 // Create must never take over an object that already exists in Dex: an equal ID
 // or even an identical configuration is not proof of ownership. It returns a

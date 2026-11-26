@@ -9,7 +9,7 @@ import (
 )
 
 // =============================================================================
-// Unreadable connector config in Dex (DEX-009 requirement 6)
+// Unreadable connector config in Dex
 //
 // Dex v2.46.1 only checks that a connector config is valid JSON, so its API
 // accepts a config that is not an object or holds a known field with the wrong

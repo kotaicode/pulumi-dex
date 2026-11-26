@@ -19,7 +19,7 @@ import (
 )
 
 // =============================================================================
-// RPC outcome tests against an in-process fake Dex gRPC server (DEX-006)
+// RPC outcome tests against an in-process fake Dex gRPC server
 // =============================================================================
 
 // fakeDex models the not-found semantics of Dex's API handlers as of v2.46.1

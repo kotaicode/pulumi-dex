@@ -12,7 +12,7 @@ import (
 )
 
 // =============================================================================
-// Client Create → refresh → preview round trip (DEX-030)
+// Client Create → refresh → preview round trip
 //
 // Replays the engine's sequence through the provider protocol against the fake
 // Dex: Check(program) → Create → Read(prior state and inputs) = refresh →
