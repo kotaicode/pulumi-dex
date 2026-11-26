@@ -13,6 +13,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go module caching uses `setup-go`'s built-in cache keyed on `provider/go.sum`; the
   duplicate `actions/cache` steps (and the "Restore cache failed" warning) are gone.
 
+### Security
+- **Opaque connector configuration is now a Pulumi secret.** `Connector.rawConfig`,
+  `OIDCConfig.extra` and the `extraOidc` maps of `AzureOidcConnector` and `CognitoOidcConnector`
+  can carry credentials, such as bind passwords or client assertions, but were stored in plaintext
+  in state and printed in preview and update output when given as plain values. They are now
+  marked secret in the schema and SDKs.
+- **Credential outputs are secret regardless of how they were supplied.** The provider now marks
+  every `clientSecret`, `Client.secret`, `rawConfig`, `extraOidc` and the generic connector's
+  whole `oidcConfig` output as secret itself. Before, it relied on the SDK having wrapped the input,
+  so values read back by `pulumi import` were stored in plaintext. Because the framework cannot mark
+  nested fields, `oidcConfig` is secret as a whole, and diffs show it as `[secret]`.
+- **Upgrading existing stacks:** run `pulumi up` once with the new provider and SDK. Connectors that
+  use the newly secret fields show a one-time `[secret] => [secret]` update, which resends the
+  unchanged configuration to Dex. `pulumi refresh` alone encrypts outputs but leaves earlier plaintext
+  inputs in state. Neither step removes plaintext from earlier checkpoints in your backend's history,
+  exported state files or CI logs. If those may have been exposed, rotate the affected credentials.
+- Still open: `pulumi import` stores the imported values in the resource's *inputs* in plaintext
+  (outputs are protected) and prints them in the generated program, until the next `pulumi up`.
+
 ### Fixed
 - **Updates no longer report success for objects deleted outside Pulumi.** Dex answers an
   update of a missing client or connector with a `not_found` flag rather than a gRPC error,

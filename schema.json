@@ -116,7 +116,8 @@
           "additionalProperties": {
             "$ref": "pulumi.json#/Any"
           },
-          "description": "Additional OIDC configuration fields as key-value pairs."
+          "description": "Additional OIDC configuration fields as key-value pairs.",
+          "secret": true
         },
         "insecureIssuer": {
           "type": "boolean",
@@ -324,7 +325,8 @@
           "additionalProperties": {
             "$ref": "pulumi.json#/Any"
           },
-          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios."
+          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios.",
+          "secret": true
         },
         "name": {
           "type": "string",
@@ -377,7 +379,8 @@
           "additionalProperties": {
             "$ref": "pulumi.json#/Any"
           },
-          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios."
+          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios.",
+          "secret": true
         },
         "name": {
           "type": "string",
@@ -524,7 +527,8 @@
           "additionalProperties": {
             "$ref": "pulumi.json#/Any"
           },
-          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios."
+          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios.",
+          "secret": true
         },
         "name": {
           "type": "string",
@@ -582,7 +586,8 @@
           "additionalProperties": {
             "$ref": "pulumi.json#/Any"
           },
-          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios."
+          "description": "Additional OIDC configuration fields as key-value pairs for advanced scenarios.",
+          "secret": true
         },
         "name": {
           "type": "string",
@@ -639,7 +644,8 @@
         },
         "rawConfig": {
           "type": "string",
-          "description": "Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig."
+          "description": "Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.",
+          "secret": true
         },
         "type": {
           "type": "string",
@@ -666,7 +672,8 @@
         },
         "rawConfig": {
           "type": "string",
-          "description": "Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig."
+          "description": "Raw JSON configuration for the connector. Use this for advanced configurations or connector types not directly supported. If provided, this takes precedence over OIDCConfig.",
+          "secret": true
         },
         "type": {
           "type": "string",

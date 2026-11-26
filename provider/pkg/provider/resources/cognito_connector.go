@@ -32,7 +32,7 @@ type CognitoOidcConnectorArgs struct {
 	RedirectUri    string         `pulumi:"redirectUri"`
 	Scopes         []string       `pulumi:"scopes,optional"`
 	UserNameSource *string        `pulumi:"userNameSource,optional"` // "email" | "sub"
-	ExtraOidc      map[string]any `pulumi:"extraOidc,optional"`
+	ExtraOidc      map[string]any `pulumi:"extraOidc,optional" provider:"secret"`
 }
 
 // CognitoOidcConnectorState defines outputs for CognitoOidcConnector.
@@ -65,6 +65,13 @@ func (c *CognitoOidcConnectorArgs) Annotate(a infer.Annotator) {
 // Annotate provides schema metadata for CognitoOidcConnectorState.
 func (c *CognitoOidcConnectorState) Annotate(a infer.Annotator) {
 	// CognitoOidcConnectorState embeds CognitoOidcConnectorArgs, so field descriptions are inherited
+}
+
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *CognitoOidcConnector) WireDependencies(f infer.FieldSelector, _ *CognitoOidcConnectorArgs, state *CognitoOidcConnectorState) {
+	f.OutputField(&state.ClientSecret).AlwaysSecret()
+	f.OutputField(&state.ExtraOidc).AlwaysSecret()
 }
 
 // Check validates inputs.

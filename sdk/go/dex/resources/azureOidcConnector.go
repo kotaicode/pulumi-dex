@@ -64,8 +64,12 @@ func NewAzureOidcConnector(ctx *pulumi.Context,
 	if args.ClientSecret != nil {
 		args.ClientSecret = pulumi.ToSecret(args.ClientSecret).(pulumi.StringInput)
 	}
+	if args.ExtraOidc != nil {
+		args.ExtraOidc = pulumi.ToSecret(args.ExtraOidc).(pulumi.MapInput)
+	}
 	secrets := pulumi.AdditionalSecretOutputs([]string{
 		"clientSecret",
+		"extraOidc",
 	})
 	opts = append(opts, secrets)
 	opts = internal.PkgResourceDefaultOpts(opts)

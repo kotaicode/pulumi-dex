@@ -30,8 +30,8 @@ type AzureOidcConnectorArgs struct {
 	ClientSecret   string         `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUri    string         `pulumi:"redirectUri"`
 	Scopes         []string       `pulumi:"scopes,optional"`
-	UserNameSource *string        `pulumi:"userNameSource,optional"` // "preferred_username" | "upn" | "email"
-	ExtraOidc      map[string]any `pulumi:"extraOidc,optional"`      // Additional OIDC config fields
+	UserNameSource *string        `pulumi:"userNameSource,optional"`              // "preferred_username" | "upn" | "email"
+	ExtraOidc      map[string]any `pulumi:"extraOidc,optional" provider:"secret"` // Additional OIDC config fields
 }
 
 // AzureOidcConnectorState defines outputs for AzureOidcConnector.
@@ -63,6 +63,13 @@ func (c *AzureOidcConnectorArgs) Annotate(a infer.Annotator) {
 // Annotate provides schema metadata for AzureOidcConnectorState.
 func (c *AzureOidcConnectorState) Annotate(a infer.Annotator) {
 	// AzureOidcConnectorState embeds AzureOidcConnectorArgs, so field descriptions are inherited
+}
+
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *AzureOidcConnector) WireDependencies(f infer.FieldSelector, _ *AzureOidcConnectorArgs, state *AzureOidcConnectorState) {
+	f.OutputField(&state.ClientSecret).AlwaysSecret()
+	f.OutputField(&state.ExtraOidc).AlwaysSecret()
 }
 
 // Check validates inputs before creation/update.
@@ -419,6 +426,12 @@ func (c *AzureMicrosoftConnectorArgs) Annotate(a infer.Annotator) {
 // Annotate provides schema metadata for AzureMicrosoftConnectorState.
 func (c *AzureMicrosoftConnectorState) Annotate(a infer.Annotator) {
 	// AzureMicrosoftConnectorState embeds AzureMicrosoftConnectorArgs, so field descriptions are inherited
+}
+
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *AzureMicrosoftConnector) WireDependencies(f infer.FieldSelector, _ *AzureMicrosoftConnectorArgs, state *AzureMicrosoftConnectorState) {
+	f.OutputField(&state.ClientSecret).AlwaysSecret()
 }
 
 // Check validates inputs.
