@@ -16,19 +16,23 @@ import (
 type AzureMicrosoftConnector struct {
 	pulumi.CustomResourceState
 
+	// Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+	AllowedGroups pulumi.StringArrayOutput `pulumi:"allowedGroups"`
 	// Azure AD application (client) ID.
 	ClientId pulumi.StringOutput `pulumi:"clientId"`
 	// Azure AD application client secret.
 	ClientSecret pulumi.StringOutput `pulumi:"clientSecret"`
 	// Unique identifier for the Azure Microsoft connector.
 	ConnectorId pulumi.StringOutput `pulumi:"connectorId"`
-	// Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+	// Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+	//
+	// Deprecated: groups is no longer supported; use allowedGroups to restrict login to members of groups.
 	Groups pulumi.StringPtrOutput `pulumi:"groups"`
 	// Human-readable name for the connector, displayed to users during login.
 	Name pulumi.StringOutput `pulumi:"name"`
 	// Redirect URI registered in Azure AD. Must match Dex's callback URL.
 	RedirectUri pulumi.StringOutput `pulumi:"redirectUri"`
-	// Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+	// Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
 	Tenant pulumi.StringOutput `pulumi:"tenant"`
 }
 
@@ -103,37 +107,45 @@ func AzureMicrosoftConnectorExists(ctx *pulumi.Context,
 }
 
 type azureMicrosoftConnectorArgs struct {
+	// Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+	AllowedGroups []string `pulumi:"allowedGroups"`
 	// Azure AD application (client) ID.
 	ClientId string `pulumi:"clientId"`
 	// Azure AD application client secret.
 	ClientSecret string `pulumi:"clientSecret"`
 	// Unique identifier for the Azure Microsoft connector.
 	ConnectorId string `pulumi:"connectorId"`
-	// Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+	// Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+	//
+	// Deprecated: groups is no longer supported; use allowedGroups to restrict login to members of groups.
 	Groups *string `pulumi:"groups"`
 	// Human-readable name for the connector, displayed to users during login.
 	Name string `pulumi:"name"`
 	// Redirect URI registered in Azure AD. Must match Dex's callback URL.
 	RedirectUri string `pulumi:"redirectUri"`
-	// Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+	// Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
 	Tenant string `pulumi:"tenant"`
 }
 
 // The set of arguments for constructing a AzureMicrosoftConnector resource.
 type AzureMicrosoftConnectorArgs struct {
+	// Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+	AllowedGroups pulumi.StringArrayInput
 	// Azure AD application (client) ID.
 	ClientId pulumi.StringInput
 	// Azure AD application client secret.
 	ClientSecret pulumi.StringInput
 	// Unique identifier for the Azure Microsoft connector.
 	ConnectorId pulumi.StringInput
-	// Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+	// Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+	//
+	// Deprecated: groups is no longer supported; use allowedGroups to restrict login to members of groups.
 	Groups pulumi.StringPtrInput
 	// Human-readable name for the connector, displayed to users during login.
 	Name pulumi.StringInput
 	// Redirect URI registered in Azure AD. Must match Dex's callback URL.
 	RedirectUri pulumi.StringInput
-	// Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+	// Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
 	Tenant pulumi.StringInput
 }
 
@@ -224,6 +236,11 @@ func (o AzureMicrosoftConnectorOutput) ToAzureMicrosoftConnectorOutputWithContex
 	return o
 }
 
+// Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+func (o AzureMicrosoftConnectorOutput) AllowedGroups() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringArrayOutput { return v.AllowedGroups }).(pulumi.StringArrayOutput)
+}
+
 // Azure AD application (client) ID.
 func (o AzureMicrosoftConnectorOutput) ClientId() pulumi.StringOutput {
 	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringOutput { return v.ClientId }).(pulumi.StringOutput)
@@ -239,7 +256,9 @@ func (o AzureMicrosoftConnectorOutput) ConnectorId() pulumi.StringOutput {
 	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringOutput { return v.ConnectorId }).(pulumi.StringOutput)
 }
 
-// Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+// Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+//
+// Deprecated: groups is no longer supported; use allowedGroups to restrict login to members of groups.
 func (o AzureMicrosoftConnectorOutput) Groups() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringPtrOutput { return v.Groups }).(pulumi.StringPtrOutput)
 }
@@ -254,7 +273,7 @@ func (o AzureMicrosoftConnectorOutput) RedirectUri() pulumi.StringOutput {
 	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringOutput { return v.RedirectUri }).(pulumi.StringOutput)
 }
 
-// Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+// Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
 func (o AzureMicrosoftConnectorOutput) Tenant() pulumi.StringOutput {
 	return o.ApplyT(func(v *AzureMicrosoftConnector) pulumi.StringOutput { return v.Tenant }).(pulumi.StringOutput)
 }

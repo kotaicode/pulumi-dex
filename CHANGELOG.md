@@ -29,6 +29,14 @@ inside a cluster.
   `insecureSkipVerify: true` still means TLS without certificate verification, never plaintext.
   Documentation that recommended `insecureSkipVerify: true` for the local Dex without TLS was wrong
   (that combination never connected) and now uses `plaintext: true`.
+- **`AzureMicrosoftConnector.groups` is replaced by `allowedGroups`.** `groups` was a string described
+  as a group claim name, but Dex reads its `groups` setting as a list of groups whose members may log
+  in. Dex v2.46.1 cannot read the string, so a connector with `groups` failed to initialize and login
+  through it failed. The new `allowedGroups` list is written to Dex's `groups`. A program that still
+  sets `groups` fails at preview with a migration message; refresh of existing stacks keeps working.
+  `allowedGroups` must not be empty (Dex would treat that as no restriction) and needs a specific
+  tenant ID or domain, because Dex ignores it for `common`, `organizations` and `consumers`.
+  To migrate, replace `groups: "..."` with `allowedGroups: ["group-a", ...]`, or remove it.
 
 ### Fixed
 - Connection failures caused by TLS are reported with their cause and fix instead of only "timed
@@ -40,6 +48,13 @@ inside a cluster.
   Dex with guessed settings. An unknown `host` failed with "host is required", and an unknown
   `caCert` was treated as absent, so the provider connected with the wrong settings. The provider now
   connects only once all configuration values are known.
+- **A login restriction set in Dex for an `AzureMicrosoftConnector` is no longer removed silently.**
+  Refresh ignored a `groups` list stored in Dex, and the next update of the connector, for example a
+  name change, wrote its config without it, so every user of the tenant could log in again. Refresh
+  now reads the list into `allowedGroups`, and a program without it shows the removal in the preview.
+- `AzureMicrosoftConnector.tenant` accepts every form Dex documents: `common`, `organizations`,
+  `consumers`, a tenant ID or a tenant domain such as `contoso.onmicrosoft.com`. Before, only
+  `common`, `organizations` and tenant IDs passed validation.
 - The README listed `DEX_*` environment variables that the provider never read. It now says that the
   provider reads no environment variables and shows how to pass settings through the program or
   Pulumi config.

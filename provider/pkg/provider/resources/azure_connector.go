@@ -11,6 +11,7 @@ import (
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -390,13 +391,17 @@ func (c *AzureOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest
 
 // AzureMicrosoftConnectorArgs defines inputs for AzureMicrosoftConnector using Microsoft connector.
 type AzureMicrosoftConnectorArgs struct {
-	ConnectorId  string  `pulumi:"connectorId"`
-	Name         string  `pulumi:"name"`
-	Tenant       string  `pulumi:"tenant"` // "common", "organizations", or tenant ID
-	ClientId     string  `pulumi:"clientId"`
-	ClientSecret string  `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
-	RedirectUri  string  `pulumi:"redirectUri"`
-	Groups       *string `pulumi:"groups,optional"` // Group claim name, e.g., "groups"
+	ConnectorId  string `pulumi:"connectorId"`
+	Name         string `pulumi:"name"`
+	Tenant       string `pulumi:"tenant"` // "common", "organizations", or tenant ID
+	ClientId     string `pulumi:"clientId"`
+	ClientSecret string `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
+	RedirectUri  string `pulumi:"redirectUri"`
+	// Groups is the removed string form of Dex's "groups" list. It stays in the
+	// schema so that programs using it get a migration error instead of an
+	// unknown-property error.
+	Groups        *string  `pulumi:"groups,optional"`
+	AllowedGroups []string `pulumi:"allowedGroups,optional"`
 }
 
 // AzureMicrosoftConnectorState defines outputs for AzureMicrosoftConnector.
@@ -416,11 +421,18 @@ func (c *AzureMicrosoftConnector) Annotate(a infer.Annotator) {
 func (c *AzureMicrosoftConnectorArgs) Annotate(a infer.Annotator) {
 	a.Describe(&c.ConnectorId, "Unique identifier for the Azure Microsoft connector.")
 	a.Describe(&c.Name, "Human-readable name for the connector, displayed to users during login.")
-	a.Describe(&c.Tenant, "Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).")
+	a.Describe(&c.Tenant, "Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), "+
+		"'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), "+
+		"or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.")
 	a.Describe(&c.ClientId, "Azure AD application (client) ID.")
 	a.Describe(&c.ClientSecret, "Azure AD application client secret.")
 	a.Describe(&c.RedirectUri, "Redirect URI registered in Azure AD. Must match Dex's callback URL.")
-	a.Describe(&c.Groups, "Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.")
+	a.Describe(&c.AllowedGroups, "Groups whose members may log in through this connector (Dex's groups setting). "+
+		"Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. "+
+		"Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.")
+	a.Describe(&c.Groups, "Removed. This string was written to Dex's groups setting, which is a list, so Dex "+
+		"could not initialize the connector. Use allowedGroups.")
+	a.Deprecate(&c.Groups, "groups is no longer supported; use allowedGroups to restrict login to members of groups.")
 }
 
 // Annotate provides schema metadata for AzureMicrosoftConnectorState.
@@ -441,17 +453,7 @@ func (c *AzureMicrosoftConnector) Check(ctx context.Context, req infer.CheckRequ
 		return infer.CheckResponse[AzureMicrosoftConnectorArgs]{Failures: failures}, err
 	}
 
-	// Validate tenant format
-	if args.Tenant != "" && args.Tenant != "common" && args.Tenant != "organizations" {
-		// Check if it's a UUID
-		uuidRegex := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
-		if !uuidRegex.MatchString(strings.ToLower(args.Tenant)) {
-			failures = append(failures, p.CheckFailure{
-				Property: "tenant",
-				Reason:   "must be \"common\", \"organizations\", or a valid UUID",
-			})
-		}
-	}
+	failures = append(failures, checkMicrosoftGroups(req.NewInputs, args)...)
 
 	return infer.CheckResponse[AzureMicrosoftConnectorArgs]{
 		Inputs:   args,
@@ -488,8 +490,8 @@ func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRe
 		"tenant":       args.Tenant,
 	}
 
-	if args.Groups != nil {
-		microsoftConfig["groups"] = *args.Groups
+	if len(args.AllowedGroups) > 0 {
+		microsoftConfig["groups"] = args.AllowedGroups
 	}
 
 	configBytes, err := json.Marshal(microsoftConfig)
@@ -571,10 +573,15 @@ func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadReques
 		ClientId:     conf.str("clientID"),
 		ClientSecret: conf.str("clientSecret"),
 		RedirectUri:  conf.str("redirectURI"),
-		// Dex's Microsoft connector stores groups as an array while this resource
-		// models a string, so groups is read leniently rather than failing on
-		// configs that are valid for Dex.
-		Groups: GetStringPtr(conf.values, "groups"),
+	}
+	// A string is what earlier versions of this provider wrote; read it back as
+	// the legacy input so refresh keeps working and preview reports the
+	// migration. A list is a restriction and must never be dropped, or the next
+	// update would remove it. Dex treats an empty list like no list.
+	if legacy, ok := conf.values["groups"].(string); ok {
+		args.Groups = &legacy
+	} else if groups := conf.strList("groups"); len(groups) > 0 {
+		args.AllowedGroups = groups
 	}
 	if err := conf.Err(); err != nil {
 		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, unreadableConfigError("azure-microsoft-connector", found.Id, err)
@@ -626,8 +633,8 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 		"tenant":       args.Tenant,
 	}
 
-	if args.Groups != nil {
-		microsoftConfig["groups"] = *args.Groups
+	if len(args.AllowedGroups) > 0 {
+		microsoftConfig["groups"] = args.AllowedGroups
 	}
 
 	configBytes, err := json.Marshal(microsoftConfig)
@@ -688,4 +695,52 @@ func (c *AzureMicrosoftConnector) Delete(ctx context.Context, req infer.DeleteRe
 	}
 
 	return infer.DeleteResponse{}, nil
+}
+
+// microsoftTenant matches the tenant forms Dex documents for its Microsoft
+// connector besides common, organizations and consumers: a tenant ID or a
+// verified domain.
+var microsoftTenant = regexp.MustCompile(`^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+)$`)
+
+// multiTenant lists the tenants for which Dex ignores the groups restriction.
+var multiTenant = map[string]bool{"common": true, "organizations": true, "consumers": true}
+
+// checkMicrosoftGroups validates tenant, allowedGroups and the removed groups
+// string. Unknown values are not judged, so previews with values from other
+// resources pass.
+func checkMicrosoftGroups(inputs property.Map, args AzureMicrosoftConnectorArgs) []p.CheckFailure {
+	known := func(key string) (property.Value, bool) {
+		v, ok := inputs.GetOk(key)
+		return v, ok && !v.IsComputed() && !v.IsNull()
+	}
+	var failures []p.CheckFailure
+
+	tenantValue, tenantKnown := known("tenant")
+	tenant := strings.ToLower(args.Tenant)
+	if tenantKnown && tenant != "" && !multiTenant[tenant] && !microsoftTenant.MatchString(tenant) {
+		failures = append(failures, p.CheckFailure{Property: "tenant",
+			Reason: "must be \"common\", \"organizations\", \"consumers\", a tenant ID (UUID) or a tenant domain such as contoso.onmicrosoft.com"})
+	}
+
+	if _, ok := known("groups"); ok {
+		failures = append(failures, p.CheckFailure{Property: "groups",
+			Reason: "groups is no longer supported. It was written to Dex as a string, but Dex reads groups as a list, " +
+				"so Dex failed to initialize this connector and no user could log in through it. " +
+				"To restrict login to members of groups, set allowedGroups to a list of group names " +
+				"(this requires a specific tenant ID or domain); otherwise remove groups"})
+	}
+
+	if v, ok := known("allowedGroups"); ok && v.IsArray() {
+		switch {
+		case v.AsArray().Len() == 0:
+			failures = append(failures, p.CheckFailure{Property: "allowedGroups",
+				Reason: "allowedGroups is empty. Dex treats an empty list like no list, so every user of the tenant could log in; " +
+					"to allow every user, omit allowedGroups, otherwise list at least one group"})
+		case tenantKnown && tenantValue.IsString() && multiTenant[tenant]:
+			failures = append(failures, p.CheckFailure{Property: "allowedGroups",
+				Reason: fmt.Sprintf("Dex ignores allowedGroups for tenant %q and lets every user log in; "+
+					"set tenant to a tenant ID or domain to restrict login to these groups", args.Tenant)})
+		}
+	}
+	return failures
 }

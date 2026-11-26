@@ -8,20 +8,6 @@ import (
 )
 
 // ============================================================================
-// Helper functions for connector implementations
-// ============================================================================
-
-// GetStringPtr extracts a string value from a map, returning nil if not found or empty.
-func GetStringPtr(m map[string]any, key string) *string {
-	if v, ok := m[key]; ok {
-		if str, ok := v.(string); ok && str != "" {
-			return &str
-		}
-	}
-	return nil
-}
-
-// ============================================================================
 // Refresh round-trip helpers
 // ============================================================================
 

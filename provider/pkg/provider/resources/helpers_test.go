@@ -4,41 +4,6 @@ import (
 	"testing"
 )
 
-func TestGetStringPtr(t *testing.T) {
-	tests := []struct {
-		name    string
-		m       map[string]any
-		key     string
-		wantNil bool
-		wantVal string
-	}{
-		{"missing key", map[string]any{}, "x", true, ""},
-		{"nil map", nil, "x", true, ""},
-		{"wrong type", map[string]any{"x": 42}, "x", true, ""},
-		{"present", map[string]any{"x": "hello"}, "x", false, "hello"},
-		{"empty string returns nil", map[string]any{"x": ""}, "x", true, ""},
-		{"other key", map[string]any{"a": "b"}, "x", true, ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := GetStringPtr(tt.m, tt.key)
-			if tt.wantNil {
-				if got != nil {
-					t.Errorf("GetStringPtr(%v, %q) = %v, want nil", tt.m, tt.key, got)
-				}
-				return
-			}
-			if got == nil || *got != tt.wantVal {
-				var v string
-				if got != nil {
-					v = *got
-				}
-				t.Errorf("GetStringPtr(%v, %q) = %q, want %q", tt.m, tt.key, v, tt.wantVal)
-			}
-		})
-	}
-}
-
 func TestJSONEqual(t *testing.T) {
 	cases := []struct {
 		a, b string

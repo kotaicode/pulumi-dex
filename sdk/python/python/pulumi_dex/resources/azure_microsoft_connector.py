@@ -25,6 +25,7 @@ class AzureMicrosoftConnectorArgs:
                  name: pulumi.Input[_builtins.str],
                  redirect_uri: pulumi.Input[_builtins.str],
                  tenant: pulumi.Input[_builtins.str],
+                 allowed_groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  groups: pulumi.Input[Optional[_builtins.str]] = None):
         """
         The set of arguments for constructing a AzureMicrosoftConnector resource.
@@ -34,8 +35,9 @@ class AzureMicrosoftConnectorArgs:
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Azure Microsoft connector.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
         :param pulumi.Input[_builtins.str] redirect_uri: Redirect URI registered in Azure AD. Must match Dex's callback URL.
-        :param pulumi.Input[_builtins.str] tenant: Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
-        :param pulumi.Input[_builtins.str] groups: Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+        :param pulumi.Input[_builtins.str] tenant: Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
+        :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] allowed_groups: Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+        :param pulumi.Input[_builtins.str] groups: Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
         """
         pulumi.set(__self__, "client_id", client_id)
         pulumi.set(__self__, "client_secret", client_secret)
@@ -43,6 +45,11 @@ class AzureMicrosoftConnectorArgs:
         pulumi.set(__self__, "name", name)
         pulumi.set(__self__, "redirect_uri", redirect_uri)
         pulumi.set(__self__, "tenant", tenant)
+        if allowed_groups is not None:
+            pulumi.set(__self__, "allowed_groups", allowed_groups)
+        if groups is not None:
+            warnings.warn("""groups is no longer supported; use allowedGroups to restrict login to members of groups.""", DeprecationWarning)
+            pulumi.log.warn("""groups is deprecated: groups is no longer supported; use allowedGroups to restrict login to members of groups.""")
         if groups is not None:
             pulumi.set(__self__, "groups", groups)
 
@@ -110,7 +117,7 @@ class AzureMicrosoftConnectorArgs:
     @pulumi.getter
     def tenant(self) -> pulumi.Input[_builtins.str]:
         """
-        Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+        Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
         """
         return pulumi.get(self, "tenant")
 
@@ -119,10 +126,23 @@ class AzureMicrosoftConnectorArgs:
         pulumi.set(self, "tenant", value)
 
     @_builtins.property
+    @pulumi.getter(name="allowedGroups")
+    def allowed_groups(self) -> pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]:
+        """
+        Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+        """
+        return pulumi.get(self, "allowed_groups")
+
+    @allowed_groups.setter
+    def allowed_groups(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
+        pulumi.set(self, "allowed_groups", value)
+
+    @_builtins.property
     @pulumi.getter
+    @_utilities.deprecated("""groups is no longer supported; use allowedGroups to restrict login to members of groups.""")
     def groups(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
-        Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+        Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
         """
         return pulumi.get(self, "groups")
 
@@ -137,6 +157,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 allowed_groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  client_id: pulumi.Input[Optional[_builtins.str]] = None,
                  client_secret: pulumi.Input[Optional[_builtins.str]] = None,
                  connector_id: pulumi.Input[Optional[_builtins.str]] = None,
@@ -150,13 +171,14 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
+        :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] allowed_groups: Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
         :param pulumi.Input[_builtins.str] client_id: Azure AD application (client) ID.
         :param pulumi.Input[_builtins.str] client_secret: Azure AD application client secret.
         :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the Azure Microsoft connector.
-        :param pulumi.Input[_builtins.str] groups: Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+        :param pulumi.Input[_builtins.str] groups: Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
         :param pulumi.Input[_builtins.str] redirect_uri: Redirect URI registered in Azure AD. Must match Dex's callback URL.
-        :param pulumi.Input[_builtins.str] tenant: Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+        :param pulumi.Input[_builtins.str] tenant: Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
         """
         ...
     @overload
@@ -182,6 +204,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 allowed_groups: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  client_id: pulumi.Input[Optional[_builtins.str]] = None,
                  client_secret: pulumi.Input[Optional[_builtins.str]] = None,
                  connector_id: pulumi.Input[Optional[_builtins.str]] = None,
@@ -198,6 +221,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
             __props__ = AzureMicrosoftConnectorArgs.__new__(AzureMicrosoftConnectorArgs)
 
+            __props__.__dict__["allowed_groups"] = allowed_groups
             if client_id is None and not opts.urn:
                 raise TypeError("Missing required property 'client_id'")
             __props__.__dict__["client_id"] = client_id
@@ -241,6 +265,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
 
         __props__ = AzureMicrosoftConnectorArgs.__new__(AzureMicrosoftConnectorArgs)
 
+        __props__.__dict__["allowed_groups"] = None
         __props__.__dict__["client_id"] = None
         __props__.__dict__["client_secret"] = None
         __props__.__dict__["connector_id"] = None
@@ -255,6 +280,14 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
             opts: Optional[pulumi.ResourceOptions] = None) -> pulumi.Output[bool]:
         __props__: dict = {}
         return pulumi.runtime.exists_resource(None, 'dex:resources:AzureMicrosoftConnector', id, __props__, opts or pulumi.ResourceOptions())
+
+    @_builtins.property
+    @pulumi.getter(name="allowedGroups")
+    def allowed_groups(self) -> pulumi.Output[Optional[Sequence[_builtins.str]]]:
+        """
+        Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+        """
+        return pulumi.get(self, "allowed_groups")
 
     @_builtins.property
     @pulumi.getter(name="clientId")
@@ -282,9 +315,10 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
 
     @_builtins.property
     @pulumi.getter
+    @_utilities.deprecated("""groups is no longer supported; use allowedGroups to restrict login to members of groups.""")
     def groups(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+        Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
         """
         return pulumi.get(self, "groups")
 
@@ -308,7 +342,7 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
     @pulumi.getter
     def tenant(self) -> pulumi.Output[_builtins.str]:
         """
-        Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+        Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
         """
         return pulumi.get(self, "tenant")
 
