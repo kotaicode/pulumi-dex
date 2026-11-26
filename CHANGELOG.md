@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-26
+
+**Before upgrading, check whether more than one stack manages the same Dex object.** Earlier
+versions silently took over an existing client or connector when a second stack created one with
+the same ID, so several stacks can hold the same object. Destroying any of them deletes the object
+in Dex for all of them. In each stack, list the Dex objects it manages:
+
+```bash
+pulumi stack export | jq -r '.deployment.resources[] | select(.type | startswith("dex:resources:")) | (if .type == "dex:resources:Client" then "client " else "connector " end) + .id'
+```
+
+If a line appears in more than one stack, keep the resource in one stack only. In each of the
+others, run `pulumi state delete <urn>` (`pulumi stack --show-urns` lists the URNs). This removes
+the resource from that stack's state without deleting it in Dex.
+
 ### Breaking
 - **Creating a resource whose ID already exists in Dex now fails instead of taking over the
   object.** `Client` and the generic `Connector` silently adopted an existing client or connector
@@ -24,19 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A create that times out, is canceled or loses its connection now reports that the outcome is
   unknown and how to check and import the object. Creates are never retried automatically.
 
-Upgrade steps:
-1. **Before upgrading, check for objects that more than one stack manages.** Earlier versions could
-   have adopted the same client or connector into several stacks; destroying any of them deletes the
-   object for all. List the IDs in each stack, for example
-   `pulumi stack export | jq -r '.deployment.resources[] | select(.type | startswith("dex:")) | .id'`,
-   and compare across stacks. Keep each ID in one stack only. In the others, run
-   `pulumi state delete <urn>`, which forgets the resource without deleting it in Dex.
-2. Resources already in a stack's state keep working after the upgrade: refresh, update and delete
+Upgrade steps, after the check at the top of this section:
+1. Resources already in a stack's state keep working after the upgrade: refresh, update and delete
    behave as before.
-3. If `pulumi up` now fails with "already exists", either run the `pulumi import` command from the
+2. If `pulumi up` now fails with "already exists", either run the `pulumi import` command from the
    error and then `pulumi up` again, or choose a different ID. Programs that relied on recreating
    their stack against an existing Dex need this step once.
-4. If refresh now reports that a connector "has type X, not Y", import it with the resource for its
+3. If refresh now reports that a connector "has type X, not Y", import it with the resource for its
    actual type, or with `dex:resources:Connector`.
 
 ### Fixed
