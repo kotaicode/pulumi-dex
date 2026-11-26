@@ -245,44 +245,32 @@ func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHub
 		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, nil
 	}
 
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, unreadableConfigError("github-connector", found.Id, err)
 	}
 
-	// Parse orgs array
 	var orgs []GitHubOrg
-	if orgsVal, ok := configMap["orgs"].([]any); ok {
-		for _, o := range orgsVal {
-			if orgMap, ok := o.(map[string]any); ok {
-				org := GitHubOrg{
-					Name: GetString(orgMap, "name"),
-				}
-				if teamsVal, ok := orgMap["teams"].([]any); ok {
-					for _, t := range teamsVal {
-						if teamStr, ok := t.(string); ok {
-							org.Teams = append(org.Teams, teamStr)
-						}
-					}
-				}
-				orgs = append(orgs, org)
-			}
-		}
+	for _, org := range conf.objects("orgs") {
+		orgs = append(orgs, GitHubOrg{Name: org.str("name"), Teams: org.strList("teams")})
 	}
 
 	args := GitHubConnectorArgs{
 		ConnectorId:          found.Id,
 		Name:                 found.Name,
-		ClientId:             GetString(configMap, "clientID"),
-		ClientSecret:         GetString(configMap, "clientSecret"),
-		RedirectUri:          GetString(configMap, "redirectURI"),
+		ClientId:             conf.str("clientID"),
+		ClientSecret:         conf.str("clientSecret"),
+		RedirectUri:          conf.str("redirectURI"),
 		Orgs:                 orgs,
-		LoadAllGroups:        GetBoolPtr(configMap, "loadAllGroups"),
-		TeamNameField:        GetStringPtr(configMap, "teamNameField"),
-		UseLoginAsID:         GetBoolPtr(configMap, "useLoginAsID"),
-		PreferredEmailDomain: GetStringPtr(configMap, "preferredEmailDomain"),
-		HostName:             GetStringPtr(configMap, "hostName"),
-		RootCA:               GetStringPtr(configMap, "rootCA"),
+		LoadAllGroups:        conf.boolPtr("loadAllGroups"),
+		TeamNameField:        conf.strPtr("teamNameField"),
+		UseLoginAsID:         conf.boolPtr("useLoginAsID"),
+		PreferredEmailDomain: conf.strPtr("preferredEmailDomain"),
+		HostName:             conf.strPtr("hostName"),
+		RootCA:               conf.strPtr("rootCA"),
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, unreadableConfigError("github-connector", found.Id, err)
 	}
 
 	state := GitHubConnectorState{
