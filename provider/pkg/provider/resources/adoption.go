@@ -45,8 +45,8 @@ func (t createTarget) importCommand() string {
 
 // alreadyExists reports that the ID is taken. The same ID, or even an identical
 // configuration, is no proof that this stack owns the object, so Create never
-// takes it over (DEX-004): another stack could otherwise destroy it. Taking over
-// an object requires an explicit import.
+// takes it over: another stack could otherwise destroy it. Taking over an
+// object requires an explicit import.
 func (t createTarget) alreadyExists() error {
 	return provider.WrapError("create", t.kind, t.id, fmt.Errorf(
 		"a %s with this ID already exists in Dex, and Pulumi does not take over existing objects; "+

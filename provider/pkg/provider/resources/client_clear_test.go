@@ -9,7 +9,7 @@ import (
 )
 
 // =============================================================================
-// Client field clearing (DEX-029, fail-loud)
+// Client field clearing fails loudly
 //
 // Dex's UpdateClient ignores an empty name/logoUrl and empty redirectUris/
 // trustedPeers lists (verified against Dex v2.46.1), so a removal would be

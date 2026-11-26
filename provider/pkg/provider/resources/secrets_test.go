@@ -11,7 +11,7 @@ import (
 )
 
 // =============================================================================
-// Secret handling (DEX-003)
+// Secret handling
 // =============================================================================
 
 // TestSecretPolicy_schema pins the secrecy policy for every credential-capable

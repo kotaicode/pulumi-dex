@@ -572,8 +572,8 @@ func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadReques
 		ClientSecret: conf.str("clientSecret"),
 		RedirectUri:  conf.str("redirectURI"),
 		// Dex's Microsoft connector stores groups as an array while this resource
-		// models a string (DEX-007), so groups is read leniently rather than failing
-		// on configs that are valid for Dex.
+		// models a string, so groups is read leniently rather than failing on
+		// configs that are valid for Dex.
 		Groups: GetStringPtr(conf.values, "groups"),
 	}
 	if err := conf.Err(); err != nil {

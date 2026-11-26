@@ -22,7 +22,7 @@ func GetStringPtr(m map[string]any, key string) *string {
 }
 
 // ============================================================================
-// Refresh round-trip helpers (DEX-009)
+// Refresh round-trip helpers
 // ============================================================================
 
 // typedOIDCConfigKeys are the Dex OIDC config keys that AzureOidcConnector and
