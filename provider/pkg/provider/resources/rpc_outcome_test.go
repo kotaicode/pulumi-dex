@@ -58,6 +58,22 @@ func (f *fakeDex) GetClient(_ context.Context, req *api.GetClientReq) (*api.GetC
 	return &api.GetClientResp{Client: c}, nil
 }
 
+// CreateClient stores the client as sent, as Dex's storage does.
+func (f *fakeDex) CreateClient(_ context.Context, req *api.CreateClientReq) (*api.CreateClientResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c := req.GetClient()
+	if _, ok := f.clients[c.GetId()]; ok {
+		return &api.CreateClientResp{AlreadyExists: true}, nil
+	}
+	f.clients[c.GetId()] = &api.Client{
+		Id: c.GetId(), Secret: c.GetSecret(), Name: c.GetName(), LogoUrl: c.GetLogoUrl(), Public: c.GetPublic(),
+		RedirectUris: append([]string(nil), c.GetRedirectUris()...),
+		TrustedPeers: append([]string(nil), c.GetTrustedPeers()...),
+	}
+	return &api.CreateClientResp{Client: c}, nil
+}
+
 func (f *fakeDex) UpdateClient(_ context.Context, req *api.UpdateClientReq) (*api.UpdateClientResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

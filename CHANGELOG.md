@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Changes made directly in Dex are still reported. Credentials stay secret through these conversions.
   `pulumi import` is unchanged: an imported `oidc` connector is still represented as `oidcConfig`.
+- **`pulumi refresh` no longer creates spurious changes for `Client` resources.** A client without
+  `public` came back as `public: false`, and one with `logoUrl: ""` came back without `logoUrl`.
+  The next preview then proposed an update although nothing had changed. Refresh now reports these
+  values the way the program set them. Changes made directly in Dex, such as making a client public
+  or adding a trusted peer, are still reported.
 
 ## [0.9.0] - 2026-11-26
 
