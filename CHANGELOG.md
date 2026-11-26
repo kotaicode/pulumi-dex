@@ -53,6 +53,11 @@ Upgrade steps:
   be represented as `oidcConfig`, instead of silently dropping a known field with the wrong type.
   The stored config is kept verbatim and stays secret.
 
+### Changed
+- GitHub release notes now start with the release's section from this changelog, above the
+  installation instructions and the generated list of pull requests. A release whose tag has no
+  changelog section stops before anything is published.
+
 ## [0.9.1] - 2026-11-26
 
 ### Fixed
