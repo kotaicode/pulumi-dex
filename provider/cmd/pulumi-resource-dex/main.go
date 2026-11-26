@@ -56,7 +56,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to build dex provider: %v", err)
 	}
-	prov = provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(prov))
+	prov = provider.WithTypedConfigValues(provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(prov)))
 
 	if err := prov.Run(context.Background(), providerName, provider.Version); err != nil {
 		log.Fatalf("provider run failed: %v", err)
