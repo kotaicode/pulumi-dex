@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-26
+
 ### Changed
 - **Updating a `Client` to remove `logoUrl`, `trustedPeers`, `redirectUris` or `name` now fails.**
   Dex's `UpdateClient` API ignores empty values, so the update reported success and Pulumi recorded the
