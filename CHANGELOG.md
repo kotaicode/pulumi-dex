@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `make generate-schema` and `make generate-sdks` fail when any required step fails. Before, a
+  failed code generation or TypeScript export fix only printed a warning and still reported
+  success; a failed Go generation even deleted the Go SDK, and a failed schema generation left an
+  empty `schema.json`. `make generate-sdks` now always regenerates `schema.json` from the freshly
+  built provider first, so SDKs are never generated from a stale schema.
+- The Pulumi CLI used for code generation is pinned in `.pulumi.version` (3.278.0) for CI, the
+  release workflow and the Makefile, which warns when the local CLI differs. CI fails when the
+  committed `schema.json` or `sdk/` differ from freshly generated output.
+
 ## [0.10.0] - 2026-11-26
 
 **Before upgrading, check whether more than one stack manages the same Dex object.** Earlier

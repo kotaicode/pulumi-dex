@@ -134,15 +134,28 @@ jobs:
 
       - name: Install Pulumi CLI
         uses: pulumi/actions@v7
+        with:
+          pulumi-version-file: .pulumi.version
 
       - name: Install dependencies
         run: cd provider && go mod download
 
-      - name: Build provider
-        run: make build
-
-      - name: Generate SDKs
+      - name: Generate schema and SDKs
         run: make generate-sdks
+
+      # The committed schema and SDKs must be exactly what the generator produces
+      # from this commit. No files are excluded: two consecutive generations with
+      # the pinned CLI are identical.
+      - name: Check that schema.json and sdk/ are up to date
+        run: |
+          drift=$(git status --porcelain -- schema.json sdk/)
+          if [ -n "$drift" ]; then
+            echo "::error::schema.json or sdk/ differs from the generated output. Run make generate-sdks with Pulumi CLI $(cat .pulumi.version) and commit the result."
+            echo "$drift"
+            git diff --stat -- schema.json sdk/
+            exit 1
+          fi
+          echo "✓ schema.json and sdk/ match the generated output"
 
       - name: Test TypeScript SDK
         run: |

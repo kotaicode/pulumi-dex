@@ -205,9 +205,9 @@ To build, generate SDKs, and test against a local Dex instance:
 1. **Build the provider and generate schema/SDKs** (from repo root):
    ```bash
    make build
-   make generate-schema   # writes schema.json from the built binary (needs Pulumi CLI)
-   make generate-sdks     # generates TypeScript, Go, and Python SDKs from schema.json
+   make generate-sdks     # builds, writes schema.json from the binary, then generates the TypeScript, Go and Python SDKs
    ```
+   Generation needs the Pulumi CLI version in `.pulumi.version`; with another version `make` prints a warning, and CI fails because the generated code may differ. Any failed step makes `make` fail. CI regenerates schema and SDKs and fails if the committed files differ, so commit the regenerated `schema.json` and `sdk/` together with provider changes.
 
 2. **Install the provider so Pulumi can find it**:
    ```bash
