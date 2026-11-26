@@ -37,6 +37,21 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
+      # The tag's CHANGELOG section opens the release notes. Extract it before
+      # anything is published (the Go SDK tag, the GitHub release, npm, PyPI),
+      # so a missing section stops the release instead of shipping without notes.
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        run: |
+          notes=$(scripts/changelog-section.sh "${{ steps.version.outputs.version }}")
+          delimiter="CHANGELOG_$(openssl rand -hex 16)"
+          {
+            echo "notes<<$delimiter"
+            echo "$notes"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+          echo "$notes"
+
       # The provider binary reports provider.Version, and that value becomes the
       # schema version and therefore the plugin version stamped into every SDK
       # (package.json "pulumi.version", pulumi-plugin.json). It MUST come from the
@@ -188,6 +203,8 @@ jobs:
             schema.json
           generate_release_notes: true
           body: |
+            ${{ steps.changelog.outputs.notes }}
+
             ## Installation
 
             ### Provider Binary
