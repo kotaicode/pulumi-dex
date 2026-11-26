@@ -8,18 +8,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/blang/semver"
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
-	"github.com/pulumi/pulumi-go-provider/infer"
 	"github.com/pulumi/pulumi-go-provider/integration"
 	presource "github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // =============================================================================
@@ -130,8 +126,8 @@ func (f *fakeDex) ListConnectors(context.Context, *api.ListConnectorReq) (*api.L
 	return resp, nil
 }
 
-// newProviderAgainst starts dex on a loopback listener and returns a provider
-// server configured to talk to it, exercising the real infer encode/decode path.
+// newProviderAgainst starts dex on a loopback listener and returns newTestProvider
+// configured to talk to it, exercising the real infer encode/decode path.
 func newProviderAgainst(t *testing.T, dex *fakeDex) integration.Server {
 	t.Helper()
 
@@ -150,29 +146,7 @@ func newProviderAgainst(t *testing.T, dex *fakeDex) integration.Server {
 		}
 	})
 
-	prov, err := infer.NewProviderBuilder().
-		WithNamespace("dex").
-		WithResources(
-			infer.Resource(&Client{}),
-			infer.Resource(&Connector{}),
-			infer.Resource(&AzureOidcConnector{}),
-			infer.Resource(&AzureMicrosoftConnector{}),
-			infer.Resource(&CognitoOidcConnector{}),
-			infer.Resource(&GitLabConnector{}),
-			infer.Resource(&GitHubConnector{}),
-			infer.Resource(&GoogleConnector{}),
-			infer.Resource(&LocalConnector{}),
-		).
-		WithConfig(infer.Config(&provider.DexConfig{})).
-		Build()
-	if err != nil {
-		t.Fatalf("build provider: %v", err)
-	}
-
-	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"), integration.WithProvider(prov))
-	if err != nil {
-		t.Fatalf("new integration server: %v", err)
-	}
+	s := newTestProvider(t)
 	if err := s.Configure(p.ConfigureRequest{Args: property.NewMap(map[string]property.Value{
 		"host":           property.New(lis.Addr().String()),
 		"timeoutSeconds": property.New(5.0),

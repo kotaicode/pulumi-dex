@@ -5,49 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blang/semver"
 	p "github.com/pulumi/pulumi-go-provider"
-	"github.com/pulumi/pulumi-go-provider/infer"
-	"github.com/pulumi/pulumi-go-provider/integration"
 	presource "github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // =============================================================================
 // Secret handling (DEX-003)
 // =============================================================================
-
-// newSchemaProvider serves the provider exactly as main.go registers it, without
-// configuring a Dex connection. It is sufficient for GetSchema and preview Create.
-func newSchemaProvider(t *testing.T) integration.Server {
-	t.Helper()
-	prov, err := infer.NewProviderBuilder().
-		WithNamespace("dex").
-		WithResources(
-			infer.Resource(&Client{}),
-			infer.Resource(&Connector{}),
-			infer.Resource(&AzureOidcConnector{}),
-			infer.Resource(&AzureMicrosoftConnector{}),
-			infer.Resource(&CognitoOidcConnector{}),
-			infer.Resource(&GitLabConnector{}),
-			infer.Resource(&GitHubConnector{}),
-			infer.Resource(&GoogleConnector{}),
-			infer.Resource(&LocalConnector{}),
-		).
-		WithConfig(infer.Config(&provider.DexConfig{})).
-		Build()
-	if err != nil {
-		t.Fatalf("build provider: %v", err)
-	}
-	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"),
-		integration.WithProvider(provider.WithSecretReadInputs(prov)))
-	if err != nil {
-		t.Fatalf("new integration server: %v", err)
-	}
-	return s
-}
 
 // TestSecretPolicy_schema pins the secrecy policy for every credential-capable
 // field. Opaque containers (raw JSON, extension maps) are secret as a whole because
@@ -56,7 +21,7 @@ func newSchemaProvider(t *testing.T) integration.Server {
 // GoogleConnector.serviceAccountFilePath is a path on the Dex server) stay plain
 // so that diffs remain reviewable.
 func TestSecretPolicy_schema(t *testing.T) {
-	resp, err := newSchemaProvider(t).GetSchema(p.GetSchemaRequest{})
+	resp, err := newTestProvider(t).GetSchema(p.GetSchemaRequest{})
 	if err != nil {
 		t.Fatalf("GetSchema: %v", err)
 	}
@@ -262,7 +227,7 @@ func TestSecretPolicy_previewOutputs(t *testing.T) {
 		},
 	}
 
-	s := newSchemaProvider(t)
+	s := newTestProvider(t)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := s.Create(p.CreateRequest{
