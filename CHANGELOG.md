@@ -49,6 +49,16 @@ inside a cluster.
   `allowedGroups` must not be empty (Dex would treat that as no restriction) and needs a specific
   tenant ID or domain, because Dex ignores it for `common`, `organizations` and `consumers`.
   To migrate, replace `groups: "..."` with `allowedGroups: ["group-a", ...]`, or remove it.
+- **Extension keys can no longer override typed connector settings.** `extraOidc`
+  (`AzureOidcConnector`, `CognitoOidcConnector`) and `oidcConfig.extra` (generic `Connector`) were
+  merged over the typed fields, so a key such as `clientID`, `issuer` or `redirectURI` silently
+  replaced the typed value in Dex. Dex reads config keys case-insensitively, so every spelling
+  collides. Such keys now fail at preview with an error that names the keys but not their values.
+  To migrate, move the value to the typed input (for example `clientId`, or `tenantId` for the Azure
+  issuer) and remove the key from the extension map.
+- **The generic `Connector`'s input rule is checked at preview.** Exactly one of `oidcConfig` and
+  `rawConfig`, `oidcConfig` only with `type: "oidc"`, and valid JSON in `rawConfig` were only checked
+  when `pulumi up` applied the change. Unknown values in a preview are not judged.
 - **`LocalConnector.enabled: false` fails at preview, and `enabled` is deprecated.** A local connector
   in Dex always offers password login (see the security note above), so the only way to turn it off
   is to remove the resource. Refresh reports `enabled: true` for every existing local connector, which

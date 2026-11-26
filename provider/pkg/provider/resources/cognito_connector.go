@@ -80,6 +80,7 @@ func (c *CognitoOidcConnector) Check(ctx context.Context, req infer.CheckRequest
 	if err != nil {
 		return infer.CheckResponse[CognitoOidcConnectorArgs]{Failures: failures}, err
 	}
+	failures = append(failures, checkExtensionKeys(req.NewInputs.Get("extraOidc"), "extraOidc", cognitoOIDCTypedKeys)...)
 
 	// Validate region format (basic check)
 	if args.Region != "" {

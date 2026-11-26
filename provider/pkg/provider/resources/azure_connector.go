@@ -79,6 +79,7 @@ func (c *AzureOidcConnector) Check(ctx context.Context, req infer.CheckRequest) 
 	if err != nil {
 		return infer.CheckResponse[AzureOidcConnectorArgs]{Failures: failures}, err
 	}
+	failures = append(failures, checkExtensionKeys(req.NewInputs.Get("extraOidc"), "extraOidc", azureOIDCTypedKeys)...)
 
 	// Validate tenantId format (UUID)
 	if args.TenantId != "" {
