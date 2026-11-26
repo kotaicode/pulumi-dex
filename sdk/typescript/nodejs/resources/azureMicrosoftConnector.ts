@@ -45,6 +45,10 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
     }
 
     /**
+     * Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+     */
+    declare public readonly allowedGroups: pulumi.Output<string[] | undefined>;
+    /**
      * Azure AD application (client) ID.
      */
     declare public readonly clientId: pulumi.Output<string>;
@@ -57,7 +61,9 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
      */
     declare public readonly connectorId: pulumi.Output<string>;
     /**
-     * Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+     * Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+     *
+     * @deprecated groups is no longer supported; use allowedGroups to restrict login to members of groups.
      */
     declare public readonly groups: pulumi.Output<string | undefined>;
     /**
@@ -69,7 +75,7 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
      */
     declare public readonly redirectUri: pulumi.Output<string>;
     /**
-     * Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+     * Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
      */
     declare public readonly tenant: pulumi.Output<string>;
 
@@ -102,6 +108,7 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
             if (args?.tenant === undefined && !opts.urn) {
                 throw new Error("Missing required property 'tenant'");
             }
+            resourceInputs["allowedGroups"] = args?.allowedGroups;
             resourceInputs["clientId"] = args?.clientId;
             resourceInputs["clientSecret"] = args?.clientSecret ? pulumi.secret(args.clientSecret) : undefined;
             resourceInputs["connectorId"] = args?.connectorId;
@@ -110,6 +117,7 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
             resourceInputs["redirectUri"] = args?.redirectUri;
             resourceInputs["tenant"] = args?.tenant;
         } else {
+            resourceInputs["allowedGroups"] = undefined /*out*/;
             resourceInputs["clientId"] = undefined /*out*/;
             resourceInputs["clientSecret"] = undefined /*out*/;
             resourceInputs["connectorId"] = undefined /*out*/;
@@ -130,6 +138,10 @@ export class AzureMicrosoftConnector extends pulumi.CustomResource {
  */
 export interface AzureMicrosoftConnectorArgs {
     /**
+     * Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way.
+     */
+    allowedGroups?: pulumi.Input<pulumi.Input<string>[] | undefined>;
+    /**
      * Azure AD application (client) ID.
      */
     clientId: pulumi.Input<string>;
@@ -142,7 +154,9 @@ export interface AzureMicrosoftConnectorArgs {
      */
     connectorId: pulumi.Input<string>;
     /**
-     * Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control.
+     * Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.
+     *
+     * @deprecated groups is no longer supported; use allowedGroups to restrict login to members of groups.
      */
     groups?: pulumi.Input<string | undefined>;
     /**
@@ -154,7 +168,7 @@ export interface AzureMicrosoftConnectorArgs {
      */
     redirectUri: pulumi.Input<string>;
     /**
-     * Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format).
+     * Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'.
      */
     tenant: pulumi.Input<string>;
 }

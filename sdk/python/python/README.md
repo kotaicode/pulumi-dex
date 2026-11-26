@@ -126,13 +126,18 @@ const azureConnector = new dex.AzureOidcConnector("azure-tenant-a", {
 const azureMsConnector = new dex.AzureMicrosoftConnector("azure-ms", {
     connectorId: "azure-ms",
     name: "Azure AD (Microsoft Connector)",
-    tenant: "common", // or "organizations" or specific tenant ID
+    // "common", "organizations", "consumers", a tenant ID or a domain such as "contoso.onmicrosoft.com"
+    tenant: "contoso.onmicrosoft.com",
     clientId: "your-azure-app-client-id",
     clientSecret: "your-azure-app-client-secret",
     redirectUri: "https://dex.example.com/callback",
-    groups: "groups", // Optional: group claim name
+    // Optional: only members of these groups may log in. Requires a specific tenant
+    // (ID or domain); Dex ignores the list for "common", "organizations" and "consumers".
+    allowedGroups: ["dex-admins", "dex-users"],
 }, { provider });
 ```
+
+`allowedGroups` replaces the removed `groups` string, which Dex could not read: a connector with it failed to initialize, so nobody could log in through it.
 
 ### AWS Cognito Connector
 

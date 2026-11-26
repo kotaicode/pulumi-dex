@@ -238,6 +238,13 @@
     "dex:resources:AzureMicrosoftConnector": {
       "description": "Manages an Azure AD/Entra ID connector in Dex using the Microsoft-specific connector (type: microsoft). This connector provides Microsoft-specific features like group filtering and domain restrictions.",
       "properties": {
+        "allowedGroups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way."
+        },
         "clientId": {
           "type": "string",
           "description": "Azure AD application (client) ID."
@@ -253,7 +260,8 @@
         },
         "groups": {
           "type": "string",
-          "description": "Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control."
+          "description": "Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.",
+          "deprecationMessage": "groups is no longer supported; use allowedGroups to restrict login to members of groups."
         },
         "name": {
           "type": "string",
@@ -265,7 +273,7 @@
         },
         "tenant": {
           "type": "string",
-          "description": "Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format)."
+          "description": "Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'."
         }
       },
       "required": [
@@ -277,6 +285,13 @@
         "redirectUri"
       ],
       "inputProperties": {
+        "allowedGroups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups whose members may log in through this connector (Dex's groups setting). Requires a specific tenant ID or domain: Dex ignores the list for 'common', 'organizations' and 'consumers'. Omit it to allow every user of the tenant; an empty list is rejected because Dex would treat it the same way."
+        },
         "clientId": {
           "type": "string",
           "description": "Azure AD application (client) ID."
@@ -292,7 +307,8 @@
         },
         "groups": {
           "type": "string",
-          "description": "Name of the claim that contains group memberships (e.g., 'groups'). Used for group-based access control."
+          "description": "Removed. This string was written to Dex's groups setting, which is a list, so Dex could not initialize the connector. Use allowedGroups.",
+          "deprecationMessage": "groups is no longer supported; use allowedGroups to restrict login to members of groups."
         },
         "name": {
           "type": "string",
@@ -304,7 +320,7 @@
         },
         "tenant": {
           "type": "string",
-          "description": "Azure AD tenant identifier. Can be 'common' (any Azure AD account), 'organizations' (any organizational account), or a specific tenant ID (UUID format)."
+          "description": "Microsoft Entra ID tenant: 'common' (work, school and personal Microsoft accounts), 'organizations' (work and school accounts), 'consumers' (personal Microsoft accounts), or a specific tenant ID (UUID) or verified domain such as 'contoso.onmicrosoft.com'."
         }
       },
       "requiredInputs": [
