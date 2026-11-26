@@ -104,12 +104,12 @@ func (c *LocalConnector) Create(ctx context.Context, req infer.CreateRequest[Loc
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "local-connector", token: tokenLocalConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[LocalConnectorState]{}, provider.WrapError("create", "local-connector", args.ConnectorId, err)
+		return infer.CreateResponse[LocalConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[LocalConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[LocalConnectorState]{}, target.alreadyExists()
 	}
 
 	state := LocalConnectorState{
@@ -147,6 +147,10 @@ func (c *LocalConnector) Read(ctx context.Context, req infer.ReadRequest[LocalCo
 
 	if found == nil {
 		return infer.ReadResponse[LocalConnectorArgs, LocalConnectorState]{}, nil
+	}
+
+	if found.Type != "local" {
+		return infer.ReadResponse[LocalConnectorArgs, LocalConnectorState]{}, wrongConnectorType("local-connector", found.Id, found.Type, "local")
 	}
 
 	// Local connector has minimal config, so we just use defaults

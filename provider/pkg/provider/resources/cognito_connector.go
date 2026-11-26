@@ -176,12 +176,12 @@ func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateReque
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "cognito-oidc-connector", token: tokenCognitoOidcConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, provider.WrapError("create", "cognito-oidc-connector", args.ConnectorId, err)
+		return infer.CreateResponse[CognitoOidcConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[CognitoOidcConnectorState]{}, target.alreadyExists()
 	}
 
 	state := CognitoOidcConnectorState{
@@ -219,6 +219,10 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 
 	if found == nil {
 		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, nil
+	}
+
+	if found.Type != "oidc" {
+		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, wrongConnectorType("cognito-oidc-connector", found.Id, found.Type, "oidc")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)

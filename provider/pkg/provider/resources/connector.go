@@ -142,44 +142,12 @@ func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[Connecto
 	resp, err := cfg.Client.CreateConnector(callCtx, &api.CreateConnectorReq{
 		Connector: conn,
 	})
+	target := createTarget{kind: "connector", token: tokenConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[ConnectorState]{}, provider.WrapError("create", "connector", args.ConnectorId, err)
+		return infer.CreateResponse[ConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		// Resource already exists - read it and return it so Pulumi can track it
-		// This allows destroy to work properly even if the resource was created outside Pulumi
-		readCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-		defer cancel()
-
-		listResp, err := cfg.Client.ListConnectors(readCtx, &api.ListConnectorReq{})
-		if err != nil {
-			return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("connector already exists but failed to list connectors: %w", err)
-		}
-
-		var found *api.Connector
-		for _, con := range listResp.Connectors {
-			if con.Id == args.ConnectorId {
-				found = con
-				break
-			}
-		}
-
-		if found == nil {
-			return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("connector already exists but not found in list")
-		}
-
-		// Decode the existing connector
-		existingArgs, _ := decodeConnector(found)
-
-		state := ConnectorState{
-			ConnectorArgs: existingArgs,
-		}
-
-		return infer.CreateResponse[ConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[ConnectorState]{}, target.alreadyExists()
 	}
 
 	state := ConnectorState{
