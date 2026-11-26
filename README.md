@@ -259,6 +259,8 @@ Manages an OAuth2 client in Dex.
 - `public` (boolean, optional) - Public (non-confidential) client
 - `logoUrl` (string, optional) - Logo image URL
 
+**Note:** Dex's API cannot clear `logoUrl`, `trustedPeers`, `redirectUris` or `name`; it ignores empty values. An update that would remove one of them fails in preview instead of reporting a change that Dex never applies. To remove such a value, delete the client and create it again; this generates a new secret unless `secret` is set.
+
 **Outputs:**
 - `id` - Resource ID (same as clientId)
 - `clientId` - The client ID

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Updating a `Client` to remove `logoUrl`, `trustedPeers`, `redirectUris` or `name` now fails.**
+  Dex's `UpdateClient` API ignores empty values, so the update reported success and Pulumi recorded the
+  field as removed while Dex kept the old value. For `trustedPeers`, Dex kept trusting peers that
+  appeared to have been removed. Preview and update now stop with an error naming the field. To remove
+  the value, delete the client and create it again; this generates a new secret unless `secret` is set.
+  Stacks that already recorded such a removal hold the wrong state: run `pulumi refresh` to see the
+  values Dex still has.
 - npm publishing uses trusted publishing (OIDC) only; the `NPM_TOKEN` secret is no longer
   read, and publishing no longer silently skips when it is missing.
 - Go module caching uses `setup-go`'s built-in cache keyed on `provider/go.sum`; the

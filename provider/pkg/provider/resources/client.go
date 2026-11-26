@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
@@ -234,8 +235,19 @@ func (c *Client) Update(ctx context.Context, req infer.UpdateRequest[ClientArgs,
 	args := req.Inputs
 	oldState := req.State
 
+	// Runs before the dry-run return so that preview already shows the error. It
+	// needs no config or Dex access.
+	if cleared := clearedClientFields(oldState.ClientArgs, args); len(cleared) > 0 {
+		return infer.UpdateResponse[ClientState]{}, fmt.Errorf(
+			"dex update client %q: cannot clear %s: Dex's UpdateClient API ignores empty values, "+
+				"so Dex would keep the previous value while Pulumi records it as removed. "+
+				"Keep a non-empty value, or delete the client and create it again to remove it "+
+				"(this generates a new secret unless `secret` is set)",
+			oldState.ClientId, strings.Join(cleared, ", "))
+	}
+
 	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
+	// This check MUST come before any config checks or Dex calls
 	if req.DryRun {
 		state := ClientState{
 			ClientArgs: args,
@@ -388,6 +400,28 @@ func clientAbsent(ctx context.Context, cfg provider.DexConfig, id string, getErr
 		}
 	}
 	return true
+}
+
+// clearedClientFields lists the fields that would change from a value to empty.
+// Dex's UpdateClient applies name and logoUrl only when non-empty, and
+// redirectUris and trustedPeers only when non-empty (an empty list arrives as nil
+// on the wire), so these removals never take effect (Dex v2.46.1,
+// server/apiserver/clients.go).
+func clearedClientFields(old, desired ClientArgs) []string {
+	var cleared []string
+	if old.Name != "" && desired.Name == "" {
+		cleared = append(cleared, "name")
+	}
+	if provider.PtrOr(old.LogoUrl, "") != "" && provider.PtrOr(desired.LogoUrl, "") == "" {
+		cleared = append(cleared, "logoUrl")
+	}
+	if len(old.RedirectUris) > 0 && len(desired.RedirectUris) == 0 {
+		cleared = append(cleared, "redirectUris")
+	}
+	if len(old.TrustedPeers) > 0 && len(desired.TrustedPeers) == 0 {
+		cleared = append(cleared, "trustedPeers")
+	}
+	return cleared
 }
 
 // PtrOrString returns the value pointed to by p, or nil if p is empty or nil.
