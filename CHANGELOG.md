@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-26
+
 ### Fixed
 - **`pulumi refresh` no longer creates spurious changes for OIDC connectors.** After a refresh, the
   next preview proposed updates for connectors that had not changed:

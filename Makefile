@@ -3,7 +3,7 @@
 # Default version for local development only. Releases always pass the
 # version from the git tag (make build VERSION=x.y.z); never rely on this
 # default for anything that gets published.
-VERSION ?= 0.9.0
+VERSION ?= 0.9.1
 
 # Build the provider binary
 build:
