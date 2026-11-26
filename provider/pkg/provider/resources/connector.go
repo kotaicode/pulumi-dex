@@ -99,6 +99,20 @@ func (c *Connector) WireDependencies(f infer.FieldSelector, _ *ConnectorArgs, st
 	f.OutputField(&state.OIDCConfig).AlwaysSecret()
 }
 
+// Check enforces the input rules at preview: exactly one of oidcConfig and
+// rawConfig, and no oidcConfig.extra key that a typed oidcConfig field sets.
+func (c *Connector) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[ConnectorArgs], error) {
+	args, failures, err := infer.DefaultCheck[ConnectorArgs](ctx, req.NewInputs)
+	if err != nil {
+		return infer.CheckResponse[ConnectorArgs]{Failures: failures}, err
+	}
+	failures = append(failures, checkConnectorInputMode(req.NewInputs)...)
+	if oidc := req.NewInputs.Get("oidcConfig"); oidc.IsMap() {
+		failures = append(failures, checkExtensionKeys(oidc.AsMap().Get("extra"), "oidcConfig.extra", genericOIDCTypedKeys)...)
+	}
+	return infer.CheckResponse[ConnectorArgs]{Inputs: args, Failures: failures}, nil
+}
+
 // Create creates a new connector in Dex.
 func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[ConnectorArgs]) (infer.CreateResponse[ConnectorState], error) {
 	args := req.Inputs
