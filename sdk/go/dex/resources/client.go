@@ -57,6 +57,10 @@ func NewClient(ctx *pulumi.Context,
 		"secret",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"clientId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource Client
 	err := ctx.RegisterResource("dex:resources:Client", name, args, &resource, opts...)

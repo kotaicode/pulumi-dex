@@ -51,6 +51,10 @@ func NewConnector(ctx *pulumi.Context,
 		"rawConfig",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource Connector
 	err := ctx.RegisterResource("dex:resources:Connector", name, args, &resource, opts...)

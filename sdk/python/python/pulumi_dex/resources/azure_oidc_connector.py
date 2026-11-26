@@ -259,6 +259,8 @@ class AzureOidcConnector(pulumi.CustomResource):
             __props__.__dict__["user_name_source"] = user_name_source
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret", "extraOidc"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(AzureOidcConnector, __self__).__init__(
             'dex:resources:AzureOidcConnector',
             resource_name,

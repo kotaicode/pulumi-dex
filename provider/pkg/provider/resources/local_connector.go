@@ -19,7 +19,7 @@ import (
 
 // LocalConnectorArgs defines inputs for LocalConnector.
 type LocalConnectorArgs struct {
-	ConnectorId string `pulumi:"connectorId"`
+	ConnectorId string `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name        string `pulumi:"name"`
 	Enabled     *bool  `pulumi:"enabled,optional"`
 }

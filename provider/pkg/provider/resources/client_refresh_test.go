@@ -35,8 +35,9 @@ func clientProgram(extra map[string]property.Value) property.Map {
 }
 
 // clientRefreshDiff creates the client, optionally edits it directly in Dex,
-// refreshes, and returns the diff the next preview would show.
-func clientRefreshDiff(t *testing.T, program property.Map, remoteEdit func(*api.Client)) p.DiffResponse {
+// refreshes, and returns the diff the next preview would show, or the check
+// failures that stop that preview.
+func clientRefreshDiff(t *testing.T, program property.Map, remoteEdit func(*api.Client)) (p.DiffResponse, []p.CheckFailure) {
 	t.Helper()
 	dex := newFakeDex()
 	s := newProviderAgainst(t, dex)
@@ -63,8 +64,11 @@ func clientRefreshDiff(t *testing.T, program property.Map, remoteEdit func(*api.
 	assertClientSecretProtected(t, "refreshed state", refreshed.Properties)
 
 	rechecked, err := s.Check(p.CheckRequest{Urn: urn, State: refreshed.Inputs, Inputs: program})
-	if err != nil || len(rechecked.Failures) > 0 {
-		t.Fatalf("re-Check: %v %v", err, rechecked.Failures)
+	if err != nil {
+		t.Fatalf("re-Check: %v", err)
+	}
+	if len(rechecked.Failures) > 0 {
+		return p.DiffResponse{}, rechecked.Failures
 	}
 	// Current engines (SupportsOldInputs) make infer diff new inputs against the
 	// refreshed inputs; the integration harness does not set that flag, so pass
@@ -75,7 +79,7 @@ func clientRefreshDiff(t *testing.T, program property.Map, remoteEdit func(*api.
 	if err != nil {
 		t.Fatalf("Diff: %v", err)
 	}
-	return diff
+	return diff, nil
 }
 
 func diffKeys(d p.DiffResponse) string {
@@ -111,7 +115,7 @@ func TestClientRefreshRoundTrip_isClean(t *testing.T) {
 	}
 	for name, program := range cases {
 		t.Run(name, func(t *testing.T) {
-			if d := clientRefreshDiff(t, program, nil); d.HasChanges {
+			if d, failures := clientRefreshDiff(t, program, nil); d.HasChanges || len(failures) > 0 {
 				t.Errorf("preview after refresh proposes changes: %s", diffKeys(d))
 			}
 		})
@@ -126,9 +130,6 @@ func TestClientRefreshRoundTrip_reportsRemoteChanges(t *testing.T) {
 		edit    func(*api.Client)
 		wantKey string
 	}{
-		{"made public in Dex", clientProgram(nil), func(c *api.Client) { c.Public = true }, "public"},
-		{"made confidential in Dex", clientProgram(map[string]property.Value{"public": property.New(true)}),
-			func(c *api.Client) { c.Public = false }, "public"},
 		{"peer added in Dex", clientProgram(nil), func(c *api.Client) { c.TrustedPeers = []string{"intruder"} }, "trustedPeers"},
 		{"logo set in Dex", clientProgram(nil), func(c *api.Client) { c.LogoUrl = "https://evil.example.com/x.png" }, "logoUrl"},
 		{"logo removed in Dex", clientProgram(map[string]property.Value{"logoUrl": property.New("https://app.example.com/logo.png")}),
@@ -136,9 +137,31 @@ func TestClientRefreshRoundTrip_reportsRemoteChanges(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			d := clientRefreshDiff(t, tc.program, tc.edit)
+			d, failures := clientRefreshDiff(t, tc.program, tc.edit)
 			if _, ok := d.DetailedDiff[tc.wantKey]; !d.HasChanges || !ok {
-				t.Errorf("remote change to %s was masked; diff = %s", tc.wantKey, diffKeys(d))
+				t.Errorf("remote change to %s was masked; diff = %s, failures = %v", tc.wantKey, diffKeys(d), failures)
+			}
+		})
+	}
+}
+
+// Dex's UpdateClient cannot change public, so a public flag changed directly in
+// Dex cannot be reverted by an update. The next preview must say so instead of
+// proposing an update that would only change the state.
+func TestClientRefreshRoundTrip_publicChangedInDexFailsPreview(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		program property.Map
+		edit    func(*api.Client)
+	}{
+		{"made public in Dex", clientProgram(nil), func(c *api.Client) { c.Public = true }},
+		{"made confidential in Dex", clientProgram(map[string]property.Value{"public": property.New(true)}),
+			func(c *api.Client) { c.Public = false }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, failures := clientRefreshDiff(t, tc.program, tc.edit)
+			if len(failures) != 1 || failures[0].Property != "public" || !strings.Contains(failures[0].Reason, "new client ID") {
+				t.Errorf("preview after refresh: failures = %v, want one public failure with guidance", failures)
 			}
 		})
 	}

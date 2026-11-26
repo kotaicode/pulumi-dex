@@ -178,6 +178,8 @@ class Connector(pulumi.CustomResource):
             __props__.__dict__["type"] = type
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["rawConfig"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(Connector, __self__).__init__(
             'dex:resources:Connector',
             resource_name,

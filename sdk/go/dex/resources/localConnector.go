@@ -37,6 +37,10 @@ func NewLocalConnector(ctx *pulumi.Context,
 	if args.Name == nil {
 		return nil, errors.New("invalid value for required argument 'Name'")
 	}
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource LocalConnector
 	err := ctx.RegisterResource("dex:resources:LocalConnector", name, args, &resource, opts...)

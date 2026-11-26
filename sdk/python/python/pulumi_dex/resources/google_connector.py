@@ -278,6 +278,8 @@ class GoogleConnector(pulumi.CustomResource):
             __props__.__dict__["service_account_file_path"] = service_account_file_path
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(GoogleConnector, __self__).__init__(
             'dex:resources:GoogleConnector',
             resource_name,

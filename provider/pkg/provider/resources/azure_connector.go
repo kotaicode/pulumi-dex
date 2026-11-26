@@ -24,7 +24,7 @@ import (
 
 // AzureOidcConnectorArgs defines inputs for AzureOidcConnector using generic OIDC.
 type AzureOidcConnectorArgs struct {
-	ConnectorId    string         `pulumi:"connectorId"`
+	ConnectorId    string         `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name           string         `pulumi:"name"`
 	TenantId       string         `pulumi:"tenantId"`
 	ClientId       string         `pulumi:"clientId"`
@@ -301,10 +301,6 @@ func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest
 	if args.ConnectorId != oldState.ConnectorId {
 		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
 	}
-	if args.TenantId != oldState.TenantId {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("tenantId cannot be changed (would require replace)")
-	}
-
 	// Rebuild config (same as Create)
 	issuer := fmt.Sprintf("https://login.microsoftonline.com/%s/v2.0", args.TenantId)
 	userNameKey := "preferred_username"
@@ -391,7 +387,7 @@ func (c *AzureOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest
 
 // AzureMicrosoftConnectorArgs defines inputs for AzureMicrosoftConnector using Microsoft connector.
 type AzureMicrosoftConnectorArgs struct {
-	ConnectorId  string `pulumi:"connectorId"`
+	ConnectorId  string `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name         string `pulumi:"name"`
 	Tenant       string `pulumi:"tenant"` // "common", "organizations", or tenant ID
 	ClientId     string `pulumi:"clientId"`
@@ -622,10 +618,6 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 	if args.ConnectorId != oldState.ConnectorId {
 		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
 	}
-	if args.Tenant != oldState.Tenant {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("tenant cannot be changed (would require replace)")
-	}
-
 	microsoftConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,

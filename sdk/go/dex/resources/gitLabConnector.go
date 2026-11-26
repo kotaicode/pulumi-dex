@@ -65,6 +65,10 @@ func NewGitLabConnector(ctx *pulumi.Context,
 		"clientSecret",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource GitLabConnector
 	err := ctx.RegisterResource("dex:resources:GitLabConnector", name, args, &resource, opts...)

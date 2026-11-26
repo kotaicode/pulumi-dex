@@ -72,6 +72,10 @@ func NewAzureOidcConnector(ctx *pulumi.Context,
 		"extraOidc",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource AzureOidcConnector
 	err := ctx.RegisterResource("dex:resources:AzureOidcConnector", name, args, &resource, opts...)

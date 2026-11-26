@@ -77,6 +77,10 @@ func NewCognitoOidcConnector(ctx *pulumi.Context,
 		"extraOidc",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource CognitoOidcConnector
 	err := ctx.RegisterResource("dex:resources:CognitoOidcConnector", name, args, &resource, opts...)

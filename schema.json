@@ -256,7 +256,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Azure Microsoft connector."
+          "description": "Unique identifier for the Azure Microsoft connector.",
+          "replaceOnChanges": true
         },
         "groups": {
           "type": "string",
@@ -303,7 +304,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Azure Microsoft connector."
+          "description": "Unique identifier for the Azure Microsoft connector.",
+          "replaceOnChanges": true
         },
         "groups": {
           "type": "string",
@@ -346,7 +348,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Azure connector."
+          "description": "Unique identifier for the Azure connector.",
+          "replaceOnChanges": true
         },
         "extraOidc": {
           "type": "object",
@@ -400,7 +403,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Azure connector."
+          "description": "Unique identifier for the Azure connector.",
+          "replaceOnChanges": true
         },
         "extraOidc": {
           "type": "object",
@@ -448,7 +452,8 @@
       "properties": {
         "clientId": {
           "type": "string",
-          "description": "Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows."
+          "description": "Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows.",
+          "replaceOnChanges": true
         },
         "createdAt": {
           "type": "string",
@@ -494,7 +499,8 @@
       "inputProperties": {
         "clientId": {
           "type": "string",
-          "description": "Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows."
+          "description": "Unique identifier for the OAuth2 client. This is used as the client_id in OAuth2 flows.",
+          "replaceOnChanges": true
         },
         "logoUrl": {
           "type": "string",
@@ -548,7 +554,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Cognito connector."
+          "description": "Unique identifier for the Cognito connector.",
+          "replaceOnChanges": true
         },
         "extraOidc": {
           "type": "object",
@@ -607,7 +614,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Cognito connector."
+          "description": "Unique identifier for the Cognito connector.",
+          "replaceOnChanges": true
         },
         "extraOidc": {
           "type": "object",
@@ -660,7 +668,8 @@
       "properties": {
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the connector."
+          "description": "Unique identifier for the connector.",
+          "replaceOnChanges": true
         },
         "name": {
           "type": "string",
@@ -688,7 +697,8 @@
       "inputProperties": {
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the connector."
+          "description": "Unique identifier for the connector.",
+          "replaceOnChanges": true
         },
         "name": {
           "type": "string",
@@ -728,7 +738,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the GitHub connector."
+          "description": "Unique identifier for the GitHub connector.",
+          "replaceOnChanges": true
         },
         "hostName": {
           "type": "string",
@@ -789,7 +800,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the GitHub connector."
+          "description": "Unique identifier for the GitHub connector.",
+          "replaceOnChanges": true
         },
         "hostName": {
           "type": "string",
@@ -857,7 +869,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the GitLab connector."
+          "description": "Unique identifier for the GitLab connector.",
+          "replaceOnChanges": true
         },
         "getGroupsPermission": {
           "type": "boolean",
@@ -906,7 +919,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the GitLab connector."
+          "description": "Unique identifier for the GitLab connector.",
+          "replaceOnChanges": true
         },
         "getGroupsPermission": {
           "type": "boolean",
@@ -954,7 +968,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Google connector."
+          "description": "Unique identifier for the Google connector.",
+          "replaceOnChanges": true
         },
         "domainToAdminEmail": {
           "type": "object",
@@ -1013,7 +1028,8 @@
         },
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the Google connector."
+          "description": "Unique identifier for the Google connector.",
+          "replaceOnChanges": true
         },
         "domainToAdminEmail": {
           "type": "object",
@@ -1066,7 +1082,8 @@
       "properties": {
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the local connector."
+          "description": "Unique identifier for the local connector.",
+          "replaceOnChanges": true
         },
         "enabled": {
           "type": "boolean",
@@ -1084,7 +1101,8 @@
       "inputProperties": {
         "connectorId": {
           "type": "string",
-          "description": "Unique identifier for the local connector."
+          "description": "Unique identifier for the local connector.",
+          "replaceOnChanges": true
         },
         "enabled": {
           "type": "boolean",

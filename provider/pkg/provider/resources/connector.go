@@ -16,7 +16,7 @@ import (
 
 // ConnectorArgs defines the inputs for a dex.Connector resource.
 type ConnectorArgs struct {
-	ConnectorId string      `pulumi:"connectorId"`
+	ConnectorId string      `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Type        string      `pulumi:"type"`
 	Name        string      `pulumi:"name"`
 	OIDCConfig  *OIDCConfig `pulumi:"oidcConfig,optional"`

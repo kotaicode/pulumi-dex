@@ -23,7 +23,7 @@ import (
 
 // CognitoOidcConnectorArgs defines inputs for CognitoOidcConnector.
 type CognitoOidcConnectorArgs struct {
-	ConnectorId    string         `pulumi:"connectorId"`
+	ConnectorId    string         `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name           string         `pulumi:"name"`
 	Region         string         `pulumi:"region"`
 	UserPoolId     string         `pulumi:"userPoolId"`
@@ -302,10 +302,6 @@ func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateReque
 	if args.ConnectorId != oldState.ConnectorId {
 		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
 	}
-	if args.Region != oldState.Region || args.UserPoolId != oldState.UserPoolId {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("region and userPoolId cannot be changed (would require replace)")
-	}
-
 	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", args.Region, args.UserPoolId)
 	userNameKey := "email"
 	if args.UserNameSource != nil {
