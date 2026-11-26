@@ -20,15 +20,15 @@ export class Provider extends pulumi.ProviderResource {
     }
 
     /**
-     * PEM-encoded CA certificate for validating Dex's TLS certificate.
+     * PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
      */
     declare public readonly caCert: pulumi.Output<string | undefined>;
     /**
-     * PEM-encoded client certificate for mTLS to Dex.
+     * PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
      */
     declare public readonly clientCert: pulumi.Output<string | undefined>;
     /**
-     * PEM-encoded private key for the client certificate.
+     * PEM-encoded private key for clientCert.
      */
     declare public readonly clientKey: pulumi.Output<string | undefined>;
     /**
@@ -55,6 +55,7 @@ export class Provider extends pulumi.ProviderResource {
             resourceInputs["clientKey"] = args?.clientKey ? pulumi.secret(args.clientKey) : undefined;
             resourceInputs["host"] = args?.host;
             resourceInputs["insecureSkipVerify"] = pulumi.output(args?.insecureSkipVerify).apply(JSON.stringify);
+            resourceInputs["plaintext"] = pulumi.output(args?.plaintext).apply(JSON.stringify);
             resourceInputs["timeoutSeconds"] = pulumi.output(args?.timeoutSeconds).apply(JSON.stringify);
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
@@ -69,15 +70,15 @@ export class Provider extends pulumi.ProviderResource {
  */
 export interface ProviderArgs {
     /**
-     * PEM-encoded CA certificate for validating Dex's TLS certificate.
+     * PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
      */
     caCert?: pulumi.Input<string | undefined>;
     /**
-     * PEM-encoded client certificate for mTLS to Dex.
+     * PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
      */
     clientCert?: pulumi.Input<string | undefined>;
     /**
-     * PEM-encoded private key for the client certificate.
+     * PEM-encoded private key for clientCert.
      */
     clientKey?: pulumi.Input<string | undefined>;
     /**
@@ -85,9 +86,13 @@ export interface ProviderArgs {
      */
     host: pulumi.Input<string>;
     /**
-     * If true, disables TLS verification (development only).
+     * If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
      */
     insecureSkipVerify?: pulumi.Input<boolean | undefined>;
+    /**
+     * If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+     */
+    plaintext?: pulumi.Input<boolean | undefined>;
     /**
      * Per-RPC timeout in seconds when talking to Dex.
      */

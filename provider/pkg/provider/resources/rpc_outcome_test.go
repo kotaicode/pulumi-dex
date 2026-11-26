@@ -205,6 +205,7 @@ func newProviderAgainst(t *testing.T, dex *fakeDex) integration.Server {
 	s := newTestProvider(t)
 	if err := s.Configure(p.ConfigureRequest{Args: property.NewMap(map[string]property.Value{
 		"host":           property.New(lis.Addr().String()),
+		"plaintext":      property.New(true),
 		"timeoutSeconds": property.New(5.0),
 	})}); err != nil {
 		t.Fatalf("configure: %v", err)

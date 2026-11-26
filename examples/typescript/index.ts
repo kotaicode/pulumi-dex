@@ -1,17 +1,12 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as dex from "@kotaicode/pulumi-dex";
 
-// Configure the Dex provider for local development
-// Note: The SDK currently requires all fields, but for local testing with insecure Dex,
-// we can use empty strings for TLS fields since insecureSkipVerify is true
+// Configure the Dex provider for the local docker-compose Dex, whose gRPC API
+// has no TLS. Against a Dex with TLS, remove plaintext and set caCert (and
+// clientCert/clientKey for mTLS) instead.
 const dexProvider = new dex.Provider("dex", {
     host: "localhost:5557", // Dex gRPC endpoint
-    // For development with insecure Dex, use empty strings for TLS fields
-    // (These won't be used when insecureSkipVerify is true)
-    caCert: "",
-    clientCert: "",
-    clientKey: "",
-    insecureSkipVerify: true,
+    plaintext: true,
     timeoutSeconds: 5,
 });
 

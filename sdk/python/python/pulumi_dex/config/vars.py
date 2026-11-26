@@ -23,21 +23,21 @@ class _ExportableConfig(types.ModuleType):
     @_builtins.property
     def ca_cert(self) -> Optional[str]:
         """
-        PEM-encoded CA certificate for validating Dex's TLS certificate.
+        PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
         """
         return __config__.get('caCert')
 
     @_builtins.property
     def client_cert(self) -> Optional[str]:
         """
-        PEM-encoded client certificate for mTLS to Dex.
+        PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
         """
         return __config__.get('clientCert')
 
     @_builtins.property
     def client_key(self) -> Optional[str]:
         """
-        PEM-encoded private key for the client certificate.
+        PEM-encoded private key for clientCert.
         """
         return __config__.get('clientKey')
 
@@ -51,9 +51,16 @@ class _ExportableConfig(types.ModuleType):
     @_builtins.property
     def insecure_skip_verify(self) -> Optional[bool]:
         """
-        If true, disables TLS verification (development only).
+        If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
         """
         return __config__.get_bool('insecureSkipVerify')
+
+    @_builtins.property
+    def plaintext(self) -> Optional[bool]:
+        """
+        If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+        """
+        return __config__.get_bool('plaintext')
 
     @_builtins.property
     def timeout_seconds(self) -> Optional[int]:

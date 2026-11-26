@@ -4,10 +4,15 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
+	"net"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
+	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -17,14 +22,15 @@ import (
 
 // DexConfig describes provider-level configuration (connection to Dex gRPC).
 // This struct doubles as the configured client object passed to resources.
-// Note: Environment variables can be set but are not automatically read by the provider.
-// Users should set them in their Pulumi program or use Pulumi config.
+// The provider reads no environment variables; every option comes from the
+// provider configuration.
 type DexConfig struct {
 	Host            string  `pulumi:"host"`
 	CACertPEM       *string `pulumi:"caCert,optional" provider:"secret"`
 	ClientCertPEM   *string `pulumi:"clientCert,optional" provider:"secret"`
 	ClientKeyPEM    *string `pulumi:"clientKey,optional" provider:"secret"`
 	InsecureSkipTLS *bool   `pulumi:"insecureSkipVerify,optional"`
+	Plaintext       *bool   `pulumi:"plaintext,optional"`
 	TimeoutSeconds  *int    `pulumi:"timeoutSeconds,optional"`
 
 	// internal fields are not exposed in schema and are used at runtime only.
@@ -34,106 +40,263 @@ type DexConfig struct {
 // Annotate config fields with descriptions & defaults for the schema.
 func (c *DexConfig) Annotate(a infer.Annotator) {
 	a.Describe(&c.Host, "Dex gRPC host:port, e.g. dex.internal.example.com:5557.")
-	a.Describe(&c.CACertPEM, "PEM-encoded CA certificate for validating Dex's TLS certificate.")
-	a.Describe(&c.ClientCertPEM, "PEM-encoded client certificate for mTLS to Dex.")
-	a.Describe(&c.ClientKeyPEM, "PEM-encoded private key for the client certificate.")
-	a.Describe(&c.InsecureSkipTLS, "If true, disables TLS verification (development only).")
+	a.Describe(&c.CACertPEM, "PEM-encoded CA certificate that issued Dex's gRPC server certificate. "+
+		"When set, only this CA is trusted instead of the system's root CAs.")
+	a.Describe(&c.ClientCertPEM, "PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.")
+	a.Describe(&c.ClientKeyPEM, "PEM-encoded private key for clientCert.")
+	a.Describe(&c.InsecureSkipTLS, "If true, connects with TLS but does not verify Dex's certificate "+
+		"(development only). The connection is still encrypted; for a Dex without TLS, use plaintext.")
+	a.Describe(&c.Plaintext, "If true, connects to Dex without TLS. Only for a Dex gRPC API that is not "+
+		"TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. "+
+		"Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. "+
+		"By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.")
 	a.Describe(&c.TimeoutSeconds, "Per-RPC timeout in seconds when talking to Dex.")
 }
 
 // Configure is called once per provider instance to establish a Dex gRPC client.
-// It satisfies infer.CustomConfigure via pointer receiver.
+// It satisfies infer.CustomConfigure via pointer receiver. While the configuration
+// still contains unknown values, WithPreviewSafeConfigure skips it.
 func (c *DexConfig) Configure(ctx context.Context) error {
 	if c.Host == "" {
 		return fmt.Errorf("host is required")
 	}
-
-	// TODO: Optionally make Configure preview-safe by checking runInfo.Preview
-	// For now, we'll let Configure connect to Dex even in preview mode.
-	// The Create/Update methods will short-circuit based on req.DryRun before making API calls.
-
-	dialCtx, cancel := context.WithTimeout(ctx, time.Duration(PtrOr(c.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	var (
-		conn *grpc.ClientConn
-		err  error
-	)
-
-	// Prefer TLS/mTLS when credentials are provided; otherwise fall back to insecure (plaintext)
-	// to match Dex's examples and make local development easy. See:
-	// https://dexidp.io/docs/configuration/api/
-	hasTLSMaterial := (c.CACertPEM != nil && *c.CACertPEM != "") ||
-		(c.ClientCertPEM != nil && *c.ClientCertPEM != "") ||
-		(c.ClientKeyPEM != nil && *c.ClientKeyPEM != "") ||
-		PtrOr(c.InsecureSkipTLS, false)
-
-	if hasTLSMaterial {
-		tlsCfg := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}
-
-		// Root CA for validating Dex's server certificate.
-		if c.CACertPEM != nil && *c.CACertPEM != "" {
-			rootCAs := x509.NewCertPool()
-			if ok := rootCAs.AppendCertsFromPEM([]byte(*c.CACertPEM)); !ok {
-				return fmt.Errorf("failed to parse CA certificate")
-			}
-			tlsCfg.RootCAs = rootCAs
-		}
-
-		// Optional client certificate for mTLS.
-		if (c.ClientCertPEM != nil && *c.ClientCertPEM != "") || (c.ClientKeyPEM != nil && *c.ClientKeyPEM != "") {
-			if c.ClientCertPEM == nil || c.ClientKeyPEM == nil || *c.ClientCertPEM == "" || *c.ClientKeyPEM == "" {
-				return fmt.Errorf("both clientCert and clientKey must be provided (and non-empty) for mTLS")
-			}
-			cert, err := tls.X509KeyPair([]byte(*c.ClientCertPEM), []byte(*c.ClientKeyPEM))
-			if err != nil {
-				return fmt.Errorf("failed to load client certificate/key: %w", err)
-			}
-			tlsCfg.Certificates = []tls.Certificate{cert}
-		}
-
-		// Optionally skip server certificate verification (development only).
-		if PtrOr(c.InsecureSkipTLS, false) {
-			tlsCfg.InsecureSkipVerify = true
-		}
-
-		conn, err = grpc.NewClient(
-			c.Host,
-			grpc.WithTransportCredentials(credentials.NewTLS(tlsCfg)),
-			grpc.WithUnaryInterceptor(redactRPCErrors),
-		)
-	} else {
-		conn, err = grpc.NewClient(
-			c.Host,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithUnaryInterceptor(redactRPCErrors),
-		)
+	tlsCfg, err := c.tlsConfig()
+	if err != nil {
+		return err
 	}
 
+	var (
+		creds    credentials.TransportCredentials
+		recorder *handshakeRecorder
+	)
+	if tlsCfg != nil {
+		recorder = &handshakeRecorder{TransportCredentials: credentials.NewTLS(tlsCfg), last: new(atomic.Pointer[error])}
+		creds = recorder
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
+	conn, err := grpc.NewClient(
+		c.Host,
+		grpc.WithTransportCredentials(creds),
+		grpc.WithUnaryInterceptor(redactRPCErrors),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to Dex at %s: %w", c.Host, err)
 	}
 
+	dialCtx, cancel := context.WithTimeout(ctx, time.Duration(PtrOr(c.TimeoutSeconds, 5))*time.Second)
+	defer cancel()
+
 	// Trigger connection establishment and wait up to the configured timeout
 	// for the connection to become READY. This approximates the previous
 	// grpc.DialContext(..., WithBlock) behavior and gives us a lightweight
-	// health check without issuing any RPCs.
+	// health check without issuing any RPCs. A failed TLS handshake that retrying
+	// cannot fix (no TLS on the other side, untrusted or mismatched certificate)
+	// is reported at once.
 	conn.Connect()
 	for {
 		state := conn.GetState()
 		if state == connectivity.Ready {
 			break
 		}
+		if state == connectivity.TransientFailure && recorder != nil {
+			if herr := recorder.lastError(); herr != nil && isPermanentTLSError(herr) {
+				return errors.Join(c.handshakeError(herr), conn.Close())
+			}
+		}
 		if !conn.WaitForStateChange(dialCtx, state) {
-			return fmt.Errorf("timed out while connecting to Dex at %s", c.Host)
+			err := fmt.Errorf("timed out while connecting to Dex at %s", c.Host)
+			if recorder != nil {
+				if herr := recorder.lastError(); herr != nil {
+					err = c.handshakeError(herr)
+				}
+			}
+			return errors.Join(err, conn.Close())
 		}
 	}
 
 	c.Client = api.NewDexClient(conn)
 
 	return nil
+}
+
+// tlsConfig validates the connection options and returns the TLS configuration,
+// or nil for a plaintext connection. TLS is the default: without options the
+// system's root CAs verify Dex's certificate and its host name. Empty strings
+// count as unset. Errors never include certificate or key contents.
+func (c *DexConfig) tlsConfig() (*tls.Config, error) {
+	caCert := PtrOr(c.CACertPEM, "")
+	clientCert := PtrOr(c.ClientCertPEM, "")
+	clientKey := PtrOr(c.ClientKeyPEM, "")
+	skipVerify := PtrOr(c.InsecureSkipTLS, false)
+
+	if PtrOr(c.Plaintext, false) {
+		var conflicts []string
+		for _, opt := range []struct {
+			name string
+			set  bool
+		}{{"caCert", caCert != ""}, {"clientCert", clientCert != ""}, {"clientKey", clientKey != ""}, {"insecureSkipVerify", skipVerify}} {
+			if opt.set {
+				conflicts = append(conflicts, opt.name)
+			}
+		}
+		if len(conflicts) > 0 {
+			return nil, fmt.Errorf("plaintext: true cannot be combined with TLS options (%s): "+
+				"remove them for an unencrypted connection, or remove plaintext to connect with TLS",
+				strings.Join(conflicts, ", "))
+		}
+		return nil, nil
+	}
+
+	cfg := &tls.Config{MinVersion: tls.VersionTLS12}
+
+	// A custom CA replaces the system roots rather than extending them, so
+	// setting caCert never widens the set of trusted certificates.
+	if caCert != "" {
+		roots := x509.NewCertPool()
+		if !roots.AppendCertsFromPEM([]byte(caCert)) {
+			return nil, fmt.Errorf("caCert does not contain a PEM-encoded certificate")
+		}
+		cfg.RootCAs = roots
+	}
+
+	if clientCert != "" || clientKey != "" {
+		if clientCert == "" || clientKey == "" {
+			return nil, fmt.Errorf("both clientCert and clientKey must be provided (and non-empty) for mTLS")
+		}
+		pair, err := tls.X509KeyPair([]byte(clientCert), []byte(clientKey))
+		if err != nil {
+			return nil, fmt.Errorf("clientCert and clientKey cannot be used as a key pair: %w", err)
+		}
+		cfg.Certificates = []tls.Certificate{pair}
+	}
+
+	if skipVerify {
+		cfg.InsecureSkipVerify = true
+	}
+	return cfg, nil
+}
+
+// handshakeError explains a failed TLS handshake with the fix for the common
+// cases. Certificate contents are never included.
+func (c *DexConfig) handshakeError(err error) error {
+	var (
+		notTLS     tls.RecordHeaderError
+		unknownCA  x509.UnknownAuthorityError
+		hostname   x509.HostnameError
+		unverified *tls.CertificateVerificationError
+	)
+	customCA := PtrOr(c.CACertPEM, "") != ""
+	switch {
+	case errors.As(err, &notTLS):
+		return fmt.Errorf("the Dex gRPC API at %s did not answer with TLS. The provider connects with TLS by default; "+
+			"if this Dex serves its gRPC API without TLS (for example on localhost or inside a cluster), "+
+			"set plaintext: true in the provider configuration", c.Host)
+	case errors.As(err, &hostname):
+		return fmt.Errorf("the TLS certificate of the Dex gRPC API at %s does not cover this address (%v); "+
+			"connect using a host name the certificate is issued for", c.Host, hostname)
+	case errors.As(err, &unknownCA) && customCA:
+		return fmt.Errorf("the TLS certificate of the Dex gRPC API at %s is not issued by the CA in caCert", c.Host)
+	// Without caCert the platform verifier decides; on macOS it reports an
+	// untrusted certificate without a typed error, so any verification failure
+	// gets the caCert hint.
+	case (errors.As(err, &unknownCA) || errors.As(err, &unverified)) && !customCA:
+		return fmt.Errorf("the TLS certificate of the Dex gRPC API at %s is not trusted by this system (%v); "+
+			"if Dex uses a certificate from a private CA, set caCert to that CA's certificate", c.Host, err)
+	case isRemoteTLSAlert(err) && PtrOr(c.ClientCertPEM, "") == "":
+		return fmt.Errorf("the Dex gRPC API at %s rejected the TLS connection (%v); "+
+			"if Dex requires client certificates, set clientCert and clientKey", c.Host, err)
+	case isRemoteTLSAlert(err):
+		return fmt.Errorf("the Dex gRPC API at %s rejected the TLS connection (%v); "+
+			"check that Dex trusts the CA that issued clientCert", c.Host, err)
+	default:
+		return fmt.Errorf("TLS handshake with the Dex gRPC API at %s failed: %w", c.Host, err)
+	}
+}
+
+// isPermanentTLSError reports whether retrying the handshake cannot succeed.
+func isPermanentTLSError(err error) bool {
+	var (
+		notTLS     tls.RecordHeaderError
+		unverified *tls.CertificateVerificationError
+		unknownCA  x509.UnknownAuthorityError
+		hostname   x509.HostnameError
+		invalid    x509.CertificateInvalidError
+	)
+	return errors.As(err, &notTLS) || errors.As(err, &unverified) || errors.As(err, &unknownCA) ||
+		errors.As(err, &hostname) || errors.As(err, &invalid) || isRemoteTLSAlert(err)
+}
+
+// isRemoteTLSAlert reports whether the server ended the connection with a TLS
+// alert. Over TCP, crypto/tls reports it as a *net.OpError with Op "remote error"
+// around an unexported alert type (tls.AlertError is used only with QUIC).
+func isRemoteTLSAlert(err error) bool {
+	var op *net.OpError
+	return errors.As(err, &op) && op.Op == "remote error"
+}
+
+// handshakeRecorder keeps the last TLS handshake error, which gRPC otherwise
+// only logs, so that Configure can explain why the connection never became ready.
+// It also keeps TLS alerts read after the handshake: with TLS 1.3 the client
+// finishes its handshake before the server checks the client certificate, so a
+// missing or untrusted client certificate arrives as an alert on the first read.
+type handshakeRecorder struct {
+	credentials.TransportCredentials
+	last *atomic.Pointer[error]
+}
+
+func (r *handshakeRecorder) ClientHandshake(ctx context.Context, authority string, raw net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	conn, info, err := r.TransportCredentials.ClientHandshake(ctx, authority, raw)
+	if err != nil {
+		r.last.Store(&err)
+		return conn, info, err
+	}
+	return &alertRecordingConn{Conn: conn, last: r.last}, info, nil
+}
+
+type alertRecordingConn struct {
+	net.Conn
+	last *atomic.Pointer[error]
+}
+
+func (c *alertRecordingConn) Read(b []byte) (int, error) {
+	n, err := c.Conn.Read(b)
+	if err != nil && isRemoteTLSAlert(err) {
+		c.last.Store(&err)
+	}
+	return n, err
+}
+
+func (r *handshakeRecorder) Clone() credentials.TransportCredentials {
+	return &handshakeRecorder{TransportCredentials: r.TransportCredentials.Clone(), last: r.last}
+}
+
+func (r *handshakeRecorder) lastError() error {
+	if err := r.last.Load(); err != nil {
+		return *err
+	}
+	return nil
+}
+
+// WithPreviewSafeConfigure skips connecting to Dex while the provider
+// configuration contains values that are not known yet, as in a preview where
+// they come from other resources. infer would decode an unknown value as absent
+// and connect with guessed options, for example without a caCert that is still
+// being created. Check, Diff and preview Create/Update need no connection;
+// operations that do need Dex fail with "dex client not configured".
+func WithPreviewSafeConfigure(prov p.Provider) p.Provider {
+	configure := prov.Configure
+	if configure == nil {
+		return prov
+	}
+	prov.Configure = func(ctx context.Context, req p.ConfigureRequest) error {
+		if req.Args.HasComputed() {
+			return nil
+		}
+		return configure(ctx, req)
+	}
+	return prov
 }
 
 // PtrOr returns the value pointed to by p, or def if p is nil.

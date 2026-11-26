@@ -38,8 +38,8 @@ Before running, you'll need to:
    - Or use the generic connector examples
 
 2. **Configure the provider** in `index.ts`:
-   - For local development: `host: "localhost:5557"` with `insecureSkipVerify: true`
-   - For production: Configure TLS certificates
+   - For local development against the docker-compose Dex (no TLS): `host: "localhost:5557"` with `plaintext: true`
+   - For production: TLS is the default; set `caCert` for a private CA and `clientCert`/`clientKey` for mTLS
 
 ### Running
 

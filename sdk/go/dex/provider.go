@@ -15,11 +15,11 @@ import (
 type Provider struct {
 	pulumi.ProviderResourceState
 
-	// PEM-encoded CA certificate for validating Dex's TLS certificate.
+	// PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
 	CaCert pulumi.StringPtrOutput `pulumi:"caCert"`
-	// PEM-encoded client certificate for mTLS to Dex.
+	// PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
 	ClientCert pulumi.StringPtrOutput `pulumi:"clientCert"`
-	// PEM-encoded private key for the client certificate.
+	// PEM-encoded private key for clientCert.
 	ClientKey pulumi.StringPtrOutput `pulumi:"clientKey"`
 	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host pulumi.StringOutput `pulumi:"host"`
@@ -60,32 +60,36 @@ func NewProvider(ctx *pulumi.Context,
 }
 
 type providerArgs struct {
-	// PEM-encoded CA certificate for validating Dex's TLS certificate.
+	// PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
 	CaCert *string `pulumi:"caCert"`
-	// PEM-encoded client certificate for mTLS to Dex.
+	// PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
 	ClientCert *string `pulumi:"clientCert"`
-	// PEM-encoded private key for the client certificate.
+	// PEM-encoded private key for clientCert.
 	ClientKey *string `pulumi:"clientKey"`
 	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host string `pulumi:"host"`
-	// If true, disables TLS verification (development only).
+	// If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
 	InsecureSkipVerify *bool `pulumi:"insecureSkipVerify"`
+	// If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+	Plaintext *bool `pulumi:"plaintext"`
 	// Per-RPC timeout in seconds when talking to Dex.
 	TimeoutSeconds *int `pulumi:"timeoutSeconds"`
 }
 
 // The set of arguments for constructing a Provider resource.
 type ProviderArgs struct {
-	// PEM-encoded CA certificate for validating Dex's TLS certificate.
+	// PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
 	CaCert pulumi.StringPtrInput
-	// PEM-encoded client certificate for mTLS to Dex.
+	// PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
 	ClientCert pulumi.StringPtrInput
-	// PEM-encoded private key for the client certificate.
+	// PEM-encoded private key for clientCert.
 	ClientKey pulumi.StringPtrInput
 	// Dex gRPC host:port, e.g. dex.internal.example.com:5557.
 	Host pulumi.StringInput
-	// If true, disables TLS verification (development only).
+	// If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
 	InsecureSkipVerify pulumi.BoolPtrInput
+	// If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+	Plaintext pulumi.BoolPtrInput
 	// Per-RPC timeout in seconds when talking to Dex.
 	TimeoutSeconds pulumi.IntPtrInput
 }
@@ -127,17 +131,17 @@ func (o ProviderOutput) ToProviderOutputWithContext(ctx context.Context) Provide
 	return o
 }
 
-// PEM-encoded CA certificate for validating Dex's TLS certificate.
+// PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
 func (o ProviderOutput) CaCert() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Provider) pulumi.StringPtrOutput { return v.CaCert }).(pulumi.StringPtrOutput)
 }
 
-// PEM-encoded client certificate for mTLS to Dex.
+// PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
 func (o ProviderOutput) ClientCert() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Provider) pulumi.StringPtrOutput { return v.ClientCert }).(pulumi.StringPtrOutput)
 }
 
-// PEM-encoded private key for the client certificate.
+// PEM-encoded private key for clientCert.
 func (o ProviderOutput) ClientKey() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Provider) pulumi.StringPtrOutput { return v.ClientKey }).(pulumi.StringPtrOutput)
 }

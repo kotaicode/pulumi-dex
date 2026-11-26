@@ -8,7 +8,7 @@ declare var exports: any;
 const __config = new pulumi.Config("dex");
 
 /**
- * PEM-encoded CA certificate for validating Dex's TLS certificate.
+ * PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
  */
 export declare const caCert: string | undefined;
 Object.defineProperty(exports, "caCert", {
@@ -19,7 +19,7 @@ Object.defineProperty(exports, "caCert", {
 });
 
 /**
- * PEM-encoded client certificate for mTLS to Dex.
+ * PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
  */
 export declare const clientCert: string | undefined;
 Object.defineProperty(exports, "clientCert", {
@@ -30,7 +30,7 @@ Object.defineProperty(exports, "clientCert", {
 });
 
 /**
- * PEM-encoded private key for the client certificate.
+ * PEM-encoded private key for clientCert.
  */
 export declare const clientKey: string | undefined;
 Object.defineProperty(exports, "clientKey", {
@@ -52,12 +52,23 @@ Object.defineProperty(exports, "host", {
 });
 
 /**
- * If true, disables TLS verification (development only).
+ * If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
  */
 export declare const insecureSkipVerify: boolean | undefined;
 Object.defineProperty(exports, "insecureSkipVerify", {
     get() {
         return __config.getObject<boolean>("insecureSkipVerify");
+    },
+    enumerable: true,
+});
+
+/**
+ * If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+ */
+export declare const plaintext: boolean | undefined;
+Object.defineProperty(exports, "plaintext", {
+    get() {
+        return __config.getObject<boolean>("plaintext");
     },
     enumerable: true,
 });

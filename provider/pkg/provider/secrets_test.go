@@ -146,7 +146,8 @@ func TestConfigure_redactsCredentialsFromRPCErrors(t *testing.T) {
 		}
 	})
 
-	cfg := &DexConfig{Host: lis.Addr().String()}
+	plaintext := true
+	cfg := &DexConfig{Host: lis.Addr().String(), Plaintext: &plaintext}
 	if err := cfg.Configure(t.Context()); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}

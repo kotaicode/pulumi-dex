@@ -33,9 +33,10 @@ pinned GitHub Actions up to date.
 
 ## Using the Provider Securely
 
-- **Encrypt the connection to the Dex gRPC API.** Without TLS options, the provider connects
-  unencrypted. Configure TLS (`caCert`) or mTLS (`clientCert` and `clientKey`) for any Dex that is
-  not on your own machine, and avoid `insecureSkipVerify`, which disables certificate checks.
+- **Keep the connection to the Dex gRPC API encrypted.** The provider connects with TLS and verifies
+  Dex's certificate by default. Use mTLS (`clientCert` and `clientKey`) where Dex supports it. Use
+  `plaintext: true` only for a Dex on your own machine or inside a cluster, and avoid
+  `insecureSkipVerify`, which disables certificate checks.
 - **Restrict network access** to Dex's gRPC API; anyone who can reach it can manage clients and
   connectors.
 - **Keep credentials secret.** Pass client secrets, connector secrets and TLS keys as Pulumi

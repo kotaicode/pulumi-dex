@@ -11,17 +11,17 @@ import (
 
 var _ = internal.GetEnvOrDefault
 
-// PEM-encoded CA certificate for validating Dex's TLS certificate.
+// PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
 func GetCaCert(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:caCert")
 }
 
-// PEM-encoded client certificate for mTLS to Dex.
+// PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
 func GetClientCert(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:clientCert")
 }
 
-// PEM-encoded private key for the client certificate.
+// PEM-encoded private key for clientCert.
 func GetClientKey(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:clientKey")
 }
@@ -31,9 +31,14 @@ func GetHost(ctx *pulumi.Context) string {
 	return config.Get(ctx, "dex:host")
 }
 
-// If true, disables TLS verification (development only).
+// If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
 func GetInsecureSkipVerify(ctx *pulumi.Context) bool {
 	return config.GetBool(ctx, "dex:insecureSkipVerify")
+}
+
+// If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+func GetPlaintext(ctx *pulumi.Context) bool {
+	return config.GetBool(ctx, "dex:plaintext")
 }
 
 // Per-RPC timeout in seconds when talking to Dex.
