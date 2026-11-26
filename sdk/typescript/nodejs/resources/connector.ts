@@ -102,6 +102,8 @@ export class Connector extends pulumi.CustomResource {
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         const secretOpts = { additionalSecretOutputs: ["rawConfig"] };
         opts = pulumi.mergeOptions(opts, secretOpts);
+        const replaceOnChanges = { replaceOnChanges: ["connectorId"] };
+        opts = pulumi.mergeOptions(opts, replaceOnChanges);
         super(Connector.__pulumiType, name, resourceInputs, opts);
     }
 }

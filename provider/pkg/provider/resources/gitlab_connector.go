@@ -20,7 +20,7 @@ import (
 
 // GitLabConnectorArgs defines inputs for GitLabConnector.
 type GitLabConnectorArgs struct {
-	ConnectorId         string   `pulumi:"connectorId"`
+	ConnectorId         string   `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name                string   `pulumi:"name"`
 	BaseURL             *string  `pulumi:"baseURL,optional"`
 	ClientId            string   `pulumi:"clientId"`
@@ -256,10 +256,6 @@ func (c *GitLabConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 	if args.ConnectorId != oldState.ConnectorId {
 		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
 	}
-	if args.BaseURL != nil && oldState.BaseURL != nil && *args.BaseURL != *oldState.BaseURL {
-		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("baseURL cannot be changed (would require replace)")
-	}
-
 	gitlabConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,

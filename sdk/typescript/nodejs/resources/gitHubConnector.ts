@@ -150,6 +150,8 @@ export class GitHubConnector extends pulumi.CustomResource {
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         const secretOpts = { additionalSecretOutputs: ["clientSecret"] };
         opts = pulumi.mergeOptions(opts, secretOpts);
+        const replaceOnChanges = { replaceOnChanges: ["connectorId"] };
+        opts = pulumi.mergeOptions(opts, replaceOnChanges);
         super(GitHubConnector.__pulumiType, name, resourceInputs, opts);
     }
 }

@@ -133,6 +133,8 @@ class LocalConnector(pulumi.CustomResource):
             if name is None and not opts.urn:
                 raise TypeError("Missing required property 'name'")
             __props__.__dict__["name"] = name
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(LocalConnector, __self__).__init__(
             'dex:resources:LocalConnector',
             resource_name,

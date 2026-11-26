@@ -83,6 +83,8 @@ export class LocalConnector extends pulumi.CustomResource {
             resourceInputs["name"] = undefined /*out*/;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
+        const replaceOnChanges = { replaceOnChanges: ["connectorId"] };
+        opts = pulumi.mergeOptions(opts, replaceOnChanges);
         super(LocalConnector.__pulumiType, name, resourceInputs, opts);
     }
 }

@@ -217,6 +217,8 @@ class Client(pulumi.CustomResource):
             __props__.__dict__["created_at"] = None
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["secret"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["clientId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(Client, __self__).__init__(
             'dex:resources:Client',
             resource_name,

@@ -9,7 +9,9 @@ import (
 	"time"
 
 	api "github.com/dexidp/dex/api/v2"
+	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,7 +20,7 @@ import (
 
 // ClientArgs defines the inputs for a dex.Client resource.
 type ClientArgs struct {
-	ClientId     string   `pulumi:"clientId"`
+	ClientId     string   `pulumi:"clientId" provider:"replaceOnChanges"`
 	Name         string   `pulumi:"name"`
 	Secret       *string  `pulumi:"secret,optional" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
 	RedirectUris []string `pulumi:"redirectUris"`
@@ -61,6 +63,21 @@ func (c *ClientState) Annotate(a infer.Annotator) {
 // input was supplied, so plain literals, refresh and import never store them in plaintext.
 func (c *Client) WireDependencies(f infer.FieldSelector, _ *ClientArgs, state *ClientState) {
 	f.OutputField(&state.Secret).AlwaysSecret()
+}
+
+// Check rejects a change of public on an existing client at preview: Dex's
+// UpdateClient cannot apply it. It runs here because only the raw inputs show
+// whether the new value is still unknown.
+func (c *Client) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[ClientArgs], error) {
+	args, failures, err := infer.DefaultCheck[ClientArgs](ctx, req.NewInputs)
+	if err != nil {
+		return infer.CheckResponse[ClientArgs]{Failures: failures}, err
+	}
+	if publicChanged(req.OldInputs, req.NewInputs) {
+		failures = append(failures, p.CheckFailure{Property: "public",
+			Reason: "Dex cannot change public of an existing client. " + newClientGuidance})
+	}
+	return infer.CheckResponse[ClientArgs]{Inputs: args, Failures: failures}, nil
 }
 
 // Create creates a new OAuth2 client in Dex.
@@ -234,6 +251,16 @@ func (c *Client) Update(ctx context.Context, req infer.UpdateRequest[ClientArgs,
 				"Keep a non-empty value, or delete the client and create it again to remove it "+
 				"(this generates a new secret unless `secret` is set)",
 			oldState.ClientId, strings.Join(cleared, ", "))
+	}
+
+	// Also before the dry-run return: Dex's UpdateClient has no secret field, so
+	// recording a new secret as applied would leave state and Dex disagreeing
+	// without notice. Only the state knows a generated secret, so this check
+	// cannot run in Check. An unknown secret decodes as unset and is not judged.
+	if secretChanged(oldState, args) {
+		return infer.UpdateResponse[ClientState]{}, fmt.Errorf(
+			"dex update client %q: Dex cannot change the secret of an existing client. %s",
+			oldState.ClientId, newClientGuidance)
 	}
 
 	// In preview/dry-run mode, skip actual Dex API calls and return expected state
@@ -412,6 +439,41 @@ func clearedClientFields(old, desired ClientArgs) []string {
 		cleared = append(cleared, "trustedPeers")
 	}
 	return cleared
+}
+
+// newClientGuidance is how to get a different secret or public flag, which
+// Dex's UpdateClient cannot change.
+const newClientGuidance = "To rotate the secret or change public, create a client with a new client ID, " +
+	"move its users to the new client, then remove the old one"
+
+// secretChanged reports whether the program sets a secret that differs from
+// the client's current one. An omitted, generated secret never counts.
+func secretChanged(old ClientState, desired ClientArgs) bool {
+	s := provider.PtrOr(desired.Secret, "")
+	return s != "" && s != provider.PtrOr(old.Secret, "")
+}
+
+// publicChanged reports whether the program changes the effective public flag
+// of an existing client; omitted and false both mean confidential. Unknown
+// values are not judged.
+func publicChanged(oldInputs, newInputs property.Map) bool {
+	if oldInputs.Len() == 0 {
+		return false // a new client
+	}
+	effective := func(m property.Map) (public, known bool) {
+		v, ok := m.GetOk("public")
+		switch {
+		case !ok || v.IsNull():
+			return false, true
+		case v.IsBool():
+			return v.AsBool(), true
+		default:
+			return false, false
+		}
+	}
+	oldPublic, oldKnown := effective(oldInputs)
+	newPublic, newKnown := effective(newInputs)
+	return oldKnown && newKnown && oldPublic != newPublic
 }
 
 // PtrOrString returns the value pointed to by p, or nil if p is empty or nil.

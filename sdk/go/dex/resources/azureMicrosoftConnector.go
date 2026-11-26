@@ -68,6 +68,10 @@ func NewAzureMicrosoftConnector(ctx *pulumi.Context,
 		"clientSecret",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource AzureMicrosoftConnector
 	err := ctx.RegisterResource("dex:resources:AzureMicrosoftConnector", name, args, &resource, opts...)

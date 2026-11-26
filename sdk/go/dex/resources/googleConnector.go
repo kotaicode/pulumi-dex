@@ -67,6 +67,10 @@ func NewGoogleConnector(ctx *pulumi.Context,
 		"clientSecret",
 	})
 	opts = append(opts, secrets)
+	replaceOnChanges := pulumi.ReplaceOnChanges([]string{
+		"connectorId",
+	})
+	opts = append(opts, replaceOnChanges)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource GoogleConnector
 	err := ctx.RegisterResource("dex:resources:GoogleConnector", name, args, &resource, opts...)

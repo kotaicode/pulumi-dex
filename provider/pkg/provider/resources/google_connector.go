@@ -20,7 +20,7 @@ import (
 
 // GoogleConnectorArgs defines inputs for GoogleConnector.
 type GoogleConnectorArgs struct {
-	ConnectorId            string            `pulumi:"connectorId"`
+	ConnectorId            string            `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name                   string            `pulumi:"name"`
 	ClientId               string            `pulumi:"clientId"`
 	ClientSecret           string            `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider

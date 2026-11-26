@@ -118,6 +118,8 @@ export class Client extends pulumi.CustomResource {
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         const secretOpts = { additionalSecretOutputs: ["secret"] };
         opts = pulumi.mergeOptions(opts, secretOpts);
+        const replaceOnChanges = { replaceOnChanges: ["clientId"] };
+        opts = pulumi.mergeOptions(opts, replaceOnChanges);
         super(Client.__pulumiType, name, resourceInputs, opts);
     }
 }

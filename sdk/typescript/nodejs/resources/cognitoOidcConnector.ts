@@ -142,6 +142,8 @@ export class CognitoOidcConnector extends pulumi.CustomResource {
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         const secretOpts = { additionalSecretOutputs: ["clientSecret", "extraOidc"] };
         opts = pulumi.mergeOptions(opts, secretOpts);
+        const replaceOnChanges = { replaceOnChanges: ["connectorId"] };
+        opts = pulumi.mergeOptions(opts, replaceOnChanges);
         super(CognitoOidcConnector.__pulumiType, name, resourceInputs, opts);
     }
 }

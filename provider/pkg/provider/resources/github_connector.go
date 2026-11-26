@@ -27,7 +27,7 @@ type GitHubOrg struct {
 
 // GitHubConnectorArgs defines inputs for GitHubConnector.
 type GitHubConnectorArgs struct {
-	ConnectorId          string      `pulumi:"connectorId"`
+	ConnectorId          string      `pulumi:"connectorId" provider:"replaceOnChanges"`
 	Name                 string      `pulumi:"name"`
 	ClientId             string      `pulumi:"clientId"`
 	ClientSecret         string      `pulumi:"clientSecret" provider:"secret"` //nolint:gosec // G117: Intentionally exported secret field for Pulumi provider
@@ -311,10 +311,6 @@ func (c *GitHubConnector) Update(ctx context.Context, req infer.UpdateRequest[Gi
 	if args.ConnectorId != oldState.ConnectorId {
 		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
 	}
-	if args.HostName != nil && oldState.HostName != nil && *args.HostName != *oldState.HostName {
-		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("hostName cannot be changed (would require replace)")
-	}
-
 	githubConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,

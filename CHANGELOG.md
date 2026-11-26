@@ -37,6 +37,17 @@ inside a cluster.
   `allowedGroups` must not be empty (Dex would treat that as no restriction) and needs a specific
   tenant ID or domain, because Dex ignores it for `common`, `organizations` and `consumers`.
   To migrate, replace `groups: "..."` with `allowedGroups: ["group-a", ...]`, or remove it.
+- **Changing a client's `secret` or `public` fails at preview.** Dex's `UpdateClient` cannot change
+  either. A new explicit `secret` was silently ignored, so a rotation never happened; a new `public`
+  value was recorded in state although Dex kept the old one, and every refresh brought the difference
+  back. The preview now explains that Dex cannot change them and how to rotate: create a client with
+  a new client ID, move its users to it, then remove the old client. An omitted, generated secret
+  stays unchanged and shows no change. A `public` value changed directly in Dex also stops the
+  preview after a refresh, instead of proposing an update that would not apply.
+- **Changing `clientId` or `connectorId` replaces the object.** Before, the preview proposed an
+  update that then failed with "cannot be changed". Now Pulumi creates the object with the new ID and
+  deletes the old one; the IDs differ, so creating first cannot collide. A replaced client without an
+  explicit `secret` gets a newly generated one.
 
 ### Fixed
 - Connection failures caused by TLS are reported with their cause and fix instead of only "timed
@@ -55,6 +66,11 @@ inside a cluster.
 - `AzureMicrosoftConnector.tenant` accepts every form Dex documents: `common`, `organizations`,
   `consumers`, a tenant ID or a tenant domain such as `contoso.onmicrosoft.com`. Before, only
   `common`, `organizations` and tenant IDs passed validation.
+- Settings stored in a connector's config are updated in place instead of failing the update with
+  "cannot be changed (would require replace)": `AzureOidcConnector.tenantId`,
+  `AzureMicrosoftConnector.tenant`, `CognitoOidcConnector.region` and `userPoolId`,
+  `GitHubConnector.hostName` and `GitLabConnector.baseURL`. Dex replaces a connector's whole config,
+  as it already did for a generic `Connector`'s `type`.
 - The README listed `DEX_*` environment variables that the provider never read. It now says that the
   provider reads no environment variables and shows how to pass settings through the program or
   Pulumi config.

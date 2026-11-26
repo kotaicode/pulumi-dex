@@ -280,6 +280,8 @@ class CognitoOidcConnector(pulumi.CustomResource):
             __props__.__dict__["user_pool_id"] = user_pool_id
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret", "extraOidc"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(CognitoOidcConnector, __self__).__init__(
             'dex:resources:CognitoOidcConnector',
             resource_name,

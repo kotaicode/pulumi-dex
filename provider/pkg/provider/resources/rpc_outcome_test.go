@@ -97,7 +97,20 @@ func (f *fakeDex) UpdateClient(_ context.Context, req *api.UpdateClientReq) (*ap
 	if !ok {
 		return &api.UpdateClientResp{NotFound: true}, nil
 	}
-	c.Name = req.Name
+	// Same fields and conditions as Dex v2.46.1's UpdateClient: secret and
+	// public cannot change, and empty name or logo URL leave the old value.
+	if req.RedirectUris != nil {
+		c.RedirectUris = req.RedirectUris
+	}
+	if req.TrustedPeers != nil {
+		c.TrustedPeers = req.TrustedPeers
+	}
+	if req.Name != "" {
+		c.Name = req.Name
+	}
+	if req.LogoUrl != "" {
+		c.LogoUrl = req.LogoUrl
+	}
 	return &api.UpdateClientResp{}, nil
 }
 
@@ -154,7 +167,17 @@ func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq
 	if !ok {
 		return &api.UpdateConnectorResp{NotFound: true}, nil
 	}
-	c.Name = req.NewName
+	// Same as Dex v2.46.1's UpdateConnector: type, name and the whole config
+	// change when set; the ID never changes.
+	if req.NewType != "" {
+		c.Type = req.NewType
+	}
+	if req.NewName != "" {
+		c.Name = req.NewName
+	}
+	if len(req.NewConfig) != 0 {
+		c.Config = req.NewConfig
+	}
 	return &api.UpdateConnectorResp{}, nil
 }
 

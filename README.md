@@ -303,6 +303,15 @@ Manages an OAuth2 client in Dex.
 
 **Note:** Dex's API cannot clear `logoUrl`, `trustedPeers`, `redirectUris` or `name`; it ignores empty values. An update that would remove one of them fails in preview instead of reporting a change that Dex never applies. To remove such a value, delete the client and create it again; this generates a new secret unless `secret` is set.
 
+**Changes Dex cannot apply in place:**
+
+| Change | What happens |
+| --- | --- |
+| `clientId` (Client) or `connectorId` (all connectors) | Replacement: the object with the new ID is created, then the old one is deleted. A replaced client gets a new secret unless `secret` is set. |
+| `secret` set to a different value | Fails in preview. Dex cannot change a client's secret. To rotate it, create a client with a new client ID, move its users to the new client, then remove the old one. An omitted, generated secret stays unchanged. |
+| `public` | Fails in preview, for the same reason and with the same remedy. |
+| connector `type` and settings stored in a connector's config (for example `tenant`, `tenantId`, `region`, `userPoolId`, `hostName`, `baseURL`) | Updated in place: Dex replaces the connector's type and config. |
+
 **Outputs:**
 - `id` - Resource ID (same as clientId)
 - `clientId` - The client ID

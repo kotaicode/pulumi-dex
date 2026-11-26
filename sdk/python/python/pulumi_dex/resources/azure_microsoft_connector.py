@@ -243,6 +243,8 @@ class AzureMicrosoftConnector(pulumi.CustomResource):
             __props__.__dict__["tenant"] = tenant
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
+        replace_on_changes = pulumi.ResourceOptions(replace_on_changes=["connectorId"])
+        opts = pulumi.ResourceOptions.merge(opts, replace_on_changes)
         super(AzureMicrosoftConnector, __self__).__init__(
             'dex:resources:AzureMicrosoftConnector',
             resource_name,
