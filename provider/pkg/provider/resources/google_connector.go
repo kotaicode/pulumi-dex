@@ -150,12 +150,12 @@ func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[Go
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "google-connector", token: tokenGoogleConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[GoogleConnectorState]{}, provider.WrapError("create", "google-connector", args.ConnectorId, err)
+		return infer.CreateResponse[GoogleConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[GoogleConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[GoogleConnectorState]{}, target.alreadyExists()
 	}
 
 	state := GoogleConnectorState{
@@ -193,6 +193,10 @@ func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[Google
 
 	if found == nil {
 		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, nil
+	}
+
+	if found.Type != "google" {
+		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, wrongConnectorType("google-connector", found.Id, found.Type, "google")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)

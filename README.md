@@ -244,6 +244,34 @@ const githubConnector = new dex.Connector("github", {
 }, { provider });
 ```
 
+## Importing Existing Dex Objects
+
+Creating a resource whose ID already exists in Dex fails with a conflict, even when the existing object has an identical configuration. The provider never takes over an object it did not create: an equal ID is no proof that this stack owns it, and taking it over would let this stack delete an object that another stack or another tool manages. The error names the command to run instead:
+
+```bash
+pulumi import <type> <name> <id>
+# for example
+pulumi import dex:resources:Client webClient my-web-app
+pulumi import dex:resources:GitHubConnector github github
+```
+
+| Resource | Type token |
+| --- | --- |
+| Client | `dex:resources:Client` |
+| Generic connector (any Dex connector type) | `dex:resources:Connector` |
+| Azure/Entra ID (generic OIDC) | `dex:resources:AzureOidcConnector` |
+| Azure/Entra ID (Microsoft connector) | `dex:resources:AzureMicrosoftConnector` |
+| AWS Cognito | `dex:resources:CognitoOidcConnector` |
+| GitHub | `dex:resources:GitHubConnector` |
+| GitLab | `dex:resources:GitLabConnector` |
+| Google | `dex:resources:GoogleConnector` |
+| Local/builtin | `dex:resources:LocalConnector` |
+
+- Import only reads from Dex; it never creates or changes the object. Run `pulumi up` afterwards to apply your program's settings.
+- A typed connector resource only imports a connector of the matching Dex type (for example `github` for `GitHubConnector`). Import a connector of any other type with `dex:resources:Connector`.
+- If a create times out or the connection drops, the object may or may not have been created. The error says so; check whether the ID exists in Dex and import it instead of running `pulumi up` again.
+- `pulumi import` prints the imported credentials in the generated program; see [Security Considerations](#security-considerations).
+
 ## Resources
 
 ### `dex.Client`

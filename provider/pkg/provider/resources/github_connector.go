@@ -200,12 +200,12 @@ func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "github-connector", token: tokenGitHubConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[GitHubConnectorState]{}, provider.WrapError("create", "github-connector", args.ConnectorId, err)
+		return infer.CreateResponse[GitHubConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[GitHubConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[GitHubConnectorState]{}, target.alreadyExists()
 	}
 
 	state := GitHubConnectorState{
@@ -243,6 +243,10 @@ func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHub
 
 	if found == nil {
 		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, nil
+	}
+
+	if found.Type != "github" {
+		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, wrongConnectorType("github-connector", found.Id, found.Type, "github")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- **Creating a resource whose ID already exists in Dex now fails instead of taking over the
+  object.** `Client` and the generic `Connector` silently adopted an existing client or connector
+  with the same ID, even one created by another stack or tool, and copied its configuration,
+  including the client secret, into state. Destroying that stack then deleted the other owner's
+  object. The typed connectors already failed, but without guidance. Every resource now returns a
+  conflict that names the exact command to take the object over explicitly, for example
+  `pulumi import dex:resources:Client webClient my-web-app`. The existing object is left untouched.
+  This applies whether Dex reports the existing ID with its `already_exists` response flag (Dex
+  v2.46.1) or with a gRPC `AlreadyExists` status.
+- **Typed connector resources only read connectors of their own Dex type.** Importing or refreshing,
+  for example, a `GoogleConnector` whose connector in Dex has type `github` now fails. Before, a later
+  update would have rewritten the connector as a Google connector. Use `dex:resources:Connector` for
+  connectors of other types.
+- A create that times out, is canceled or loses its connection now reports that the outcome is
+  unknown and how to check and import the object. Creates are never retried automatically.
+
+Upgrade steps:
+1. **Before upgrading, check for objects that more than one stack manages.** Earlier versions could
+   have adopted the same client or connector into several stacks; destroying any of them deletes the
+   object for all. List the IDs in each stack, for example
+   `pulumi stack export | jq -r '.deployment.resources[] | select(.type | startswith("dex:")) | .id'`,
+   and compare across stacks. Keep each ID in one stack only. In the others, run
+   `pulumi state delete <urn>`, which forgets the resource without deleting it in Dex.
+2. Resources already in a stack's state keep working after the upgrade: refresh, update and delete
+   behave as before.
+3. If `pulumi up` now fails with "already exists", either run the `pulumi import` command from the
+   error and then `pulumi up` again, or choose a different ID. Programs that relied on recreating
+   their stack against an existing Dex need this step once.
+4. If refresh now reports that a connector "has type X, not Y", import it with the resource for its
+   actual type, or with `dex:resources:Connector`.
+
 ### Fixed
 - **Refresh no longer drops connectors whose config in Dex cannot be read.** Dex only checks that a
   connector config is valid JSON, so it can store a config that is not a JSON object or a known

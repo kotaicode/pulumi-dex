@@ -153,12 +153,12 @@ func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "gitlab-connector", token: tokenGitLabConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[GitLabConnectorState]{}, provider.WrapError("create", "gitlab-connector", args.ConnectorId, err)
+		return infer.CreateResponse[GitLabConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[GitLabConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[GitLabConnectorState]{}, target.alreadyExists()
 	}
 
 	state := GitLabConnectorState{
@@ -196,6 +196,10 @@ func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLab
 
 	if found == nil {
 		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, nil
+	}
+
+	if found.Type != "gitlab" {
+		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, wrongConnectorType("gitlab-connector", found.Id, found.Type, "gitlab")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)

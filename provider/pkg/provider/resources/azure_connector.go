@@ -176,12 +176,12 @@ func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "azure-oidc-connector", token: tokenAzureOidcConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, provider.WrapError("create", "azure-oidc-connector", args.ConnectorId, err)
+		return infer.CreateResponse[AzureOidcConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[AzureOidcConnectorState]{}, target.alreadyExists()
 	}
 
 	state := AzureOidcConnectorState{
@@ -221,6 +221,10 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 	if found == nil {
 		// Not found - return empty to indicate deletion
 		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, nil
+	}
+
+	if found.Type != "oidc" {
+		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, wrongConnectorType("azure-oidc-connector", found.Id, found.Type, "oidc")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)
@@ -506,12 +510,12 @@ func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRe
 	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
 		Connector: connector,
 	})
+	target := createTarget{kind: "azure-microsoft-connector", token: tokenAzureMicrosoftConnector, name: req.Name, id: args.ConnectorId}
 	if err != nil {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, provider.WrapError("create", "azure-microsoft-connector", args.ConnectorId, err)
+		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("connector with id %q already exists", args.ConnectorId)
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, target.alreadyExists()
 	}
 
 	state := AzureMicrosoftConnectorState{
@@ -549,6 +553,10 @@ func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadReques
 
 	if found == nil {
 		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, nil
+	}
+
+	if found.Type != "microsoft" {
+		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, wrongConnectorType("azure-microsoft-connector", found.Id, found.Type, "microsoft")
 	}
 
 	conf, err := parseConnectorConfig(found.Config)

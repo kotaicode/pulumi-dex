@@ -118,40 +118,12 @@ func (c *Client) Create(ctx context.Context, req infer.CreateRequest[ClientArgs]
 	resp, err := cfg.Client.CreateClient(createCtx, &api.CreateClientReq{
 		Client: client,
 	})
+	target := createTarget{kind: "client", token: tokenClient, name: req.Name, id: args.ClientId}
 	if err != nil {
-		return infer.CreateResponse[ClientState]{}, provider.WrapError("create", "client", args.ClientId, err)
+		return infer.CreateResponse[ClientState]{}, target.failed(err)
 	}
-
-	if resp.AlreadyExists {
-		// Resource already exists - read it and return it so Pulumi can track it
-		// This allows destroy to work properly even if the resource was created outside Pulumi
-		readCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-		defer cancel()
-
-		getResp, err := cfg.Client.GetClient(readCtx, &api.GetClientReq{
-			Id: args.ClientId,
-		})
-		if err != nil {
-			return infer.CreateResponse[ClientState]{}, provider.WrapError("read existing", "client", args.ClientId, err)
-		}
-
-		// Build state from existing client
-		state := ClientState{
-			ClientArgs: ClientArgs{
-				ClientId:     getResp.Client.Id,
-				Name:         getResp.Client.Name,
-				Secret:       &getResp.Client.Secret,
-				RedirectUris: getResp.Client.RedirectUris,
-				TrustedPeers: getResp.Client.TrustedPeers,
-				Public:       &getResp.Client.Public,
-				LogoUrl:      &getResp.Client.LogoUrl,
-			},
-		}
-
-		return infer.CreateResponse[ClientState]{
-			ID:     args.ClientId,
-			Output: state,
-		}, nil
+	if resp.GetAlreadyExists() {
+		return infer.CreateResponse[ClientState]{}, target.alreadyExists()
 	}
 
 	// Build the state

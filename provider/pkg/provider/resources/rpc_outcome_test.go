@@ -39,6 +39,14 @@ type fakeDex struct {
 	getClientErr      error
 	listClientsErr    error
 	listConnectorsErr error
+	// alreadyExistsStatus reports an existing ID on Create as gRPC AlreadyExists
+	// instead of Dex's already_exists response flag.
+	alreadyExistsStatus bool
+	// createErr is returned by Create after the object was stored, simulating a
+	// write that committed but whose response was lost (e.g. a timeout).
+	createErr error
+
+	writes int // Create, Update and Delete calls, to prove read-only paths
 }
 
 func newFakeDex() *fakeDex {
@@ -62,8 +70,12 @@ func (f *fakeDex) GetClient(_ context.Context, req *api.GetClientReq) (*api.GetC
 func (f *fakeDex) CreateClient(_ context.Context, req *api.CreateClientReq) (*api.CreateClientResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	c := req.GetClient()
 	if _, ok := f.clients[c.GetId()]; ok {
+		if f.alreadyExistsStatus {
+			return nil, status.Error(codes.AlreadyExists, "client already exists")
+		}
 		return &api.CreateClientResp{AlreadyExists: true}, nil
 	}
 	f.clients[c.GetId()] = &api.Client{
@@ -71,12 +83,16 @@ func (f *fakeDex) CreateClient(_ context.Context, req *api.CreateClientReq) (*ap
 		RedirectUris: append([]string(nil), c.GetRedirectUris()...),
 		TrustedPeers: append([]string(nil), c.GetTrustedPeers()...),
 	}
+	if f.createErr != nil {
+		return nil, f.createErr
+	}
 	return &api.CreateClientResp{Client: c}, nil
 }
 
 func (f *fakeDex) UpdateClient(_ context.Context, req *api.UpdateClientReq) (*api.UpdateClientResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	c, ok := f.clients[req.Id]
 	if !ok {
 		return &api.UpdateClientResp{NotFound: true}, nil
@@ -88,6 +104,7 @@ func (f *fakeDex) UpdateClient(_ context.Context, req *api.UpdateClientReq) (*ap
 func (f *fakeDex) DeleteClient(_ context.Context, req *api.DeleteClientReq) (*api.DeleteClientResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	if _, ok := f.clients[req.Id]; !ok {
 		return &api.DeleteClientResp{NotFound: true}, nil
 	}
@@ -112,12 +129,19 @@ func (f *fakeDex) ListClients(context.Context, *api.ListClientReq) (*api.ListCli
 func (f *fakeDex) CreateConnector(_ context.Context, req *api.CreateConnectorReq) (*api.CreateConnectorResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	c := req.GetConnector()
 	if _, ok := f.connectors[c.GetId()]; ok {
+		if f.alreadyExistsStatus {
+			return nil, status.Error(codes.AlreadyExists, "connector already exists")
+		}
 		return &api.CreateConnectorResp{AlreadyExists: true}, nil
 	}
 	f.connectors[c.GetId()] = &api.Connector{
 		Id: c.GetId(), Type: c.GetType(), Name: c.GetName(), Config: append([]byte(nil), c.GetConfig()...),
+	}
+	if f.createErr != nil {
+		return nil, f.createErr
 	}
 	return &api.CreateConnectorResp{}, nil
 }
@@ -125,6 +149,7 @@ func (f *fakeDex) CreateConnector(_ context.Context, req *api.CreateConnectorReq
 func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq) (*api.UpdateConnectorResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	c, ok := f.connectors[req.Id]
 	if !ok {
 		return &api.UpdateConnectorResp{NotFound: true}, nil
@@ -136,6 +161,7 @@ func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq
 func (f *fakeDex) DeleteConnector(_ context.Context, req *api.DeleteConnectorReq) (*api.DeleteConnectorResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writes++
 	if _, ok := f.connectors[req.Id]; !ok {
 		return &api.DeleteConnectorResp{NotFound: true}, nil
 	}
