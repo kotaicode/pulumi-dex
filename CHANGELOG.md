@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Release binaries are built with Go 1.26.11 instead of 1.26.6.** The `go.mod` files named only
+  Go 1.26.6, so CI and releases built with it. `govulncheck` reports 12 standard library
+  vulnerabilities in 1.26.6 that the provider's code can reach, among them HTTP/2 server crashes and
+  memory exhaustion in `net/http` and missing distrust of compromised intermediate certificates in
+  `crypto/x509`. A `toolchain go1.26.11` line now sets the build version; the minimum Go version for
+  Go SDK users stays 1.26.6.
+
 ### Changed
+- New `Security` workflow: `govulncheck` (pinned to v1.10.0) scans the provider and the Go SDK on
+  every pull request and weekly. A finding, or a scan that cannot run, fails the check.
+- All GitHub Actions in the workflows are pinned to a commit SHA with the version as a comment;
+  Dependabot keeps the pins up to date. The golangci-lint version in CI is pinned to v2.15.0.
+- `SECURITY.md` asks for reports through GitHub's private vulnerability reporting, names the latest
+  minor version as supported, and no longer promises response times or mentions an email address.
 - `make generate-schema` and `make generate-sdks` fail when any required step fails. Before, a
   failed code generation or TypeScript export fix only printed a warning and still reported
   success; a failed Go generation even deleted the Go SDK, and a failed schema generation left an

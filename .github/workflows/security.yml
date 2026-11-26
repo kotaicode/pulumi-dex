@@ -1,0 +1,47 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '17 5 * * 1' # weekly, Monday 05:17 UTC: new advisories also affect unchanged code
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [provider, sdk]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The toolchain directive in go.mod decides the Go version, so the
+      # standard library is scanned at the version releases are built with.
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      # Pinned scanner version. A failed download or install fails the job;
+      # it is never treated as a clean scan.
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.10.0
+
+      # govulncheck exits 3 when it finds a vulnerability in reachable code and
+      # with another nonzero code when it cannot scan (for example when the
+      # vulnerability database is unreachable); both fail the job.
+      - name: Scan ${{ matrix.module }}
+        working-directory: ${{ matrix.module }}
+        run: |
+          govulncheck -version
+          govulncheck ./...

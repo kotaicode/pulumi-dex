@@ -2,6 +2,8 @@ module github.com/kotaicode/pulumi-dex
 
 go 1.26.6
 
+toolchain go1.26.11
+
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dexidp/dex/api/v2 v2.4.0
