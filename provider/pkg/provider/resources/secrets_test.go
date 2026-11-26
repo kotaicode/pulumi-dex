@@ -2,6 +2,7 @@ package resources
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/blang/semver"
@@ -40,7 +41,8 @@ func newSchemaProvider(t *testing.T) integration.Server {
 	if err != nil {
 		t.Fatalf("build provider: %v", err)
 	}
-	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"), integration.WithProvider(prov))
+	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"),
+		integration.WithProvider(provider.WithSecretReadInputs(prov)))
 	if err != nil {
 		t.Fatalf("new integration server: %v", err)
 	}
@@ -275,5 +277,22 @@ func TestSecretPolicy_previewOutputs(t *testing.T) {
 				t.Errorf("output is not marked secret: plain-literal input would be stored and displayed in plaintext")
 			}
 		})
+	}
+}
+
+func TestBuildConnectorConfigBytes_invalidJSONDoesNotEchoConfig(t *testing.T) {
+	const canary = "synthetic-canary-secret"
+	for _, raw := range []string{
+		`{"bindPW": ` + canary + `}`,  // unquoted value
+		`{"bindPW": "` + canary + `"`, // truncated
+		canary,
+	} {
+		_, err := buildConnectorConfigBytes(ConnectorArgs{RawConfig: &raw})
+		if err == nil {
+			t.Fatalf("expected a JSON error for %d-byte input", len(raw))
+		}
+		if strings.Contains(err.Error(), canary) {
+			t.Errorf("error echoes rawConfig content: %v", err)
+		}
 	}
 }

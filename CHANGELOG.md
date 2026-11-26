@@ -29,8 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged configuration to Dex. `pulumi refresh` alone encrypts outputs but leaves earlier plaintext
   inputs in state. Neither step removes plaintext from earlier checkpoints in your backend's history,
   exported state files or CI logs. If those may have been exposed, rotate the affected credentials.
-- Still open: `pulumi import` stores the imported values in the resource's *inputs* in plaintext
-  (outputs are protected) and prints them in the generated program, until the next `pulumi up`.
+- **`pulumi import` stores credentials as secrets.** Imported credentials were stored in plaintext
+  in the resource's inputs, because only outputs were protected. The provider now marks Read inputs secret
+  wherever the schema declares a secret property, including nested `oidcConfig.clientSecret` and
+  `oidcConfig.extra`. The program that `pulumi import` prints still contains the values, because it must
+  reproduce them: use `--generate-code=false`, or `--out <file>` and treat that file as sensitive.
+- **Credentials are removed from Dex error messages.** Dex includes raw storage-backend errors in its
+  messages. If a backend echoed the object it rejected, the client secret or connector configuration
+  would have been printed with the Pulumi error. The provider now replaces the credential values sent
+  in that request with `[secret]`. Connector configuration is opaque, so this applies to every
+  config string of 8 or more characters. The status code and the rest of the message are unchanged.
 
 ### Fixed
 - **Updates no longer report success for objects deleted outside Pulumi.** Dex answers an

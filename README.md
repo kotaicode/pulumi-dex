@@ -425,7 +425,8 @@ export DEX_API_CONNECTORS_CRUD=true
 
 ## Security Considerations
 
-- **Secrets**: Client secrets, TLS keys and opaque configuration that may contain credentials (`rawConfig`, `oidcConfig`, `extraOidc`) are marked as Pulumi secrets and encrypted in state, even when supplied as plain values. A value imported with `pulumi import` is still stored in plaintext in the resource's inputs until the next `pulumi up`.
+- **Secrets**: Client secrets, TLS keys and opaque configuration that may contain credentials (`rawConfig`, `oidcConfig`, `extraOidc`) are marked as Pulumi secrets and encrypted in state, even when supplied as plain values or read back by `pulumi refresh` / `pulumi import`.
+- **Importing**: `pulumi import` prints a program that reproduces the imported inputs, and that program includes the client and connector credentials read from Dex. Pulumi marks them `secret`, but the values are still in plain text. Use `pulumi import --generate-code=false` to print no code, or `--out <file>` to write it to a file instead of the console, and treat that file as sensitive. State is protected either way.
 - **mTLS**: Strongly recommended for production use. Configure TLS certificates properly
 - **Network**: Ensure Dex gRPC API is only accessible from trusted networks
 
