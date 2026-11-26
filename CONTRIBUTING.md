@@ -7,7 +7,7 @@ Thank you for your interest in contributing to the Pulumi Provider for Dex! This
 ### Prerequisites
 
 - Go 1.24+ installed
-- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) installed
+- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) installed; to regenerate schema and SDKs, the version in `.pulumi.version`
 - Docker and Docker Compose (for integration tests)
 - Access to a Dex instance with gRPC API enabled (or use the local Docker Compose setup)
 

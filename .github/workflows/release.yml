@@ -26,6 +26,8 @@ jobs:
 
       - name: Install Pulumi CLI
         uses: pulumi/actions@v7
+        with:
+          pulumi-version-file: .pulumi.version
 
       - name: Install dependencies
         run: cd provider && go mod download
