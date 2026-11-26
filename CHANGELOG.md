@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`pulumi refresh` no longer creates spurious changes for OIDC connectors.** After a refresh, the
+  next preview proposed updates for connectors that had not changed:
+  - A generic `Connector` with `type: oidc` and `rawConfig` came back as `oidcConfig`. Refresh now
+    keeps `rawConfig`, and reformatting the JSON alone (whitespace or key order) is not a change.
+  - `AzureOidcConnector` and `CognitoOidcConnector` lost `extraOidc` on refresh. They also reported
+    `userNameSource` (`preferred_username` or `email`) when the program had omitted it. Both are now
+    read back the way they were written.
+
+  Changes made directly in Dex are still reported. Credentials stay secret through these conversions.
+  `pulumi import` is unchanged: an imported `oidc` connector is still represented as `oidcConfig`.
+
 ## [0.9.0] - 2026-11-26
 
 ### Changed

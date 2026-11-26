@@ -92,6 +92,20 @@ func (f *fakeDex) ListClients(context.Context, *api.ListClientReq) (*api.ListCli
 	return resp, nil
 }
 
+// CreateConnector stores the config bytes verbatim, as Dex's storage does.
+func (f *fakeDex) CreateConnector(_ context.Context, req *api.CreateConnectorReq) (*api.CreateConnectorResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c := req.GetConnector()
+	if _, ok := f.connectors[c.GetId()]; ok {
+		return &api.CreateConnectorResp{AlreadyExists: true}, nil
+	}
+	f.connectors[c.GetId()] = &api.Connector{
+		Id: c.GetId(), Type: c.GetType(), Name: c.GetName(), Config: append([]byte(nil), c.GetConfig()...),
+	}
+	return &api.CreateConnectorResp{}, nil
+}
+
 func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq) (*api.UpdateConnectorResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

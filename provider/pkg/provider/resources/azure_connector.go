@@ -240,9 +240,8 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		}
 	}
 
-	// Extract userNameKey and map to userNameSource (preferred_username is the default)
-	userNameKey, _ := configMap["userNameKey"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled
-	userNameSource := &userNameKey
+	// Create writes "preferred_username" when userNameSource is omitted.
+	userNameSource := userNameSourceFromConfig(configMap, "preferred_username", req.Inputs.UserNameSource)
 
 	scopes, _ := configMap["scopes"].([]any) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
 	scopesStr := make([]string, 0, len(scopes))
@@ -262,6 +261,7 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		RedirectUri:    GetString(configMap, "redirectURI"),
 		Scopes:         scopesStr,
 		UserNameSource: userNameSource,
+		ExtraOidc:      extraOIDCFromConfig(configMap, req.Inputs.ExtraOidc),
 	}
 
 	state := AzureOidcConnectorState{

@@ -223,6 +223,15 @@ func (c *Connector) Read(ctx context.Context, req infer.ReadRequest[ConnectorArg
 
 	args, state := decodeConnector(found)
 
+	// decodeConnector maps every "oidc" config to oidcConfig. If the prior inputs
+	// used rawConfig, keep that representation so refresh does not switch modes.
+	// Import has no prior inputs and still gets the typed decoding.
+	if prior := req.Inputs.RawConfig; prior != nil && *prior != "" {
+		raw := rawConfigFromRemote(found.Config, prior)
+		args.OIDCConfig, args.RawConfig = nil, &raw
+		state = ConnectorState{ConnectorArgs: args}
+	}
+
 	return infer.ReadResponse[ConnectorArgs, ConnectorState]{
 		ID:     found.Id,
 		Inputs: args,
