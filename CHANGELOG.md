@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Security: a `LocalConnector` with `enabled: false` has password login enabled.** Dex offers password
+login through every connector of type `local`, and the provider never sent `enabled` to Dex. A stack
+that declares a `LocalConnector` with `enabled: false` therefore lets users log in with their Dex
+passwords through that connector, even when `enablePasswordDB` is `false` in Dex's configuration.
+Check your programs for `enabled: false` on a `LocalConnector`:
+
+- To turn that password login off, remove the `LocalConnector` resource from the program and run
+  `pulumi up`. This deletes the connector in Dex; password users are kept.
+- To keep password login, remove `enabled: false` from the resource.
+
+From this version on, `enabled: false` fails at preview with this instruction.
+
 **Before upgrading: if your Dex gRPC API is not TLS-enabled, set `plaintext: true` in the provider
 configuration.** The provider now connects with TLS by default. A configuration without TLS options
 that reached a Dex without TLS, such as the docker-compose setup in this repository, fails with an
@@ -37,6 +49,10 @@ inside a cluster.
   `allowedGroups` must not be empty (Dex would treat that as no restriction) and needs a specific
   tenant ID or domain, because Dex ignores it for `common`, `organizations` and `consumers`.
   To migrate, replace `groups: "..."` with `allowedGroups: ["group-a", ...]`, or remove it.
+- **`LocalConnector.enabled: false` fails at preview, and `enabled` is deprecated.** A local connector
+  in Dex always offers password login (see the security note above), so the only way to turn it off
+  is to remove the resource. Refresh reports `enabled: true` for every existing local connector, which
+  is what Dex does with it.
 - **Changing a client's `secret` or `public` fails at preview.** Dex's `UpdateClient` cannot change
   either. A new explicit `secret` was silently ignored, so a rotation never happened; a new `public`
   value was recorded in state although Dex kept the old one, and every refresh brought the difference
@@ -71,6 +87,10 @@ inside a cluster.
   `AzureMicrosoftConnector.tenant`, `CognitoOidcConnector.region` and `userPoolId`,
   `GitHubConnector.hostName` and `GitLabConnector.baseURL`. Dex replaces a connector's whole config,
   as it already did for a generic `Connector`'s `type`.
+- Creating a `LocalConnector` with the ID `local` while Dex runs with `enablePasswordDB: true` fails
+  with an error that explains that `local` is Dex's built-in password login, defined in its
+  configuration and read-only for the API, instead of Dex's bare "static connectors: read-only".
+  Creating any other client or connector that Dex's configuration file defines gets a similar error.
 - The README listed `DEX_*` environment variables that the provider never read. It now says that the
   provider reads no environment variables and shows how to pass settings through the program or
   Pulumi config.

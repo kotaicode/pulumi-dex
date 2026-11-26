@@ -14,7 +14,7 @@ A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gR
 - **GitLab Integration**: `GitLabConnector` for GitLab.com and self-hosted GitLab instances
 - **GitHub Integration**: `GitHubConnector` for GitHub.com and GitHub Enterprise
 - **Google Integration**: `GoogleConnector` for Google Workspace and Google accounts
-- **Local/Builtin Connector**: `LocalConnector` for local user authentication
+- **Password login**: `LocalConnector` adds a login with passwords stored in Dex
 
 ## Installation
 
@@ -215,13 +215,14 @@ const googleConnector = new dex.GoogleConnector("google", {
 }, { provider });
 ```
 
-### Local/Builtin Connector
+### Password Login (LocalConnector)
 
 ```typescript
-const localConnector = new dex.LocalConnector("local", {
-    connectorId: "local",
-    name: "Local",
-    enabled: true, // Optional: default is true
+// Adds a login with the passwords stored in Dex's password database.
+// Remove the resource to turn this password login off.
+const passwordLogin = new dex.LocalConnector("passwords", {
+    connectorId: "passwords", // "local" is Dex's built-in password login when enablePasswordDB is true
+    name: "Email and password",
 }, { provider });
 ```
 
@@ -428,14 +429,14 @@ Manages a Google connector in Dex.
 
 ### `dex.LocalConnector`
 
-Manages a local/builtin connector in Dex.
+Adds a password login to Dex: a connector of type `local`, through which users log in with the passwords stored in Dex's password database.
 
 **Inputs:**
-- `connectorId` (string, required)
+- `connectorId` (string, required) - `local` is reserved for Dex's built-in password login when `enablePasswordDB: true`; creating it fails with an error that says so
 - `name` (string, required)
-- `enabled` (bool, optional) - Whether the connector is enabled, default: `true`
+- `enabled` (bool, optional, deprecated) - Has no effect in Dex; `false` fails in preview
 
-**Note:** The local connector requires `enablePasswordDB: true` in Dex configuration. User management is handled separately via Dex's static passwords or gRPC API.
+**Note:** Dex offers password login through every connector of type `local`, even when `enablePasswordDB` is `false` in its configuration. There is no disabled state: to turn this password login off, remove the resource. Removing it does not delete password users. Users are managed separately, through Dex's static passwords or its gRPC API.
 
 ## Local Development and Testing
 

@@ -45,6 +45,9 @@ type fakeDex struct {
 	// createErr is returned by Create after the object was stored, simulating a
 	// write that committed but whose response was lost (e.g. a timeout).
 	createErr error
+	// staticConnectors are defined in Dex's configuration file; like Dex, the
+	// fake refuses to create them through the API with an untyped error.
+	staticConnectors map[string]bool
 
 	writes int // Create, Update and Delete calls, to prove read-only paths
 }
@@ -144,6 +147,9 @@ func (f *fakeDex) CreateConnector(_ context.Context, req *api.CreateConnectorReq
 	defer f.mu.Unlock()
 	f.writes++
 	c := req.GetConnector()
+	if f.staticConnectors[c.GetId()] {
+		return nil, status.Error(codes.Unknown, "create connector: static connectors: read-only cannot create connector")
+	}
 	if _, ok := f.connectors[c.GetId()]; ok {
 		if f.alreadyExistsStatus {
 			return nil, status.Error(codes.AlreadyExists, "connector already exists")
