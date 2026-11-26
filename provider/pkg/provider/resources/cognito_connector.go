@@ -324,7 +324,7 @@ func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateReque
 	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err = cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
+	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
 		Id:        args.ConnectorId,
 		NewType:   "oidc",
 		NewName:   args.Name,
@@ -332,6 +332,9 @@ func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateReque
 	})
 	if err != nil {
 		return infer.UpdateResponse[CognitoOidcConnectorState]{}, provider.WrapError("update", "cognito-oidc-connector", args.ConnectorId, err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[CognitoOidcConnectorState]{}, provider.NotFoundError("update", "cognito-oidc-connector", args.ConnectorId)
 	}
 
 	state := CognitoOidcConnectorState{

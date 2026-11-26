@@ -183,7 +183,7 @@ func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, Cli
 		Id: req.ID,
 	})
 	if err != nil {
-		if status.Code(err) == codes.NotFound {
+		if clientAbsent(ctx, cfg, req.ID, err) {
 			// Resource doesn't exist - return empty response to indicate deletion
 			return infer.ReadResponse[ClientArgs, ClientState]{}, nil
 		}
@@ -191,7 +191,7 @@ func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, Cli
 	}
 
 	if resp.Client == nil {
-		return infer.ReadResponse[ClientArgs, ClientState]{}, nil
+		return infer.ReadResponse[ClientArgs, ClientState]{}, fmt.Errorf("failed to get Dex client %q: response contained no client", req.ID)
 	}
 
 	client := resp.Client
@@ -269,9 +269,12 @@ func (c *Client) Update(ctx context.Context, req infer.UpdateRequest[ClientArgs,
 	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err := cfg.Client.UpdateClient(updateCtx, updateReq)
+	resp, err := cfg.Client.UpdateClient(updateCtx, updateReq)
 	if err != nil {
 		return infer.UpdateResponse[ClientState]{}, fmt.Errorf("failed to update Dex client: %w", err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[ClientState]{}, provider.NotFoundError("update", "client", args.ClientId)
 	}
 
 	// Build the updated state
@@ -354,6 +357,37 @@ func (c *Client) Delete(ctx context.Context, req infer.DeleteRequest[ClientState
 
 	// Client not found in list - delete was successful
 	return infer.DeleteResponse{}, nil
+}
+
+// clientAbsent reports whether a failed GetClient proves the client does not exist.
+//
+// Dex's GetClient returns storage errors unwrapped, so a missing client arrives as
+// codes.Unknown ("not found") rather than codes.NotFound (Dex v2.46.1,
+// server/apiserver/clients.go). Rather than matching on the message, an Unknown
+// error is confirmed against a successful ListClients. Any other status, or a
+// failed list, is not proof of absence.
+func clientAbsent(ctx context.Context, cfg provider.DexConfig, id string, getErr error) bool {
+	code := status.Code(getErr)
+	if code == codes.NotFound {
+		return true
+	}
+	if code != codes.Unknown {
+		return false
+	}
+
+	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
+	defer cancel()
+
+	listResp, err := cfg.Client.ListClients(listCtx, &api.ListClientReq{})
+	if err != nil {
+		return false
+	}
+	for _, client := range listResp.GetClients() {
+		if client.GetId() == id {
+			return false
+		}
+	}
+	return true
 }
 
 // PtrOrString returns the value pointed to by p, or nil if p is empty or nil.

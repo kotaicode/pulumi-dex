@@ -325,7 +325,7 @@ func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest
 	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err = cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
+	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
 		Id:        args.ConnectorId,
 		NewType:   "oidc",
 		NewName:   args.Name,
@@ -333,6 +333,9 @@ func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest
 	})
 	if err != nil {
 		return infer.UpdateResponse[AzureOidcConnectorState]{}, provider.WrapError("update", "azure-oidc-connector", args.ConnectorId, err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[AzureOidcConnectorState]{}, provider.NotFoundError("update", "azure-oidc-connector", args.ConnectorId)
 	}
 
 	state := AzureOidcConnectorState{
@@ -614,7 +617,7 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err = cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
+	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
 		Id:        args.ConnectorId,
 		NewType:   "microsoft",
 		NewName:   args.Name,
@@ -622,6 +625,9 @@ func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRe
 	})
 	if err != nil {
 		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, provider.WrapError("update", "azure-microsoft-connector", args.ConnectorId, err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, provider.NotFoundError("update", "azure-microsoft-connector", args.ConnectorId)
 	}
 
 	state := AzureMicrosoftConnectorState{

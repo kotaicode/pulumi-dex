@@ -68,3 +68,15 @@ func TestWrapError(t *testing.T) {
 		})
 	}
 }
+
+func TestNotFoundError(t *testing.T) {
+	err := NotFoundError("update", "github-connector", "github")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("NotFoundError() should wrap ErrNotFound (errors.Is), got %v", err)
+	}
+	for _, sub := range []string{"update", "github-connector", `"github"`, "not found", "pulumi refresh"} {
+		if !strings.Contains(err.Error(), sub) {
+			t.Errorf("NotFoundError() message %q does not contain %q", err.Error(), sub)
+		}
+	}
+}

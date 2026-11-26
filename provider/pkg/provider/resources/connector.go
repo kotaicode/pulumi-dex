@@ -265,9 +265,12 @@ func (c *Connector) Update(ctx context.Context, req infer.UpdateRequest[Connecto
 	callCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err = cfg.Client.UpdateConnector(callCtx, updateReq)
+	resp, err := cfg.Client.UpdateConnector(callCtx, updateReq)
 	if err != nil {
 		return infer.UpdateResponse[ConnectorState]{}, provider.WrapError("update", "connector", args.ConnectorId, err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[ConnectorState]{}, provider.NotFoundError("update", "connector", args.ConnectorId)
 	}
 
 	state := ConnectorState{
