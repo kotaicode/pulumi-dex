@@ -14,6 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   duplicate `actions/cache` steps (and the "Restore cache failed" warning) are gone.
 
 ### Fixed
+- **Updates no longer report success for objects deleted outside Pulumi.** Dex answers an
+  update of a missing client or connector with a `not_found` flag rather than a gRPC error,
+  and every resource ignored it: `pulumi up` showed the update as successful and wrote the
+  desired values to state although nothing existed in Dex. Such updates now fail with a
+  "not found in Dex" error that points to `pulumi refresh`. A failed update does not recreate
+  the object; run `pulumi refresh` (which removes it from state) and `pulumi up` again to
+  recreate it.
+- **`pulumi refresh` detects `Client` resources deleted outside Pulumi.** Dex reports a missing
+  client from `GetClient` as an `Unknown` error, which refresh treated as a failure, so the
+  refresh could not complete. Absence is now confirmed via `ListClients` and the client is
+  removed from state. Authorization, timeout and other errors, or a failed confirmation,
+  still fail the refresh instead of dropping the resource.
+
+## [0.8.1] - 2026-11-25
+
+### Fixed
 - **npm package now ships compiled JavaScript.** Published versions up to and including 0.8.0
   contained only TypeScript sources and no `main`, so `require("@kotaicode/pulumi-dex")` failed
   and ts-node refused to compile it from `node_modules`. The release now publishes the

@@ -197,7 +197,7 @@ func (c *LocalConnector) Update(ctx context.Context, req infer.UpdateRequest[Loc
 	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
 	defer cancel()
 
-	_, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
+	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
 		Id:        args.ConnectorId,
 		NewType:   "local",
 		NewName:   args.Name,
@@ -205,6 +205,9 @@ func (c *LocalConnector) Update(ctx context.Context, req infer.UpdateRequest[Loc
 	})
 	if err != nil {
 		return infer.UpdateResponse[LocalConnectorState]{}, provider.WrapError("update", "local-connector", args.ConnectorId, err)
+	}
+	if resp.GetNotFound() {
+		return infer.UpdateResponse[LocalConnectorState]{}, provider.NotFoundError("update", "local-connector", args.ConnectorId)
 	}
 
 	state := LocalConnectorState{
