@@ -13,6 +13,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go module caching uses `setup-go`'s built-in cache keyed on `provider/go.sum`; the
   duplicate `actions/cache` steps (and the "Restore cache failed" warning) are gone.
 
+### Security
+- **Opaque connector configuration is now a Pulumi secret.** `Connector.rawConfig`,
+  `OIDCConfig.extra` and the `extraOidc` maps of `AzureOidcConnector` and `CognitoOidcConnector`
+  can carry credentials, such as bind passwords or client assertions, but were stored in plaintext
+  in state and printed in preview and update output when given as plain values. They are now
+  marked secret in the schema and SDKs.
+- **Credential outputs are secret regardless of how they were supplied.** The provider now marks
+  every `clientSecret`, `Client.secret`, `rawConfig`, `extraOidc` and the generic connector's
+  whole `oidcConfig` output as secret itself. Before, it relied on the SDK having wrapped the input,
+  so values read back by `pulumi import` were stored in plaintext. Because the framework cannot mark
+  nested fields, `oidcConfig` is secret as a whole, and diffs show it as `[secret]`.
+- **Upgrading existing stacks:** run `pulumi up` once with the new provider and SDK. Connectors that
+  use the newly secret fields show a one-time `[secret] => [secret]` update, which resends the
+  unchanged configuration to Dex. `pulumi refresh` alone encrypts outputs but leaves earlier plaintext
+  inputs in state. Neither step removes plaintext from earlier checkpoints in your backend's history,
+  exported state files or CI logs. If those may have been exposed, rotate the affected credentials.
+- **`pulumi import` stores credentials as secrets.** Imported credentials were stored in plaintext
+  in the resource's inputs, because only outputs were protected. The provider now marks Read inputs secret
+  wherever the schema declares a secret property, including nested `oidcConfig.clientSecret` and
+  `oidcConfig.extra`. The program that `pulumi import` prints still contains the values, because it must
+  reproduce them: use `--generate-code=false`, or `--out <file>` and treat that file as sensitive.
+- **Credentials are removed from Dex error messages.** Dex includes raw storage-backend errors in its
+  messages. If a backend echoed the object it rejected, the client secret or connector configuration
+  would have been printed with the Pulumi error. The provider now replaces the credential values sent
+  in that request with `[secret]`. Connector configuration is opaque, so this applies to every
+  config string of 8 or more characters. The status code and the rest of the message are unchanged.
+
 ### Fixed
 - **Updates no longer report success for objects deleted outside Pulumi.** Dex answers an
   update of a missing client or connector with a `not_found` flag rather than a gRPC error,

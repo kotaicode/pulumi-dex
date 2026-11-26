@@ -273,8 +273,8 @@ Manages a generic connector in Dex.
 - `connectorId` (string, required) - Unique identifier
 - `type` (string, required) - Connector type (e.g., "oidc", "ldap", "saml", "github")
 - `name` (string, required) - Display name
-- `oidcConfig` (OIDCConfig, optional) - OIDC configuration (use when type="oidc")
-- `rawConfig` (string, optional) - Raw JSON configuration (for non-OIDC connectors)
+- `oidcConfig` (OIDCConfig, optional) - OIDC configuration (use when type="oidc"). Its `clientSecret` and `extra` fields are secret, and the whole object is a secret output.
+- `rawConfig` (string, optional, secret) - Raw JSON configuration (for non-OIDC connectors)
 
 **Note:** Exactly one of `oidcConfig` or `rawConfig` must be provided.
 
@@ -291,7 +291,7 @@ Manages an Azure AD/Entra ID connector using generic OIDC.
 - `redirectUri` (string, required)
 - `scopes` (string[], optional) - Defaults to `["openid", "profile", "email", "offline_access"]`
 - `userNameSource` (string, optional) - "preferred_username" (default), "upn", or "email"
-- `extraOidc` (map, optional) - Additional OIDC config fields
+- `extraOidc` (map, optional, secret) - Additional OIDC config fields
 
 ### `dex.AzureMicrosoftConnector`
 
@@ -320,7 +320,7 @@ Manages an AWS Cognito user pool connector.
 - `redirectUri` (string, required)
 - `scopes` (string[], optional) - Defaults to `["openid", "email", "profile"]`
 - `userNameSource` (string, optional) - "email" (default) or "sub"
-- `extraOidc` (map, optional) - Additional OIDC config fields
+- `extraOidc` (map, optional, secret) - Additional OIDC config fields
 
 ### `dex.GitLabConnector`
 
@@ -425,7 +425,8 @@ export DEX_API_CONNECTORS_CRUD=true
 
 ## Security Considerations
 
-- **Secrets**: All secrets (client secrets, TLS keys) are automatically marked as Pulumi secrets and encrypted in state
+- **Secrets**: Client secrets, TLS keys and opaque configuration that may contain credentials (`rawConfig`, `oidcConfig`, `extraOidc`) are marked as Pulumi secrets and encrypted in state, even when supplied as plain values or read back by `pulumi refresh` / `pulumi import`.
+- **Importing**: `pulumi import` prints a program that reproduces the imported inputs, and that program includes the client and connector credentials read from Dex. Pulumi marks them `secret`, but the values are still in plain text. Use `pulumi import --generate-code=false` to print no code, or `--out <file>` to write it to a file instead of the console, and treat that file as sensitive. State is protected either way.
 - **mTLS**: Strongly recommended for production use. Configure TLS certificates properly
 - **Network**: Ensure Dex gRPC API is only accessible from trusted networks
 

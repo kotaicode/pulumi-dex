@@ -263,7 +263,7 @@ class CognitoOidcConnector(pulumi.CustomResource):
             if connector_id is None and not opts.urn:
                 raise TypeError("Missing required property 'connector_id'")
             __props__.__dict__["connector_id"] = connector_id
-            __props__.__dict__["extra_oidc"] = extra_oidc
+            __props__.__dict__["extra_oidc"] = None if extra_oidc is None else pulumi.Output.secret(extra_oidc)
             if name is None and not opts.urn:
                 raise TypeError("Missing required property 'name'")
             __props__.__dict__["name"] = name
@@ -278,7 +278,7 @@ class CognitoOidcConnector(pulumi.CustomResource):
             if user_pool_id is None and not opts.urn:
                 raise TypeError("Missing required property 'user_pool_id'")
             __props__.__dict__["user_pool_id"] = user_pool_id
-        secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret"])
+        secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["clientSecret", "extraOidc"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
         super(CognitoOidcConnector, __self__).__init__(
             'dex:resources:CognitoOidcConnector',

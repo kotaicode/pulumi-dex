@@ -172,10 +172,12 @@ class Connector(pulumi.CustomResource):
                 raise TypeError("Missing required property 'name'")
             __props__.__dict__["name"] = name
             __props__.__dict__["oidc_config"] = oidc_config
-            __props__.__dict__["raw_config"] = raw_config
+            __props__.__dict__["raw_config"] = None if raw_config is None else pulumi.Output.secret(raw_config)
             if type is None and not opts.urn:
                 raise TypeError("Missing required property 'type'")
             __props__.__dict__["type"] = type
+        secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["rawConfig"])
+        opts = pulumi.ResourceOptions.merge(opts, secret_opts)
         super(Connector, __self__).__init__(
             'dex:resources:Connector',
             resource_name,

@@ -44,6 +44,13 @@ func NewConnector(ctx *pulumi.Context,
 	if args.Type == nil {
 		return nil, errors.New("invalid value for required argument 'Type'")
 	}
+	if args.RawConfig != nil {
+		args.RawConfig = pulumi.ToSecret(args.RawConfig).(pulumi.StringPtrInput)
+	}
+	secrets := pulumi.AdditionalSecretOutputs([]string{
+		"rawConfig",
+	})
+	opts = append(opts, secrets)
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource Connector
 	err := ctx.RegisterResource("dex:resources:Connector", name, args, &resource, opts...)

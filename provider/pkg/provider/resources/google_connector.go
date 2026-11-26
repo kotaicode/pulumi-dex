@@ -64,6 +64,12 @@ func (c *GoogleConnectorState) Annotate(a infer.Annotator) {
 	// GoogleConnectorState embeds GoogleConnectorArgs, so field descriptions are inherited
 }
 
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *GoogleConnector) WireDependencies(f infer.FieldSelector, _ *GoogleConnectorArgs, state *GoogleConnectorState) {
+	f.OutputField(&state.ClientSecret).AlwaysSecret()
+}
+
 // Check validates inputs.
 func (c *GoogleConnector) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[GoogleConnectorArgs], error) {
 	args, failures, err := infer.DefaultCheck[GoogleConnectorArgs](ctx, req.NewInputs)

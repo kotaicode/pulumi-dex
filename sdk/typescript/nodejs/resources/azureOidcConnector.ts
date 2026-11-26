@@ -113,7 +113,7 @@ export class AzureOidcConnector extends pulumi.CustomResource {
             resourceInputs["clientId"] = args?.clientId;
             resourceInputs["clientSecret"] = args?.clientSecret ? pulumi.secret(args.clientSecret) : undefined;
             resourceInputs["connectorId"] = args?.connectorId;
-            resourceInputs["extraOidc"] = args?.extraOidc;
+            resourceInputs["extraOidc"] = args?.extraOidc ? pulumi.secret(args.extraOidc) : undefined;
             resourceInputs["name"] = args?.name;
             resourceInputs["redirectUri"] = args?.redirectUri;
             resourceInputs["scopes"] = args?.scopes;
@@ -131,7 +131,7 @@ export class AzureOidcConnector extends pulumi.CustomResource {
             resourceInputs["userNameSource"] = undefined /*out*/;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
-        const secretOpts = { additionalSecretOutputs: ["clientSecret"] };
+        const secretOpts = { additionalSecretOutputs: ["clientSecret", "extraOidc"] };
         opts = pulumi.mergeOptions(opts, secretOpts);
         super(AzureOidcConnector.__pulumiType, name, resourceInputs, opts);
     }

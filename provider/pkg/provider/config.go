@@ -102,11 +102,13 @@ func (c *DexConfig) Configure(ctx context.Context) error {
 		conn, err = grpc.NewClient(
 			c.Host,
 			grpc.WithTransportCredentials(credentials.NewTLS(tlsCfg)),
+			grpc.WithUnaryInterceptor(redactRPCErrors),
 		)
 	} else {
 		conn, err = grpc.NewClient(
 			c.Host,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(redactRPCErrors),
 		)
 	}
 

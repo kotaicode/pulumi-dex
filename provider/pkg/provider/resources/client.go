@@ -56,6 +56,12 @@ func (c *ClientState) Annotate(a infer.Annotator) {
 	a.Describe(&c.CreatedAt, "Timestamp when the client was created (RFC3339 format).")
 }
 
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *Client) WireDependencies(f infer.FieldSelector, _ *ClientArgs, state *ClientState) {
+	f.OutputField(&state.Secret).AlwaysSecret()
+}
+
 // Create creates a new OAuth2 client in Dex.
 func (c *Client) Create(ctx context.Context, req infer.CreateRequest[ClientArgs]) (infer.CreateResponse[ClientState], error) {
 	args := req.Inputs

@@ -81,6 +81,12 @@ func (c *GitHubConnectorState) Annotate(a infer.Annotator) {
 	// GitHubConnectorState embeds GitHubConnectorArgs, so field descriptions are inherited
 }
 
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *GitHubConnector) WireDependencies(f infer.FieldSelector, _ *GitHubConnectorArgs, state *GitHubConnectorState) {
+	f.OutputField(&state.ClientSecret).AlwaysSecret()
+}
+
 // Check validates inputs.
 func (c *GitHubConnector) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[GitHubConnectorArgs], error) {
 	args, failures, err := infer.DefaultCheck[GitHubConnectorArgs](ctx, req.NewInputs)

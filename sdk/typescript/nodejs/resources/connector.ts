@@ -90,7 +90,7 @@ export class Connector extends pulumi.CustomResource {
             resourceInputs["connectorId"] = args?.connectorId;
             resourceInputs["name"] = args?.name;
             resourceInputs["oidcConfig"] = args?.oidcConfig;
-            resourceInputs["rawConfig"] = args?.rawConfig;
+            resourceInputs["rawConfig"] = args?.rawConfig ? pulumi.secret(args.rawConfig) : undefined;
             resourceInputs["type"] = args?.type;
         } else {
             resourceInputs["connectorId"] = undefined /*out*/;
@@ -100,6 +100,8 @@ export class Connector extends pulumi.CustomResource {
             resourceInputs["type"] = undefined /*out*/;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
+        const secretOpts = { additionalSecretOutputs: ["rawConfig"] };
+        opts = pulumi.mergeOptions(opts, secretOpts);
         super(Connector.__pulumiType, name, resourceInputs, opts);
     }
 }

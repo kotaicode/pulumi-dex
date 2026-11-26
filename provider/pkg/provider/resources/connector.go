@@ -20,7 +20,7 @@ type ConnectorArgs struct {
 	Type        string      `pulumi:"type"`
 	Name        string      `pulumi:"name"`
 	OIDCConfig  *OIDCConfig `pulumi:"oidcConfig,optional"`
-	RawConfig   *string     `pulumi:"rawConfig,optional"`
+	RawConfig   *string     `pulumi:"rawConfig,optional" provider:"secret"`
 }
 
 // ConnectorState defines the outputs/state for a dex.Connector resource.
@@ -41,7 +41,7 @@ type OIDCConfig struct {
 	InsecureIssuer            *bool             `pulumi:"insecureIssuer,optional" json:"insecureIssuer,omitempty"`
 	UserNameKey               *string           `pulumi:"userNameKey,optional" json:"userNameKey,omitempty"`
 	ClaimMapping              *OIDCClaimMapping `pulumi:"claimMapping,optional" json:"claimMapping,omitempty"`
-	Extra                     map[string]any    `pulumi:"extra,optional" json:"-"`
+	Extra                     map[string]any    `pulumi:"extra,optional" json:"-" provider:"secret"`
 }
 
 // OIDCClaimMapping represents claim mapping configuration.
@@ -90,6 +90,13 @@ func (c *OIDCClaimMapping) Annotate(a infer.Annotator) {
 // Annotate provides schema metadata for ConnectorState.
 func (c *ConnectorState) Annotate(a infer.Annotator) {
 	// ConnectorState embeds ConnectorArgs, so field descriptions are inherited
+}
+
+// WireDependencies marks credential-bearing outputs secret regardless of how the
+// input was supplied, so plain literals, refresh and import never store them in plaintext.
+func (c *Connector) WireDependencies(f infer.FieldSelector, _ *ConnectorArgs, state *ConnectorState) {
+	f.OutputField(&state.RawConfig).AlwaysSecret()
+	f.OutputField(&state.OIDCConfig).AlwaysSecret()
 }
 
 // Create creates a new connector in Dex.
