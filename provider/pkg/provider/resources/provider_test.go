@@ -35,7 +35,7 @@ func newTestProvider(t *testing.T) integration.Server {
 		t.Fatalf("build provider: %v", err)
 	}
 	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"),
-		integration.WithProvider(provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(prov))))
+		integration.WithProvider(provider.WithTypedConfigValues(provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(prov)))))
 	if err != nil {
 		t.Fatalf("new integration server: %v", err)
 	}

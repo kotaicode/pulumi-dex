@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -14,6 +15,7 @@ import (
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
@@ -293,6 +295,45 @@ func WithPreviewSafeConfigure(prov p.Provider) p.Provider {
 	prov.Configure = func(ctx context.Context, req p.ConfigureRequest) error {
 		if req.Args.HasComputed() {
 			return nil
+		}
+		return configure(ctx, req)
+	}
+	return prov
+}
+
+// configValueKinds are the non-string provider settings. The engine can pass
+// stack config to Configure as strings, for example "true" for a value set
+// with pulumi config set --type bool during pulumi import, which infer
+// rejects for a bool or int field.
+var configValueKinds = map[string]func(string) (property.Value, bool){
+	"plaintext":          parseBoolConfig,
+	"insecureSkipVerify": parseBoolConfig,
+	"timeoutSeconds": func(s string) (property.Value, bool) {
+		n, err := strconv.Atoi(s)
+		return property.New(float64(n)), err == nil
+	},
+}
+
+func parseBoolConfig(s string) (property.Value, bool) {
+	b, err := strconv.ParseBool(s)
+	return property.New(b), err == nil
+}
+
+// WithTypedConfigValues converts string-encoded booleans and integers in the
+// provider configuration before infer decodes it. A string that is not a
+// valid value is left as it is, so the error still names the field.
+func WithTypedConfigValues(prov p.Provider) p.Provider {
+	configure := prov.Configure
+	if configure == nil {
+		return prov
+	}
+	prov.Configure = func(ctx context.Context, req p.ConfigureRequest) error {
+		for key, parse := range configValueKinds {
+			if v, ok := req.Args.GetOk(key); ok && v.IsString() {
+				if typed, ok := parse(v.AsString()); ok {
+					req.Args = req.Args.Set(key, typed)
+				}
+			}
 		}
 		return configure(ctx, req)
 	}

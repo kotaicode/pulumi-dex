@@ -101,6 +101,11 @@ inside a cluster.
   with an error that explains that `local` is Dex's built-in password login, defined in its
   configuration and read-only for the API, instead of Dex's bare "static connectors: read-only".
   Creating any other client or connector that Dex's configuration file defines gets a similar error.
+- `pulumi import` with the default provider failed when the stack config set `plaintext`,
+  `insecureSkipVerify` or `timeoutSeconds` (for example with `pulumi config set --type bool`):
+  "Field 'plaintext' on 'provider.DexConfig' must be a 'bool'; got 'string' instead". The import path
+  passes these values as strings; the provider now accepts `"true"`, `"false"` and whole numbers
+  given as strings.
 - The README listed `DEX_*` environment variables that the provider never read. It now says that the
   provider reads no environment variables and shows how to pass settings through the program or
   Pulumi config.

@@ -101,3 +101,21 @@ func TestProviderConfigure_unknownInputsDoNotDial(t *testing.T) {
 		})
 	}
 }
+
+// pulumi import passes the default provider's stack config to Configure as
+// strings, for example "true" for a value set with --type bool. Those must work
+// like typed values, or a Dex without TLS could not be imported from.
+func TestProviderConfigure_acceptsStringEncodedValues(t *testing.T) {
+	dex := plaintextDex(t)
+	if err := configureWith(t, map[string]property.Value{
+		"host": property.New(dex.Addr().String()), "plaintext": property.New("true"),
+		"insecureSkipVerify": property.New("false"), "timeoutSeconds": property.New("2"),
+	}); err != nil {
+		t.Fatalf("string-encoded configuration: %v", err)
+	}
+	if err := configureWith(t, map[string]property.Value{
+		"host": property.New(dex.Addr().String()), "plaintext": property.New("yes please"),
+	}); err == nil || !strings.Contains(err.Error(), "plaintext") {
+		t.Errorf("a string that is no boolean must fail and name the field, got %v", err)
+	}
+}
