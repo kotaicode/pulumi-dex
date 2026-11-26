@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "../utilities";
 
 /**
- * Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
+ * Adds a password login to Dex: a connector of type local, through which users log in with the passwords stored in Dex's password database. Dex offers it even when enablePasswordDB is false in its configuration. To turn this password login off, remove the resource. With enablePasswordDB: true, Dex already provides a password login with the ID 'local', which cannot be managed through the API.
  */
 export class LocalConnector extends pulumi.CustomResource {
     /**
@@ -45,11 +45,13 @@ export class LocalConnector extends pulumi.CustomResource {
     }
 
     /**
-     * Unique identifier for the local connector.
+     * Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
      */
     declare public readonly connectorId: pulumi.Output<string>;
     /**
-     * Whether the local connector is enabled. Defaults to true.
+     * Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+     *
+     * @deprecated enabled has no effect in Dex; remove the resource to turn password login off.
      */
     declare public readonly enabled: pulumi.Output<boolean | undefined>;
     /**
@@ -94,11 +96,13 @@ export class LocalConnector extends pulumi.CustomResource {
  */
 export interface LocalConnectorArgs {
     /**
-     * Unique identifier for the local connector.
+     * Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
      */
     connectorId: pulumi.Input<string>;
     /**
-     * Whether the local connector is enabled. Defaults to true.
+     * Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+     *
+     * @deprecated enabled has no effect in Dex; remove the resource to turn password login off.
      */
     enabled?: pulumi.Input<boolean | undefined>;
     /**

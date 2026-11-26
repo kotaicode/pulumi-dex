@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -67,8 +68,37 @@ func (t createTarget) failed(err error) error {
 				"Check whether %s %q exists in Dex; if it does, import it with `%s` instead of creating it again",
 			err, t.noun(), t.noun(), t.id, t.importCommand()))
 	default:
+		if isStaticObjectError(err) {
+			return t.definedInDexConfig()
+		}
 		return provider.WrapError("create", t.kind, t.id, err)
 	}
+}
+
+// isStaticObjectError reports Dex's refusal to create a client or connector
+// that its configuration file defines. Dex v2.46.1 returns it untyped (gRPC
+// Unknown), so the message is the only signal.
+func isStaticObjectError(err error) bool {
+	if status.Code(err) != codes.Unknown {
+		return false
+	}
+	msg := status.Convert(err).Message()
+	return strings.Contains(msg, "static connectors: read-only") || strings.Contains(msg, "static clients: read-only")
+}
+
+// definedInDexConfig explains that the ID belongs to an object from Dex's
+// configuration file, which the API cannot create or change.
+func (t createTarget) definedInDexConfig() error {
+	if t.token == tokenLocalConnector && t.id == "local" {
+		return provider.WrapError("create", t.kind, t.id, fmt.Errorf(
+			"the connector ID \"local\" belongs to Dex's built-in password login, which Dex provides when "+
+				"enablePasswordDB is true in its configuration; Dex does not let the API create or change it. "+
+				"Password login through \"local\" already exists: remove this resource, or choose another connectorId "+
+				"for an additional password login"))
+	}
+	return provider.WrapError("create", t.kind, t.id, fmt.Errorf(
+		"a %s with this ID is defined in Dex's configuration file, and Dex does not let the API create or change it; "+
+			"remove it from Dex's configuration to manage it with Pulumi, or choose a different ID", t.noun()))
 }
 
 // wrongConnectorType reports a connector whose Dex type does not match the typed

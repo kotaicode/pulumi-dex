@@ -12,13 +12,15 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
+// Adds a password login to Dex: a connector of type local, through which users log in with the passwords stored in Dex's password database. Dex offers it even when enablePasswordDB is false in its configuration. To turn this password login off, remove the resource. With enablePasswordDB: true, Dex already provides a password login with the ID 'local', which cannot be managed through the API.
 type LocalConnector struct {
 	pulumi.CustomResourceState
 
-	// Unique identifier for the local connector.
+	// Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
 	ConnectorId pulumi.StringOutput `pulumi:"connectorId"`
-	// Whether the local connector is enabled. Defaults to true.
+	// Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+	//
+	// Deprecated: enabled has no effect in Dex; remove the resource to turn password login off.
 	Enabled pulumi.BoolPtrOutput `pulumi:"enabled"`
 	// Human-readable name for the connector, displayed to users during login.
 	Name pulumi.StringOutput `pulumi:"name"`
@@ -80,9 +82,11 @@ func LocalConnectorExists(ctx *pulumi.Context,
 }
 
 type localConnectorArgs struct {
-	// Unique identifier for the local connector.
+	// Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
 	ConnectorId string `pulumi:"connectorId"`
-	// Whether the local connector is enabled. Defaults to true.
+	// Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+	//
+	// Deprecated: enabled has no effect in Dex; remove the resource to turn password login off.
 	Enabled *bool `pulumi:"enabled"`
 	// Human-readable name for the connector, displayed to users during login.
 	Name string `pulumi:"name"`
@@ -90,9 +94,11 @@ type localConnectorArgs struct {
 
 // The set of arguments for constructing a LocalConnector resource.
 type LocalConnectorArgs struct {
-	// Unique identifier for the local connector.
+	// Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
 	ConnectorId pulumi.StringInput
-	// Whether the local connector is enabled. Defaults to true.
+	// Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+	//
+	// Deprecated: enabled has no effect in Dex; remove the resource to turn password login off.
 	Enabled pulumi.BoolPtrInput
 	// Human-readable name for the connector, displayed to users during login.
 	Name pulumi.StringInput
@@ -185,12 +191,14 @@ func (o LocalConnectorOutput) ToLocalConnectorOutputWithContext(ctx context.Cont
 	return o
 }
 
-// Unique identifier for the local connector.
+// Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
 func (o LocalConnectorOutput) ConnectorId() pulumi.StringOutput {
 	return o.ApplyT(func(v *LocalConnector) pulumi.StringOutput { return v.ConnectorId }).(pulumi.StringOutput)
 }
 
-// Whether the local connector is enabled. Defaults to true.
+// Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
+//
+// Deprecated: enabled has no effect in Dex; remove the resource to turn password login off.
 func (o LocalConnectorOutput) Enabled() pulumi.BoolPtrOutput {
 	return o.ApplyT(func(v *LocalConnector) pulumi.BoolPtrOutput { return v.Enabled }).(pulumi.BoolPtrOutput)
 }

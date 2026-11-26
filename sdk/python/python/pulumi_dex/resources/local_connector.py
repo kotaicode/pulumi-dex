@@ -25,12 +25,15 @@ class LocalConnectorArgs:
         """
         The set of arguments for constructing a LocalConnector resource.
 
-        :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the local connector.
+        :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
-        :param pulumi.Input[_builtins.bool] enabled: Whether the local connector is enabled. Defaults to true.
+        :param pulumi.Input[_builtins.bool] enabled: Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
         """
         pulumi.set(__self__, "connector_id", connector_id)
         pulumi.set(__self__, "name", name)
+        if enabled is not None:
+            warnings.warn("""enabled has no effect in Dex; remove the resource to turn password login off.""", DeprecationWarning)
+            pulumi.log.warn("""enabled is deprecated: enabled has no effect in Dex; remove the resource to turn password login off.""")
         if enabled is not None:
             pulumi.set(__self__, "enabled", enabled)
 
@@ -38,7 +41,7 @@ class LocalConnectorArgs:
     @pulumi.getter(name="connectorId")
     def connector_id(self) -> pulumi.Input[_builtins.str]:
         """
-        Unique identifier for the local connector.
+        Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
         """
         return pulumi.get(self, "connector_id")
 
@@ -60,9 +63,10 @@ class LocalConnectorArgs:
 
     @_builtins.property
     @pulumi.getter
+    @_utilities.deprecated("""enabled has no effect in Dex; remove the resource to turn password login off.""")
     def enabled(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
-        Whether the local connector is enabled. Defaults to true.
+        Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
         """
         return pulumi.get(self, "enabled")
 
@@ -82,12 +86,12 @@ class LocalConnector(pulumi.CustomResource):
                  name: pulumi.Input[Optional[_builtins.str]] = None,
                  __props__=None):
         """
-        Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
+        Adds a password login to Dex: a connector of type local, through which users log in with the passwords stored in Dex's password database. Dex offers it even when enablePasswordDB is false in its configuration. To turn this password login off, remove the resource. With enablePasswordDB: true, Dex already provides a password login with the ID 'local', which cannot be managed through the API.
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the local connector.
-        :param pulumi.Input[_builtins.bool] enabled: Whether the local connector is enabled. Defaults to true.
+        :param pulumi.Input[_builtins.str] connector_id: Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
+        :param pulumi.Input[_builtins.bool] enabled: Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
         :param pulumi.Input[_builtins.str] name: Human-readable name for the connector, displayed to users during login.
         """
         ...
@@ -97,7 +101,7 @@ class LocalConnector(pulumi.CustomResource):
                  args: LocalConnectorArgs,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        Manages a local/builtin connector in Dex. The local connector provides username/password authentication stored in Dex's database. This is useful for testing or when you don't have an external identity provider.
+        Adds a password login to Dex: a connector of type local, through which users log in with the passwords stored in Dex's password database. Dex offers it even when enablePasswordDB is false in its configuration. To turn this password login off, remove the resource. With enablePasswordDB: true, Dex already provides a password login with the ID 'local', which cannot be managed through the API.
 
         :param str resource_name: The name of the resource.
         :param LocalConnectorArgs args: The arguments to use to populate this resource's properties.
@@ -172,15 +176,16 @@ class LocalConnector(pulumi.CustomResource):
     @pulumi.getter(name="connectorId")
     def connector_id(self) -> pulumi.Output[_builtins.str]:
         """
-        Unique identifier for the local connector.
+        Unique identifier for the password login connector. 'local' is reserved for Dex's built-in password login when enablePasswordDB is true.
         """
         return pulumi.get(self, "connector_id")
 
     @_builtins.property
     @pulumi.getter
+    @_utilities.deprecated("""enabled has no effect in Dex; remove the resource to turn password login off.""")
     def enabled(self) -> pulumi.Output[Optional[_builtins.bool]]:
         """
-        Whether the local connector is enabled. Defaults to true.
+        Deprecated: a local connector in Dex always offers password login. Only true is accepted; to turn password login off, remove the resource.
         """
         return pulumi.get(self, "enabled")
 
