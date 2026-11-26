@@ -403,14 +403,12 @@ func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
 
 	// Try to parse as OIDC config when type == "oidc".
 	if con.Type == "oidc" && len(con.Config) > 0 {
+		// Map known fields into oidcConfig only when that is lossless: the config must
+		// be a JSON object and every known field must have the expected type.
+		// Otherwise fall back to rawConfig below, which keeps the stored config verbatim.
 		var base map[string]any
-		if err := json.Unmarshal(con.Config, &base); err == nil {
-			// Attempt to map known fields into OIDCConfig.
-			oidc := &OIDCConfig{}
-			// Marshal back into JSON and unmarshal into typed struct for known fields.
-			if data, err := json.Marshal(base); err == nil {
-				_ = json.Unmarshal(data, oidc) //nolint:errcheck // Best-effort parse, errors are acceptable here
-			}
+		oidc := &OIDCConfig{}
+		if json.Unmarshal(con.Config, &base) == nil && base != nil && json.Unmarshal(con.Config, oidc) == nil {
 
 			// Convert from Dex format (clientID, redirectURI) to Pulumi format (clientId, redirectUri)
 			if clientID, ok := base["clientID"]; ok {
@@ -438,7 +436,7 @@ func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
 
 			args.OIDCConfig = oidc
 		} else {
-			// Fall back to rawConfig if JSON parsing fails.
+			// Fall back to rawConfig if the config cannot be mapped losslessly.
 			rc := string(con.Config)
 			args.RawConfig = &rc
 		}

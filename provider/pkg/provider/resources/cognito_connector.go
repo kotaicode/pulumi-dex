@@ -221,13 +221,13 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, nil
 	}
 
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, unreadableConfigError("cognito-oidc-connector", found.Id, err)
 	}
 
 	// Extract region and userPoolId from issuer
-	issuer, _ := configMap["issuer"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
+	issuer := conf.str("issuer")
 	region := ""
 	userPoolId := ""
 	if strings.HasPrefix(issuer, "https://cognito-idp.") && strings.Contains(issuer, ".amazonaws.com/") {
@@ -241,28 +241,26 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 		}
 	}
 
-	// Create writes "email" when userNameSource is omitted.
-	userNameSource := userNameSourceFromConfig(configMap, "email", req.Inputs.UserNameSource)
-
-	scopes, _ := configMap["scopes"].([]any) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
-	scopesStr := make([]string, 0, len(scopes))
-	for _, s := range scopes {
-		if str, ok := s.(string); ok {
-			scopesStr = append(scopesStr, str)
-		}
+	scopes := conf.strList("scopes")
+	if scopes == nil {
+		scopes = []string{} // as before: absent scopes read back as an empty list
 	}
 
 	args := CognitoOidcConnectorArgs{
-		ConnectorId:    found.Id,
-		Name:           found.Name,
-		Region:         region,
-		UserPoolId:     userPoolId,
-		ClientId:       GetString(configMap, "clientID"),
-		ClientSecret:   GetString(configMap, "clientSecret"),
-		RedirectUri:    GetString(configMap, "redirectURI"),
-		Scopes:         scopesStr,
-		UserNameSource: userNameSource,
-		ExtraOidc:      extraOIDCFromConfig(configMap, req.Inputs.ExtraOidc),
+		ConnectorId:  found.Id,
+		Name:         found.Name,
+		Region:       region,
+		UserPoolId:   userPoolId,
+		ClientId:     conf.str("clientID"),
+		ClientSecret: conf.str("clientSecret"),
+		RedirectUri:  conf.str("redirectURI"),
+		Scopes:       scopes,
+		// Create writes "email" when userNameSource is omitted.
+		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "email", req.Inputs.UserNameSource),
+		ExtraOidc:      extraOIDCFromConfig(conf.values, req.Inputs.ExtraOidc),
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, unreadableConfigError("cognito-oidc-connector", found.Id, err)
 	}
 
 	state := CognitoOidcConnectorState{

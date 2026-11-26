@@ -195,51 +195,30 @@ func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[Google
 		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, nil
 	}
 
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, unreadableConfigError("google-connector", found.Id, err)
 	}
 
-	// Parse arrays
-	var hostedDomains []string
-	if domainsVal, ok := configMap["hostedDomains"].([]any); ok {
-		for _, d := range domainsVal {
-			if str, ok := d.(string); ok {
-				hostedDomains = append(hostedDomains, str)
-			}
-		}
-	}
-
-	var groups []string
-	if groupsVal, ok := configMap["groups"].([]any); ok {
-		for _, g := range groupsVal {
-			if str, ok := g.(string); ok {
-				groups = append(groups, str)
-			}
-		}
-	}
-
-	// Parse domainToAdminEmail map
-	domainToAdminEmail := make(map[string]string)
-	if domainMap, ok := configMap["domainToAdminEmail"].(map[string]any); ok {
-		for k, v := range domainMap {
-			if str, ok := v.(string); ok {
-				domainToAdminEmail[k] = str
-			}
-		}
+	domainToAdminEmail := conf.strMap("domainToAdminEmail")
+	if domainToAdminEmail == nil {
+		domainToAdminEmail = map[string]string{} // as before: absent reads back as an empty map
 	}
 
 	args := GoogleConnectorArgs{
 		ConnectorId:            found.Id,
 		Name:                   found.Name,
-		ClientId:               GetString(configMap, "clientID"),
-		ClientSecret:           GetString(configMap, "clientSecret"),
-		RedirectUri:            GetString(configMap, "redirectURI"),
-		PromptType:             GetStringPtr(configMap, "promptType"),
-		HostedDomains:          hostedDomains,
-		Groups:                 groups,
-		ServiceAccountFilePath: GetStringPtr(configMap, "serviceAccountFilePath"),
+		ClientId:               conf.str("clientID"),
+		ClientSecret:           conf.str("clientSecret"),
+		RedirectUri:            conf.str("redirectURI"),
+		PromptType:             conf.strPtr("promptType"),
+		HostedDomains:          conf.strList("hostedDomains"),
+		Groups:                 conf.strList("groups"),
+		ServiceAccountFilePath: conf.strPtr("serviceAccountFilePath"),
 		DomainToAdminEmail:     domainToAdminEmail,
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, unreadableConfigError("google-connector", found.Id, err)
 	}
 
 	state := GoogleConnectorState{

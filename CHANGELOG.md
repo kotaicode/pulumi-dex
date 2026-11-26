@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Refresh no longer drops connectors whose config in Dex cannot be read.** Dex only checks that a
+  connector config is valid JSON, so it can store a config that is not a JSON object or a known
+  field with the wrong type. `AzureOidcConnector`, `AzureMicrosoftConnector`,
+  `CognitoOidcConnector`, `GitHubConnector`, `GitLabConnector` and `GoogleConnector` reported such
+  a connector as deleted, so `pulumi refresh` removed it from state although it still existed.
+  Others read the field as empty and wrote that into state. Refresh now fails with an error naming
+  the connector, the path and the expected type (for example
+  `config.orgs[0].name is a JSON number, expected a string`) and keeps the resource and its
+  previous values in state. The error never includes config values.
+- The generic `Connector` with `type: oidc` falls back to `rawConfig` when the stored config cannot
+  be represented as `oidcConfig`, instead of silently dropping a known field with the wrong type.
+  The stored config is kept verbatim and stays secret.
+
 ## [0.9.1] - 2026-11-26
 
 ### Fixed

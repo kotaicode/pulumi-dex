@@ -198,35 +198,24 @@ func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLab
 		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, nil
 	}
 
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, unreadableConfigError("gitlab-connector", found.Id, err)
 	}
-
-	// Parse groups array
-	var groups []string
-	if groupsVal, ok := configMap["groups"].([]any); ok {
-		for _, g := range groupsVal {
-			if str, ok := g.(string); ok {
-				groups = append(groups, str)
-			}
-		}
-	}
-
-	baseURL := GetStringPtr(configMap, "baseURL")
-	useLoginAsID := GetBoolPtr(configMap, "useLoginAsID")
-	getGroupsPermission := GetBoolPtr(configMap, "getGroupsPermission")
 
 	args := GitLabConnectorArgs{
 		ConnectorId:         found.Id,
 		Name:                found.Name,
-		BaseURL:             baseURL,
-		ClientId:            GetString(configMap, "clientID"),
-		ClientSecret:        GetString(configMap, "clientSecret"),
-		RedirectUri:         GetString(configMap, "redirectURI"),
-		Groups:              groups,
-		UseLoginAsID:        useLoginAsID,
-		GetGroupsPermission: getGroupsPermission,
+		BaseURL:             conf.strPtr("baseURL"),
+		ClientId:            conf.str("clientID"),
+		ClientSecret:        conf.str("clientSecret"),
+		RedirectUri:         conf.str("redirectURI"),
+		Groups:              conf.strList("groups"),
+		UseLoginAsID:        conf.boolPtr("useLoginAsID"),
+		GetGroupsPermission: conf.boolPtr("getGroupsPermission"),
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, unreadableConfigError("gitlab-connector", found.Id, err)
 	}
 
 	state := GitLabConnectorState{

@@ -223,15 +223,13 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, nil
 	}
 
-	// Parse config back to args
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		// If we can't parse, return empty (connector exists but config is invalid)
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, unreadableConfigError("azure-oidc-connector", found.Id, err)
 	}
 
 	// Extract tenantId from issuer
-	issuer, _ := configMap["issuer"].(string) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
+	issuer := conf.str("issuer")
 	tenantId := ""
 	if strings.HasPrefix(issuer, "https://login.microsoftonline.com/") {
 		parts := strings.Split(issuer, "/")
@@ -240,28 +238,26 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		}
 	}
 
-	// Create writes "preferred_username" when userNameSource is omitted.
-	userNameSource := userNameSourceFromConfig(configMap, "preferred_username", req.Inputs.UserNameSource)
-
-	scopes, _ := configMap["scopes"].([]any) //nolint:errcheck // Type assertion ok value ignored - defaults handled below
-	scopesStr := make([]string, 0, len(scopes))
-	for _, s := range scopes {
-		if str, ok := s.(string); ok {
-			scopesStr = append(scopesStr, str)
-		}
+	scopes := conf.strList("scopes")
+	if scopes == nil {
+		scopes = []string{} // as before: absent scopes read back as an empty list
 	}
 
 	// Build args from config
 	args := AzureOidcConnectorArgs{
-		ConnectorId:    found.Id,
-		Name:           found.Name,
-		TenantId:       tenantId,
-		ClientId:       GetString(configMap, "clientID"),
-		ClientSecret:   GetString(configMap, "clientSecret"),
-		RedirectUri:    GetString(configMap, "redirectURI"),
-		Scopes:         scopesStr,
-		UserNameSource: userNameSource,
-		ExtraOidc:      extraOIDCFromConfig(configMap, req.Inputs.ExtraOidc),
+		ConnectorId:  found.Id,
+		Name:         found.Name,
+		TenantId:     tenantId,
+		ClientId:     conf.str("clientID"),
+		ClientSecret: conf.str("clientSecret"),
+		RedirectUri:  conf.str("redirectURI"),
+		Scopes:       scopes,
+		// Create writes "preferred_username" when userNameSource is omitted.
+		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "preferred_username", req.Inputs.UserNameSource),
+		ExtraOidc:      extraOIDCFromConfig(conf.values, req.Inputs.ExtraOidc),
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, unreadableConfigError("azure-oidc-connector", found.Id, err)
 	}
 
 	state := AzureOidcConnectorState{
@@ -555,21 +551,25 @@ func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadReques
 		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, nil
 	}
 
-	var configMap map[string]any
-	if err := json.Unmarshal(found.Config, &configMap); err != nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, nil
+	conf, err := parseConnectorConfig(found.Config)
+	if err != nil {
+		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, unreadableConfigError("azure-microsoft-connector", found.Id, err)
 	}
-
-	groups := GetStringPtr(configMap, "groups")
 
 	args := AzureMicrosoftConnectorArgs{
 		ConnectorId:  found.Id,
 		Name:         found.Name,
-		Tenant:       GetString(configMap, "tenant"),
-		ClientId:     GetString(configMap, "clientID"),
-		ClientSecret: GetString(configMap, "clientSecret"),
-		RedirectUri:  GetString(configMap, "redirectURI"),
-		Groups:       groups,
+		Tenant:       conf.str("tenant"),
+		ClientId:     conf.str("clientID"),
+		ClientSecret: conf.str("clientSecret"),
+		RedirectUri:  conf.str("redirectURI"),
+		// Dex's Microsoft connector stores groups as an array while this resource
+		// models a string (DEX-007), so groups is read leniently rather than failing
+		// on configs that are valid for Dex.
+		Groups: GetStringPtr(conf.values, "groups"),
+	}
+	if err := conf.Err(); err != nil {
+		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, unreadableConfigError("azure-microsoft-connector", found.Id, err)
 	}
 
 	state := AzureMicrosoftConnectorState{
