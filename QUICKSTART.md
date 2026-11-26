@@ -93,8 +93,8 @@ func main() {
     pulumi.Run(func(ctx *pulumi.Context) error {
         // Configure provider
         provider, err := dex.NewProvider(ctx, "dex", &dex.ProviderArgs{
-            Host: pulumi.String("localhost:5557"),
-            InsecureSkipVerify: pulumi.Bool(true),
+            Host:      pulumi.String("localhost:5557"),
+            Plaintext: pulumi.Bool(true), // the local docker-compose Dex serves gRPC without TLS
         })
         if err != nil {
             return err
@@ -156,8 +156,8 @@ pulumi plugin ls
 
 - Verify Dex is running: `curl http://localhost:5556/healthz`
 - Check gRPC port: `netstat -an | grep 5557`
-- For development, use `insecureSkipVerify: true` in provider config
-- For production, ensure TLS certificates are properly configured
+- The provider connects with TLS by default. For the local docker-compose Dex, which serves gRPC without TLS, set `plaintext: true`
+- For a Dex with TLS, set `caCert` if its certificate comes from a private CA, and `clientCert` and `clientKey` if it requires client certificates
 
 ### SDK generation fails
 

@@ -24,15 +24,17 @@ class ProviderArgs:
                  client_cert: pulumi.Input[Optional[_builtins.str]] = None,
                  client_key: pulumi.Input[Optional[_builtins.str]] = None,
                  insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 plaintext: pulumi.Input[Optional[_builtins.bool]] = None,
                  timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None):
         """
         The set of arguments for constructing a Provider resource.
 
         :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.example.com:5557.
-        :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
-        :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mTLS to Dex.
-        :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for the client certificate.
-        :param pulumi.Input[_builtins.bool] insecure_skip_verify: If true, disables TLS verification (development only).
+        :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
+        :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
+        :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for clientCert.
+        :param pulumi.Input[_builtins.bool] insecure_skip_verify: If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
+        :param pulumi.Input[_builtins.bool] plaintext: If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
         :param pulumi.Input[_builtins.int] timeout_seconds: Per-RPC timeout in seconds when talking to Dex.
         """
         pulumi.set(__self__, "host", host)
@@ -44,6 +46,8 @@ class ProviderArgs:
             pulumi.set(__self__, "client_key", client_key)
         if insecure_skip_verify is not None:
             pulumi.set(__self__, "insecure_skip_verify", insecure_skip_verify)
+        if plaintext is not None:
+            pulumi.set(__self__, "plaintext", plaintext)
         if timeout_seconds is not None:
             pulumi.set(__self__, "timeout_seconds", timeout_seconds)
 
@@ -63,7 +67,7 @@ class ProviderArgs:
     @pulumi.getter(name="caCert")
     def ca_cert(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
-        PEM-encoded CA certificate for validating Dex's TLS certificate.
+        PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
         """
         return pulumi.get(self, "ca_cert")
 
@@ -75,7 +79,7 @@ class ProviderArgs:
     @pulumi.getter(name="clientCert")
     def client_cert(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
-        PEM-encoded client certificate for mTLS to Dex.
+        PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
         """
         return pulumi.get(self, "client_cert")
 
@@ -87,7 +91,7 @@ class ProviderArgs:
     @pulumi.getter(name="clientKey")
     def client_key(self) -> pulumi.Input[Optional[_builtins.str]]:
         """
-        PEM-encoded private key for the client certificate.
+        PEM-encoded private key for clientCert.
         """
         return pulumi.get(self, "client_key")
 
@@ -99,13 +103,25 @@ class ProviderArgs:
     @pulumi.getter(name="insecureSkipVerify")
     def insecure_skip_verify(self) -> pulumi.Input[Optional[_builtins.bool]]:
         """
-        If true, disables TLS verification (development only).
+        If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
         """
         return pulumi.get(self, "insecure_skip_verify")
 
     @insecure_skip_verify.setter
     def insecure_skip_verify(self, value: pulumi.Input[Optional[_builtins.bool]]):
         pulumi.set(self, "insecure_skip_verify", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def plaintext(self) -> pulumi.Input[Optional[_builtins.bool]]:
+        """
+        If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
+        """
+        return pulumi.get(self, "plaintext")
+
+    @plaintext.setter
+    def plaintext(self, value: pulumi.Input[Optional[_builtins.bool]]):
+        pulumi.set(self, "plaintext", value)
 
     @_builtins.property
     @pulumi.getter(name="timeoutSeconds")
@@ -131,6 +147,7 @@ class Provider(pulumi.ProviderResource):
                  client_key: pulumi.Input[Optional[_builtins.str]] = None,
                  host: pulumi.Input[Optional[_builtins.str]] = None,
                  insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 plaintext: pulumi.Input[Optional[_builtins.bool]] = None,
                  timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None,
                  __props__=None):
         """
@@ -138,11 +155,12 @@ class Provider(pulumi.ProviderResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate for validating Dex's TLS certificate.
-        :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mTLS to Dex.
-        :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for the client certificate.
+        :param pulumi.Input[_builtins.str] ca_cert: PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
+        :param pulumi.Input[_builtins.str] client_cert: PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
+        :param pulumi.Input[_builtins.str] client_key: PEM-encoded private key for clientCert.
         :param pulumi.Input[_builtins.str] host: Dex gRPC host:port, e.g. dex.internal.example.com:5557.
-        :param pulumi.Input[_builtins.bool] insecure_skip_verify: If true, disables TLS verification (development only).
+        :param pulumi.Input[_builtins.bool] insecure_skip_verify: If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext.
+        :param pulumi.Input[_builtins.bool] plaintext: If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs.
         :param pulumi.Input[_builtins.int] timeout_seconds: Per-RPC timeout in seconds when talking to Dex.
         """
         ...
@@ -174,6 +192,7 @@ class Provider(pulumi.ProviderResource):
                  client_key: pulumi.Input[Optional[_builtins.str]] = None,
                  host: pulumi.Input[Optional[_builtins.str]] = None,
                  insecure_skip_verify: pulumi.Input[Optional[_builtins.bool]] = None,
+                 plaintext: pulumi.Input[Optional[_builtins.bool]] = None,
                  timeout_seconds: pulumi.Input[Optional[_builtins.int]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
@@ -191,6 +210,7 @@ class Provider(pulumi.ProviderResource):
                 raise TypeError("Missing required property 'host'")
             __props__.__dict__["host"] = host
             __props__.__dict__["insecure_skip_verify"] = pulumi.Output.from_input(insecure_skip_verify).apply(pulumi.runtime.to_json) if insecure_skip_verify is not None else None
+            __props__.__dict__["plaintext"] = pulumi.Output.from_input(plaintext).apply(pulumi.runtime.to_json) if plaintext is not None else None
             __props__.__dict__["timeout_seconds"] = pulumi.Output.from_input(timeout_seconds).apply(pulumi.runtime.to_json) if timeout_seconds is not None else None
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["caCert", "clientCert", "clientKey"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
@@ -204,7 +224,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter(name="caCert")
     def ca_cert(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        PEM-encoded CA certificate for validating Dex's TLS certificate.
+        PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.
         """
         return pulumi.get(self, "ca_cert")
 
@@ -212,7 +232,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter(name="clientCert")
     def client_cert(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        PEM-encoded client certificate for mTLS to Dex.
+        PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.
         """
         return pulumi.get(self, "client_cert")
 
@@ -220,7 +240,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter(name="clientKey")
     def client_key(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        PEM-encoded private key for the client certificate.
+        PEM-encoded private key for clientCert.
         """
         return pulumi.get(self, "client_key")
 

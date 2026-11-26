@@ -5,7 +5,7 @@ services:
     container_name: dex
     ports:
       - "5556:5556"  # Dex web UI
-      - "5557:5557"  # Dex gRPC API (insecure for local dev)
+      - "5557:5557"  # Dex gRPC API without TLS (local only): set plaintext: true in the provider
     volumes:
       - ./examples/dex-config.yaml:/etc/dex/config.yaml:ro
     environment:

@@ -7,7 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Before upgrading: if your Dex gRPC API is not TLS-enabled, set `plaintext: true` in the provider
+configuration.** The provider now connects with TLS by default. A configuration without TLS options
+that reached a Dex without TLS, such as the docker-compose setup in this repository, fails with an
+error that names `plaintext: true` as the fix:
+
+```bash
+pulumi config set --type bool dex:plaintext true   # default provider
+```
+
+or `plaintext: true` in an explicit `dex.Provider`. Use it only for a Dex on your own machine or
+inside a cluster.
+
+### Breaking
+- **The connection to Dex is encrypted by default.** Without `caCert`, `clientCert`, `clientKey` or
+  `insecureSkipVerify`, the provider connected without TLS, so client secrets and connector
+  credentials crossed the network unencrypted. It now uses TLS 1.2 or later and verifies Dex's
+  certificate and host name against the system's root CAs. The new `plaintext: true` option connects
+  without TLS; combined with any TLS option it is an error naming the conflicting options. There is
+  no automatic fallback to plaintext. `caCert` still replaces the system's root CAs, and
+  `insecureSkipVerify: true` still means TLS without certificate verification, never plaintext.
+  Documentation that recommended `insecureSkipVerify: true` for the local Dex without TLS was wrong
+  (that combination never connected) and now uses `plaintext: true`.
+
 ### Fixed
+- Connection failures caused by TLS are reported with their cause and fix instead of only "timed
+  out": a Dex without TLS (set `plaintext: true`), a certificate the system does not trust (set
+  `caCert`), a certificate that does not cover the host name, and a Dex that rejects the client
+  certificate or requires one (set `clientCert` and `clientKey`). Errors never include certificate
+  or key contents.
+- A preview whose provider configuration depends on other resources no longer fails or connects to
+  Dex with guessed settings. An unknown `host` failed with "host is required", and an unknown
+  `caCert` was treated as absent, so the provider connected with the wrong settings. The provider now
+  connects only once all configuration values are known.
+- The README listed `DEX_*` environment variables that the provider never read. It now says that the
+  provider reads no environment variables and shows how to pass settings through the program or
+  Pulumi config.
 - **Release binaries are built with Go 1.26.11 instead of 1.26.6.** The `go.mod` files named only
   Go 1.26.6, so CI and releases built with it. `govulncheck` reports 12 standard library
   vulnerabilities in 1.26.6 that the provider's code can reach, among them HTTP/2 server crashes and

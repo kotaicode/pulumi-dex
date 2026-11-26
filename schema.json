@@ -33,17 +33,17 @@
     "variables": {
       "caCert": {
         "type": "string",
-        "description": "PEM-encoded CA certificate for validating Dex's TLS certificate.",
+        "description": "PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.",
         "secret": true
       },
       "clientCert": {
         "type": "string",
-        "description": "PEM-encoded client certificate for mTLS to Dex.",
+        "description": "PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.",
         "secret": true
       },
       "clientKey": {
         "type": "string",
-        "description": "PEM-encoded private key for the client certificate.",
+        "description": "PEM-encoded private key for clientCert.",
         "secret": true
       },
       "host": {
@@ -52,7 +52,11 @@
       },
       "insecureSkipVerify": {
         "type": "boolean",
-        "description": "If true, disables TLS verification (development only)."
+        "description": "If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext."
+      },
+      "plaintext": {
+        "type": "boolean",
+        "description": "If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs."
       },
       "timeoutSeconds": {
         "type": "integer",
@@ -160,17 +164,17 @@
     "properties": {
       "caCert": {
         "type": "string",
-        "description": "PEM-encoded CA certificate for validating Dex's TLS certificate.",
+        "description": "PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.",
         "secret": true
       },
       "clientCert": {
         "type": "string",
-        "description": "PEM-encoded client certificate for mTLS to Dex.",
+        "description": "PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.",
         "secret": true
       },
       "clientKey": {
         "type": "string",
-        "description": "PEM-encoded private key for the client certificate.",
+        "description": "PEM-encoded private key for clientCert.",
         "secret": true
       },
       "host": {
@@ -179,7 +183,11 @@
       },
       "insecureSkipVerify": {
         "type": "boolean",
-        "description": "If true, disables TLS verification (development only)."
+        "description": "If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext."
+      },
+      "plaintext": {
+        "type": "boolean",
+        "description": "If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs."
       },
       "timeoutSeconds": {
         "type": "integer",
@@ -192,17 +200,17 @@
     "inputProperties": {
       "caCert": {
         "type": "string",
-        "description": "PEM-encoded CA certificate for validating Dex's TLS certificate.",
+        "description": "PEM-encoded CA certificate that issued Dex's gRPC server certificate. When set, only this CA is trusted instead of the system's root CAs.",
         "secret": true
       },
       "clientCert": {
         "type": "string",
-        "description": "PEM-encoded client certificate for mTLS to Dex.",
+        "description": "PEM-encoded client certificate for mutual TLS with Dex. Requires clientKey.",
         "secret": true
       },
       "clientKey": {
         "type": "string",
-        "description": "PEM-encoded private key for the client certificate.",
+        "description": "PEM-encoded private key for clientCert.",
         "secret": true
       },
       "host": {
@@ -211,7 +219,11 @@
       },
       "insecureSkipVerify": {
         "type": "boolean",
-        "description": "If true, disables TLS verification (development only)."
+        "description": "If true, connects with TLS but does not verify Dex's certificate (development only). The connection is still encrypted; for a Dex without TLS, use plaintext."
+      },
+      "plaintext": {
+        "type": "boolean",
+        "description": "If true, connects to Dex without TLS. Only for a Dex gRPC API that is not TLS-enabled and is reachable only on a trusted network, such as localhost or inside a cluster. Cannot be combined with caCert, clientCert, clientKey or insecureSkipVerify. By default the provider connects with TLS and verifies Dex's certificate against the system's root CAs."
       },
       "timeoutSeconds": {
         "type": "integer",

@@ -1,0 +1,103 @@
+package resources
+
+import (
+	"net"
+	"strings"
+	"sync/atomic"
+	"testing"
+
+	p "github.com/pulumi/pulumi-go-provider"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
+	"google.golang.org/grpc"
+)
+
+// =============================================================================
+// Provider configuration through the provider protocol
+// =============================================================================
+
+// countingListener counts connection attempts, so tests can prove that the
+// provider did not dial Dex.
+type countingListener struct {
+	net.Listener
+	accepted atomic.Int32
+}
+
+func (l *countingListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err == nil {
+		l.accepted.Add(1)
+	}
+	return c, err
+}
+
+// plaintextDex serves an empty plaintext gRPC API, like a local Dex without TLS.
+func plaintextDex(t *testing.T) *countingListener {
+	t.Helper()
+	inner, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lis := &countingListener{Listener: inner}
+	srv := grpc.NewServer()
+	done := make(chan error, 1)
+	go func() { done <- srv.Serve(lis) }()
+	t.Cleanup(func() {
+		srv.Stop()
+		if err := <-done; err != nil {
+			t.Errorf("plaintext Dex: %v", err)
+		}
+	})
+	return lis
+}
+
+func configureWith(t *testing.T, args map[string]property.Value) error {
+	t.Helper()
+	return newTestProvider(t).Configure(p.ConfigureRequest{Args: property.NewMap(args)})
+}
+
+// A configuration without TLS options used to connect unencrypted. It now uses
+// TLS, and against a Dex without TLS the error says how to opt out.
+func TestProviderConfigure_defaultsToTLS(t *testing.T) {
+	dex := plaintextDex(t)
+	err := configureWith(t, map[string]property.Value{
+		"host": property.New(dex.Addr().String()), "timeoutSeconds": property.New(2.0),
+	})
+	if err == nil {
+		t.Fatal("the provider connected without TLS although plaintext was not requested")
+	}
+	if !strings.Contains(err.Error(), "plaintext: true") {
+		t.Errorf("error should name plaintext: true as the fix, got: %v", err)
+	}
+}
+
+func TestProviderConfigure_plaintextOptIn(t *testing.T) {
+	dex := plaintextDex(t)
+	if err := configureWith(t, map[string]property.Value{
+		"host": property.New(dex.Addr().String()), "plaintext": property.New(true), "timeoutSeconds": property.New(2.0),
+	}); err != nil {
+		t.Fatalf("plaintext: true against a plaintext Dex: %v", err)
+	}
+}
+
+// During a preview, provider inputs can be unknown because they come from other
+// resources. The provider must not guess them and dial Dex.
+func TestProviderConfigure_unknownInputsDoNotDial(t *testing.T) {
+	dex := plaintextDex(t)
+	for name, args := range map[string]map[string]property.Value{
+		"unknown host": {"host": property.New(property.Computed)},
+		"unknown caCert": {
+			"host": property.New(dex.Addr().String()), "caCert": property.New(property.Computed),
+			"timeoutSeconds": property.New(1.0),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			before := dex.accepted.Load()
+			if err := configureWith(t, args); err != nil {
+				t.Errorf("Configure with unknown inputs: %v", err)
+			}
+			if n := dex.accepted.Load() - before; n != 0 {
+				t.Errorf("provider dialed Dex %d times with unknown configuration", n)
+			}
+		})
+	}
+}

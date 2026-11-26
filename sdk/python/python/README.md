@@ -56,28 +56,37 @@ The provider requires configuration to connect to your Dex gRPC API:
 
 ```typescript
 import * as dex from "@kotaicode/pulumi-dex";
+import * as fs from "fs";
 
+// TLS is the default. caCert is needed when Dex's certificate comes from a
+// private CA; clientCert and clientKey when Dex requires client certificates (mTLS).
 const provider = new dex.Provider("dex", {
     host: "dex.internal:5557", // Dex gRPC host:port
-    // Optional: TLS configuration for mTLS
     caCert: fs.readFileSync("certs/ca.crt", "utf-8"),
     clientCert: fs.readFileSync("certs/client.crt", "utf-8"),
     clientKey: fs.readFileSync("certs/client.key", "utf-8"),
-    // Or for development:
-    // insecureSkipVerify: true,
+});
+
+// A local Dex whose gRPC API has no TLS, such as the docker-compose setup in this repository:
+const localProvider = new dex.Provider("dex-local", {
+    host: "localhost:5557",
+    plaintext: true,
 });
 ```
 
-### Environment Variables
+### Connection Security
 
-You can also configure the provider using environment variables:
+| Configuration | Connection |
+| --- | --- |
+| no TLS options | TLS 1.2 or later; Dex's certificate and host name are verified against the system's root CAs |
+| `caCert` | TLS; only this CA is trusted, instead of the system's root CAs |
+| `clientCert` and `clientKey` | TLS with a client certificate (mTLS); one without the other is an error |
+| `insecureSkipVerify: true` | TLS without certificate verification (development only); still encrypted |
+| `plaintext: true` | unencrypted; only for a Dex without TLS on a trusted network, such as localhost or inside a cluster |
 
-- `DEX_HOST` - Dex gRPC host:port
-- `DEX_CA_CERT` - PEM-encoded CA certificate
-- `DEX_CLIENT_CERT` - PEM-encoded client certificate
-- `DEX_CLIENT_KEY` - PEM-encoded client private key
-- `DEX_INSECURE_SKIP_VERIFY` - Skip TLS verification (development only)
-- `DEX_TIMEOUT_SECONDS` - Per-RPC timeout in seconds
+`plaintext: true` cannot be combined with `caCert`, `clientCert`, `clientKey` or `insecureSkipVerify`. The provider never falls back from TLS to plaintext. If it reaches a Dex without TLS, the error names `plaintext: true` as the fix.
+
+The provider reads no environment variables. To take connection settings from the environment, read them in your program (for example `process.env.DEX_HOST`) or use Pulumi config (`pulumi config set dex:host ...`, `pulumi config set --secret dex:caCert -- "$(cat ca.crt)"`).
 
 ## Usage Examples
 
