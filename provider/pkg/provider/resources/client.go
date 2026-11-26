@@ -203,6 +203,18 @@ func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, Cli
 
 	client := resp.Client
 
+	// Dex cannot distinguish an omitted optional field from its zero value. Report a
+	// zero value the way the prior input had it, so refresh alone shows no change;
+	// any non-zero remote value is real state and is reported as is.
+	public := &client.Public
+	if !client.Public && req.Inputs.Public == nil {
+		public = nil
+	}
+	logoUrl := PtrOrString(client.LogoUrl)
+	if logoUrl == nil && req.Inputs.LogoUrl != nil && *req.Inputs.LogoUrl == "" {
+		logoUrl = req.Inputs.LogoUrl
+	}
+
 	// Build the state from Dex response
 	state := ClientState{
 		ClientArgs: ClientArgs{
@@ -211,8 +223,8 @@ func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, Cli
 			Secret:       &client.Secret,
 			RedirectUris: client.RedirectUris,
 			TrustedPeers: client.TrustedPeers,
-			Public:       &client.Public,
-			LogoUrl:      PtrOrString(client.LogoUrl),
+			Public:       public,
+			LogoUrl:      logoUrl,
 		},
 		// Note: Dex API doesn't expose createdAt, so we keep the existing value if present
 		CreatedAt: req.State.CreatedAt,
