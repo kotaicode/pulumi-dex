@@ -315,9 +315,10 @@ func WithPreviewSafeConfigure(prov p.Provider) p.Provider {
 }
 
 // configValueKinds are the non-string provider settings. The engine can pass
-// stack config to Configure as strings, for example "true" for a value set
+// stack config to the provider as strings, for example "true" for a value set
 // with pulumi config set --type bool during pulumi import, which infer
-// rejects for a bool or int field.
+// rejects for a bool or int field. The import also stores these strings as the
+// provider's inputs, while pulumi up stores the checked values.
 var configValueKinds = map[string]func(string) (property.Value, bool){
 	"plaintext":          parseBoolConfig,
 	"insecureSkipVerify": parseBoolConfig,
@@ -332,23 +333,39 @@ func parseBoolConfig(s string) (property.Value, bool) {
 	return property.New(b), err == nil
 }
 
-// WithTypedConfigValues converts string-encoded booleans and integers in the
-// provider configuration before infer decodes it. A string that is not a
-// valid value is left as it is, so the error still names the field.
-func WithTypedConfigValues(prov p.Provider) p.Provider {
-	configure := prov.Configure
-	if configure == nil {
-		return prov
-	}
-	prov.Configure = func(ctx context.Context, req p.ConfigureRequest) error {
-		for key, parse := range configValueKinds {
-			if v, ok := req.Args.GetOk(key); ok && v.IsString() {
-				if typed, ok := parse(v.AsString()); ok {
-					req.Args = req.Args.Set(key, typed)
-				}
+// typedConfigValues converts string-encoded booleans and integers in a
+// provider configuration. A string that is not a valid value is left as it is,
+// so the error still names the field.
+func typedConfigValues(m property.Map) property.Map {
+	for key, parse := range configValueKinds {
+		if v, ok := m.GetOk(key); ok && v.IsString() {
+			if typed, ok := parse(v.AsString()); ok {
+				m = m.Set(key, typed)
 			}
 		}
-		return configure(ctx, req)
+	}
+	return m
+}
+
+// WithTypedConfigValues makes string-encoded booleans and integers in the
+// provider configuration equal to their typed values: in Configure, before
+// infer decodes them, and in DiffConfig, where infer would otherwise see the
+// strings an import stored as a change and replace every resource that uses
+// the provider.
+func WithTypedConfigValues(prov p.Provider) p.Provider {
+	if configure := prov.Configure; configure != nil {
+		prov.Configure = func(ctx context.Context, req p.ConfigureRequest) error {
+			req.Args = typedConfigValues(req.Args)
+			return configure(ctx, req)
+		}
+	}
+	if diffConfig := prov.DiffConfig; diffConfig != nil {
+		prov.DiffConfig = func(ctx context.Context, req p.DiffRequest) (p.DiffResponse, error) {
+			req.State = typedConfigValues(req.State)
+			req.OldInputs = typedConfigValues(req.OldInputs)
+			req.Inputs = typedConfigValues(req.Inputs)
+			return diffConfig(ctx, req)
+		}
 	}
 	return prov
 }
