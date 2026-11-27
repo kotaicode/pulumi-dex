@@ -17,6 +17,12 @@ from .. import _utilities
 __all__ = [
     'GitHubOrgArgs',
     'GitHubOrgArgsDict',
+    'LdapGroupSearchArgs',
+    'LdapGroupSearchArgsDict',
+    'LdapUserMatcherArgs',
+    'LdapUserMatcherArgsDict',
+    'LdapUserSearchArgs',
+    'LdapUserSearchArgsDict',
     'OIDCClaimMappingArgs',
     'OIDCClaimMappingArgsDict',
     'OIDCConfigArgs',
@@ -69,6 +75,366 @@ class GitHubOrgArgs:
     @teams.setter
     def teams(self, value: pulumi.Input[Optional[Sequence[pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "teams", value)
+
+
+class LdapGroupSearchArgsDict(TypedDict):
+    base_dn: pulumi.Input[_builtins.str]
+    """
+    DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+    """
+    name_attr: pulumi.Input[_builtins.str]
+    """
+    Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+    """
+    user_matchers: pulumi.Input[Sequence[pulumi.Input['LdapUserMatcherArgsDict']]]
+    """
+    How a group is matched to the user. A group belongs to the user if it matches any entry.
+    """
+    filter: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+    """
+    scope: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+    """
+
+@pulumi.input_type
+class LdapGroupSearchArgs:
+    def __init__(__self__, *,
+                 base_dn: pulumi.Input[_builtins.str],
+                 name_attr: pulumi.Input[_builtins.str],
+                 user_matchers: pulumi.Input[Sequence[pulumi.Input['LdapUserMatcherArgs']]],
+                 filter: pulumi.Input[Optional[_builtins.str]] = None,
+                 scope: pulumi.Input[Optional[_builtins.str]] = None):
+        """
+        :param pulumi.Input[_builtins.str] base_dn: DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+        :param pulumi.Input[_builtins.str] name_attr: Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+        :param pulumi.Input[Sequence[pulumi.Input['LdapUserMatcherArgs']]] user_matchers: How a group is matched to the user. A group belongs to the user if it matches any entry.
+        :param pulumi.Input[_builtins.str] filter: LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+        :param pulumi.Input[_builtins.str] scope: Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+        """
+        pulumi.set(__self__, "base_dn", base_dn)
+        pulumi.set(__self__, "name_attr", name_attr)
+        pulumi.set(__self__, "user_matchers", user_matchers)
+        if filter is not None:
+            pulumi.set(__self__, "filter", filter)
+        if scope is not None:
+            pulumi.set(__self__, "scope", scope)
+
+    @_builtins.property
+    @pulumi.getter(name="baseDn")
+    def base_dn(self) -> pulumi.Input[_builtins.str]:
+        """
+        DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+        """
+        return pulumi.get(self, "base_dn")
+
+    @base_dn.setter
+    def base_dn(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "base_dn", value)
+
+    @_builtins.property
+    @pulumi.getter(name="nameAttr")
+    def name_attr(self) -> pulumi.Input[_builtins.str]:
+        """
+        Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+        """
+        return pulumi.get(self, "name_attr")
+
+    @name_attr.setter
+    def name_attr(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "name_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="userMatchers")
+    def user_matchers(self) -> pulumi.Input[Sequence[pulumi.Input['LdapUserMatcherArgs']]]:
+        """
+        How a group is matched to the user. A group belongs to the user if it matches any entry.
+        """
+        return pulumi.get(self, "user_matchers")
+
+    @user_matchers.setter
+    def user_matchers(self, value: pulumi.Input[Sequence[pulumi.Input['LdapUserMatcherArgs']]]):
+        pulumi.set(self, "user_matchers", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def filter(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+        """
+        return pulumi.get(self, "filter")
+
+    @filter.setter
+    def filter(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "filter", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def scope(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+        """
+        return pulumi.get(self, "scope")
+
+    @scope.setter
+    def scope(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "scope", value)
+
+
+class LdapUserMatcherArgsDict(TypedDict):
+    group_attr: pulumi.Input[_builtins.str]
+    """
+    Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+    """
+    user_attr: pulumi.Input[_builtins.str]
+    """
+    Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+    """
+    recursion_group_attr: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+    """
+
+@pulumi.input_type
+class LdapUserMatcherArgs:
+    def __init__(__self__, *,
+                 group_attr: pulumi.Input[_builtins.str],
+                 user_attr: pulumi.Input[_builtins.str],
+                 recursion_group_attr: pulumi.Input[Optional[_builtins.str]] = None):
+        """
+        :param pulumi.Input[_builtins.str] group_attr: Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+        :param pulumi.Input[_builtins.str] user_attr: Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+        :param pulumi.Input[_builtins.str] recursion_group_attr: If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+        """
+        pulumi.set(__self__, "group_attr", group_attr)
+        pulumi.set(__self__, "user_attr", user_attr)
+        if recursion_group_attr is not None:
+            pulumi.set(__self__, "recursion_group_attr", recursion_group_attr)
+
+    @_builtins.property
+    @pulumi.getter(name="groupAttr")
+    def group_attr(self) -> pulumi.Input[_builtins.str]:
+        """
+        Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+        """
+        return pulumi.get(self, "group_attr")
+
+    @group_attr.setter
+    def group_attr(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "group_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="userAttr")
+    def user_attr(self) -> pulumi.Input[_builtins.str]:
+        """
+        Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+        """
+        return pulumi.get(self, "user_attr")
+
+    @user_attr.setter
+    def user_attr(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "user_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="recursionGroupAttr")
+    def recursion_group_attr(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+        """
+        return pulumi.get(self, "recursion_group_attr")
+
+    @recursion_group_attr.setter
+    def recursion_group_attr(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "recursion_group_attr", value)
+
+
+class LdapUserSearchArgsDict(TypedDict):
+    base_dn: pulumi.Input[_builtins.str]
+    """
+    DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+    """
+    username_attributes: pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]
+    """
+    Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+    """
+    email_attr: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Attribute that becomes the email claim. Defaults to 'mail'.
+    """
+    email_suffix: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+    """
+    filter: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    LDAP filter that users must match, e.g. '(objectClass=person)'.
+    """
+    id_attr: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+    """
+    name_attr: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Attribute that becomes the name claim, e.g. 'cn'.
+    """
+    preferred_username_attr: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Attribute that becomes the preferred_username claim.
+    """
+    scope: NotRequired[pulumi.Input[Optional[_builtins.str]]]
+    """
+    Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+    """
+
+@pulumi.input_type
+class LdapUserSearchArgs:
+    def __init__(__self__, *,
+                 base_dn: pulumi.Input[_builtins.str],
+                 username_attributes: pulumi.Input[Sequence[pulumi.Input[_builtins.str]]],
+                 email_attr: pulumi.Input[Optional[_builtins.str]] = None,
+                 email_suffix: pulumi.Input[Optional[_builtins.str]] = None,
+                 filter: pulumi.Input[Optional[_builtins.str]] = None,
+                 id_attr: pulumi.Input[Optional[_builtins.str]] = None,
+                 name_attr: pulumi.Input[Optional[_builtins.str]] = None,
+                 preferred_username_attr: pulumi.Input[Optional[_builtins.str]] = None,
+                 scope: pulumi.Input[Optional[_builtins.str]] = None):
+        """
+        :param pulumi.Input[_builtins.str] base_dn: DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+        :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] username_attributes: Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+        :param pulumi.Input[_builtins.str] email_attr: Attribute that becomes the email claim. Defaults to 'mail'.
+        :param pulumi.Input[_builtins.str] email_suffix: If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+        :param pulumi.Input[_builtins.str] filter: LDAP filter that users must match, e.g. '(objectClass=person)'.
+        :param pulumi.Input[_builtins.str] id_attr: Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+        :param pulumi.Input[_builtins.str] name_attr: Attribute that becomes the name claim, e.g. 'cn'.
+        :param pulumi.Input[_builtins.str] preferred_username_attr: Attribute that becomes the preferred_username claim.
+        :param pulumi.Input[_builtins.str] scope: Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+        """
+        pulumi.set(__self__, "base_dn", base_dn)
+        pulumi.set(__self__, "username_attributes", username_attributes)
+        if email_attr is not None:
+            pulumi.set(__self__, "email_attr", email_attr)
+        if email_suffix is not None:
+            pulumi.set(__self__, "email_suffix", email_suffix)
+        if filter is not None:
+            pulumi.set(__self__, "filter", filter)
+        if id_attr is not None:
+            pulumi.set(__self__, "id_attr", id_attr)
+        if name_attr is not None:
+            pulumi.set(__self__, "name_attr", name_attr)
+        if preferred_username_attr is not None:
+            pulumi.set(__self__, "preferred_username_attr", preferred_username_attr)
+        if scope is not None:
+            pulumi.set(__self__, "scope", scope)
+
+    @_builtins.property
+    @pulumi.getter(name="baseDn")
+    def base_dn(self) -> pulumi.Input[_builtins.str]:
+        """
+        DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+        """
+        return pulumi.get(self, "base_dn")
+
+    @base_dn.setter
+    def base_dn(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "base_dn", value)
+
+    @_builtins.property
+    @pulumi.getter(name="usernameAttributes")
+    def username_attributes(self) -> pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]:
+        """
+        Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+        """
+        return pulumi.get(self, "username_attributes")
+
+    @username_attributes.setter
+    def username_attributes(self, value: pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]):
+        pulumi.set(self, "username_attributes", value)
+
+    @_builtins.property
+    @pulumi.getter(name="emailAttr")
+    def email_attr(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Attribute that becomes the email claim. Defaults to 'mail'.
+        """
+        return pulumi.get(self, "email_attr")
+
+    @email_attr.setter
+    def email_attr(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "email_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="emailSuffix")
+    def email_suffix(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+        """
+        return pulumi.get(self, "email_suffix")
+
+    @email_suffix.setter
+    def email_suffix(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "email_suffix", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def filter(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        LDAP filter that users must match, e.g. '(objectClass=person)'.
+        """
+        return pulumi.get(self, "filter")
+
+    @filter.setter
+    def filter(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "filter", value)
+
+    @_builtins.property
+    @pulumi.getter(name="idAttr")
+    def id_attr(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+        """
+        return pulumi.get(self, "id_attr")
+
+    @id_attr.setter
+    def id_attr(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "id_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="nameAttr")
+    def name_attr(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Attribute that becomes the name claim, e.g. 'cn'.
+        """
+        return pulumi.get(self, "name_attr")
+
+    @name_attr.setter
+    def name_attr(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "name_attr", value)
+
+    @_builtins.property
+    @pulumi.getter(name="preferredUsernameAttr")
+    def preferred_username_attr(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Attribute that becomes the preferred_username claim.
+        """
+        return pulumi.get(self, "preferred_username_attr")
+
+    @preferred_username_attr.setter
+    def preferred_username_attr(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "preferred_username_attr", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def scope(self) -> pulumi.Input[Optional[_builtins.str]]:
+        """
+        Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+        """
+        return pulumi.get(self, "scope")
+
+    @scope.setter
+    def scope(self, value: pulumi.Input[Optional[_builtins.str]]):
+        pulumi.set(self, "scope", value)
 
 
 class OIDCClaimMappingArgsDict(TypedDict):

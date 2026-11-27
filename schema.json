@@ -87,6 +87,108 @@
         "name"
       ]
     },
+    "dex:resources:LdapGroupSearch": {
+      "properties": {
+        "baseDn": {
+          "type": "string",
+          "description": "DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'."
+        },
+        "filter": {
+          "type": "string",
+          "description": "LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'."
+        },
+        "nameAttr": {
+          "type": "string",
+          "description": "Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level)."
+        },
+        "userMatchers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/dex:resources:LdapUserMatcher"
+          },
+          "description": "How a group is matched to the user. A group belongs to the user if it matches any entry."
+        }
+      },
+      "type": "object",
+      "required": [
+        "baseDn",
+        "userMatchers",
+        "nameAttr"
+      ]
+    },
+    "dex:resources:LdapUserMatcher": {
+      "properties": {
+        "groupAttr": {
+          "type": "string",
+          "description": "Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'."
+        },
+        "recursionGroupAttr": {
+          "type": "string",
+          "description": "If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'."
+        },
+        "userAttr": {
+          "type": "string",
+          "description": "Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'."
+        }
+      },
+      "type": "object",
+      "required": [
+        "userAttr",
+        "groupAttr"
+      ]
+    },
+    "dex:resources:LdapUserSearch": {
+      "properties": {
+        "baseDn": {
+          "type": "string",
+          "description": "DN to search users under, e.g. 'ou=people,dc=example,dc=org'."
+        },
+        "emailAttr": {
+          "type": "string",
+          "description": "Attribute that becomes the email claim. Defaults to 'mail'."
+        },
+        "emailSuffix": {
+          "type": "string",
+          "description": "If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'."
+        },
+        "filter": {
+          "type": "string",
+          "description": "LDAP filter that users must match, e.g. '(objectClass=person)'."
+        },
+        "idAttr": {
+          "type": "string",
+          "description": "Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex."
+        },
+        "nameAttr": {
+          "type": "string",
+          "description": "Attribute that becomes the name claim, e.g. 'cn'."
+        },
+        "preferredUsernameAttr": {
+          "type": "string",
+          "description": "Attribute that becomes the preferred_username claim."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level)."
+        },
+        "usernameAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in."
+        }
+      },
+      "type": "object",
+      "required": [
+        "baseDn",
+        "usernameAttributes"
+      ]
+    },
     "dex:resources:OIDCClaimMapping": {
       "properties": {
         "emailKey": {
@@ -1075,6 +1177,149 @@
         "clientId",
         "clientSecret",
         "redirectUri"
+      ]
+    },
+    "dex:resources:LdapConnector": {
+      "description": "Manages an LDAP connector in Dex (type: ldap). Users log in with their directory username and password; Dex looks the user up, checks the password with a bind as that user, and reads the user's groups. Dex checks this configuration only when someone logs in, so test a login after every change. Settings this resource does not model, such as kerberos, make refresh and import fail; manage such a connector with dex.Connector and rawConfig.",
+      "properties": {
+        "bindDn": {
+          "type": "string",
+          "description": "DN of the account that Dex binds as to search for users and groups. Requires bindPassword. Without bindDn and bindPassword, Dex searches anonymously."
+        },
+        "bindPassword": {
+          "type": "string",
+          "description": "Password of bindDn (Dex's bindPW). Dex uses it as written.",
+          "secret": true
+        },
+        "clientCert": {
+          "type": "string",
+          "description": "Path, on the Dex host, of a client certificate for the LDAP server. Requires clientKey."
+        },
+        "clientKey": {
+          "type": "string",
+          "description": "Path, on the Dex host, of the private key for clientCert. Requires clientCert."
+        },
+        "connectorId": {
+          "type": "string",
+          "description": "Unique identifier for the LDAP connector.",
+          "replaceOnChanges": true
+        },
+        "groupSearch": {
+          "$ref": "#/types/dex:resources:LdapGroupSearch",
+          "description": "How Dex finds the user's groups. Without it, tokens carry no groups."
+        },
+        "host": {
+          "type": "string",
+          "description": "Host and port of the LDAP server, e.g. 'ldap.example.com:636'. Without a port, Dex uses 389 when insecureNoSsl is true and 636 otherwise, also with startTls; startTls therefore requires a port."
+        },
+        "insecureNoSsl": {
+          "type": "boolean",
+          "description": "If true, connects without TLS. Passwords then cross the network in plain text; only for an LDAP server on a trusted network."
+        },
+        "insecureSkipVerify": {
+          "type": "boolean",
+          "description": "If true, does not verify the LDAP server's certificate. Not recommended for production."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the connector, displayed to users during login."
+        },
+        "rootCa": {
+          "type": "string",
+          "description": "Path, on the Dex host, of a PEM file with the CA certificates that sign the LDAP server's certificate. Use either rootCa or rootCaPem."
+        },
+        "rootCaPem": {
+          "type": "string",
+          "description": "PEM-encoded CA certificates that sign the LDAP server's certificate, sent inline as Dex's rootCAData. Use either rootCa or rootCaPem."
+        },
+        "startTls": {
+          "type": "boolean",
+          "description": "If true, connects without TLS and then upgrades the connection with StartTLS. Otherwise Dex connects with TLS (LDAPS). Requires a port in host."
+        },
+        "userSearch": {
+          "$ref": "#/types/dex:resources:LdapUserSearch",
+          "description": "How Dex finds the user who logs in."
+        },
+        "usernamePrompt": {
+          "type": "string",
+          "description": "Label of the username field on Dex's login page, e.g. 'Email Address'. Defaults to 'Username'."
+        }
+      },
+      "required": [
+        "connectorId",
+        "name",
+        "host",
+        "userSearch"
+      ],
+      "inputProperties": {
+        "bindDn": {
+          "type": "string",
+          "description": "DN of the account that Dex binds as to search for users and groups. Requires bindPassword. Without bindDn and bindPassword, Dex searches anonymously."
+        },
+        "bindPassword": {
+          "type": "string",
+          "description": "Password of bindDn (Dex's bindPW). Dex uses it as written.",
+          "secret": true
+        },
+        "clientCert": {
+          "type": "string",
+          "description": "Path, on the Dex host, of a client certificate for the LDAP server. Requires clientKey."
+        },
+        "clientKey": {
+          "type": "string",
+          "description": "Path, on the Dex host, of the private key for clientCert. Requires clientCert."
+        },
+        "connectorId": {
+          "type": "string",
+          "description": "Unique identifier for the LDAP connector.",
+          "replaceOnChanges": true
+        },
+        "groupSearch": {
+          "$ref": "#/types/dex:resources:LdapGroupSearch",
+          "description": "How Dex finds the user's groups. Without it, tokens carry no groups."
+        },
+        "host": {
+          "type": "string",
+          "description": "Host and port of the LDAP server, e.g. 'ldap.example.com:636'. Without a port, Dex uses 389 when insecureNoSsl is true and 636 otherwise, also with startTls; startTls therefore requires a port."
+        },
+        "insecureNoSsl": {
+          "type": "boolean",
+          "description": "If true, connects without TLS. Passwords then cross the network in plain text; only for an LDAP server on a trusted network."
+        },
+        "insecureSkipVerify": {
+          "type": "boolean",
+          "description": "If true, does not verify the LDAP server's certificate. Not recommended for production."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the connector, displayed to users during login."
+        },
+        "rootCa": {
+          "type": "string",
+          "description": "Path, on the Dex host, of a PEM file with the CA certificates that sign the LDAP server's certificate. Use either rootCa or rootCaPem."
+        },
+        "rootCaPem": {
+          "type": "string",
+          "description": "PEM-encoded CA certificates that sign the LDAP server's certificate, sent inline as Dex's rootCAData. Use either rootCa or rootCaPem."
+        },
+        "startTls": {
+          "type": "boolean",
+          "description": "If true, connects without TLS and then upgrades the connection with StartTLS. Otherwise Dex connects with TLS (LDAPS). Requires a port in host."
+        },
+        "userSearch": {
+          "$ref": "#/types/dex:resources:LdapUserSearch",
+          "description": "How Dex finds the user who logs in."
+        },
+        "usernamePrompt": {
+          "type": "string",
+          "description": "Label of the username field on Dex's login page, e.g. 'Email Address'. Defaults to 'Username'."
+        }
+      },
+      "requiredInputs": [
+        "connectorId",
+        "name",
+        "host",
+        "userSearch"
       ]
     },
     "dex:resources:LocalConnector": {

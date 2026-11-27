@@ -134,6 +134,14 @@ func connectorContracts() []connectorContract {
 			inputs: oauth(map[string]property.Value{"tenant": str("organizations")})},
 		{token: tokenCognitoOidcConnector, dexType: "oidc", secret: "clientSecret",
 			inputs: oauth(map[string]property.Value{"region": str("eu-central-1"), "userPoolId": str("eu-central-1_pool")})},
+		{token: tokenLdapConnector, dexType: "ldap", secret: "bindPassword",
+			inputs: func(id string) map[string]property.Value {
+				return map[string]property.Value{
+					"connectorId": str(id), "name": str("Contract"), "host": str("ldap.example.com:636"),
+					"bindDn": str("cn=reader,dc=example,dc=org"), "bindPassword": str(contractCanary),
+					"userSearch": obj(map[string]property.Value{"baseDn": str("dc=example,dc=org"), "usernameAttributes": strs("uid")}),
+				}
+			}},
 		{token: tokenLocalConnector, dexType: "local", config: configIgnored,
 			inputs: func(id string) map[string]property.Value {
 				return map[string]property.Value{"connectorId": str(id), "name": str("Contract")}

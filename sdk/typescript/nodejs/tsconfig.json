@@ -35,6 +35,7 @@
         "resources/gitLabConnector.ts",
         "resources/googleConnector.ts",
         "resources/index.ts",
+        "resources/ldapConnector.ts",
         "resources/localConnector.ts",
         "resources/localUser.ts",
         "types/index.ts",

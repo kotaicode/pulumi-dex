@@ -31,6 +31,10 @@ var (
 	// LocalUserGroups is the groups list on password users (Password.groups,
 	// UpdatePasswordReq.new_groups), added in Dex v2.46.0.
 	LocalUserGroups = Feature{Name: "LocalUser.groups", MinAPI: 4, MinServer: "v2.46"}
+	// LdapUsernameAttributes is a list in the LDAP connector's
+	// userSearch.username, added in Dex v2.46.0. Dex v2.45 stores the list
+	// and then fails every login through the connector.
+	LdapUsernameAttributes = Feature{Name: "LdapConnector.userSearch.usernameAttributes with more than one entry", MinAPI: 4, MinServer: "v2.46"}
 )
 
 // Supported Dex lines: v2.45 (API 3) and v2.46 (API 4).

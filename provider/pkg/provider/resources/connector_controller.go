@@ -93,6 +93,10 @@ type connectorController[A, S any] struct {
 	// config cannot be read; it must not contain config values.
 	decode func(remote *api.Connector, prior A) (A, error)
 
+	// requires refuses inputs that the connected Dex would store without
+	// applying them, such as a field an older Dex line does not know.
+	requires func(cfg provider.DexConfig, args A) error
+
 	// The generic Connector sets these. Its type is an input, so it reads a
 	// connector of any type; the rest keeps its own checks and messages.
 	typeOf          func(A) string
@@ -122,8 +126,28 @@ func (c connectorController[A, S]) connector(args A) (*api.Connector, error) {
 	return &api.Connector{Id: c.id(args), Type: c.connectorType(args), Name: c.name(args), Config: config}, nil
 }
 
+// require runs the requires check. A preview runs it as soon as the server
+// version is known; while the provider configuration is unknown, the update
+// itself runs it.
+func (c connectorController[A, S]) require(ctx context.Context, dryRun bool, op string, args A) error {
+	if c.requires == nil {
+		return nil
+	}
+	cfg := infer.GetConfig[provider.DexConfig](ctx)
+	if dryRun && cfg.Server == nil {
+		return nil
+	}
+	if err := c.requires(cfg, args); err != nil {
+		return provider.WrapError(op, c.kind, c.id(args), err)
+	}
+	return nil
+}
+
 func (c connectorController[A, S]) create(ctx context.Context, req infer.CreateRequest[A]) (infer.CreateResponse[S], error) {
 	args := req.Inputs
+	if err := c.require(ctx, req.DryRun, "create", args); err != nil {
+		return infer.CreateResponse[S]{}, err
+	}
 	// A preview must not need a configured provider.
 	if req.DryRun {
 		return infer.CreateResponse[S]{ID: c.id(args), Output: c.state(args)}, nil
@@ -185,6 +209,9 @@ func (c connectorController[A, S]) read(ctx context.Context, req infer.ReadReque
 
 func (c connectorController[A, S]) update(ctx context.Context, req infer.UpdateRequest[A, S]) (infer.UpdateResponse[S], error) {
 	args := req.Inputs
+	if err := c.require(ctx, req.DryRun, "update", args); err != nil {
+		return infer.UpdateResponse[S]{}, err
+	}
 	if req.DryRun {
 		return infer.UpdateResponse[S]{Output: c.state(args)}, nil
 	}

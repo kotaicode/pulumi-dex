@@ -15,6 +15,7 @@ A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gR
 - **GitHub Integration**: `GitHubConnector` for GitHub.com and GitHub Enterprise
 - **Google Integration**: `GoogleConnector` for Google Workspace and Google accounts
 - **Password login**: `LocalConnector` adds a login with passwords stored in Dex
+- **LDAP Integration**: `LdapConnector` for OpenLDAP, Active Directory and other LDAP directories
 
 ## Installation
 
@@ -257,6 +258,70 @@ Create the bcrypt hash outside Pulumi, so the password itself never reaches the 
 - `pulumi import dex:resources:LocalUser <name> <email>` imports a user without its password hash. The program can omit `passwordHash` afterwards; updates then leave the password unchanged.
 - Deleting a `LocalUser` removes only its password record. Sessions and tokens that Dex already issued stay valid until they expire.
 
+### LDAP Connector (OpenLDAP)
+
+```typescript
+import * as fs from "fs";
+
+const config = new pulumi.Config();
+
+// Users under ou=people, groupOfNames groups under ou=groups. Dex checks this
+// configuration only when someone logs in: test a login after every change.
+const ldap = new dex.LdapConnector("ldap", {
+    connectorId: "ldap",
+    name: "OpenLDAP",
+    host: "ldap.example.com:636",                     // LDAPS; for StartTLS: "ldap.example.com:389" and startTls: true
+    rootCaPem: fs.readFileSync("ldap-ca.pem", "utf8"), // CA that signed the LDAP server's certificate
+    bindDn: "cn=dex,ou=services,dc=example,dc=org",   // leave out bindDn and bindPassword to search anonymously
+    bindPassword: config.requireSecret("ldapBindPassword"),
+    userSearch: {
+        baseDn: "ou=people,dc=example,dc=org",
+        filter: "(objectClass=inetOrgPerson)",
+        usernameAttributes: ["uid"],                  // several attributes need Dex v2.46
+        idAttr: "uid",                                // the user ID in Dex: changing it changes every user's identity
+        emailAttr: "mail",
+        nameAttr: "cn",
+    },
+    groupSearch: {
+        baseDn: "ou=groups,dc=example,dc=org",
+        filter: "(objectClass=groupOfNames)",
+        // recursionGroupAttr adds groups that contain the user's groups, at any depth
+        userMatchers: [{ userAttr: "DN", groupAttr: "member", recursionGroupAttr: "member" }],
+        nameAttr: "cn",
+    },
+}, { provider });
+```
+
+### LDAP Connector (Active Directory, untested)
+
+This example follows Dex's documentation for Active Directory; the provider's tests do not cover Active Directory.
+
+```typescript
+const activeDirectory = new dex.LdapConnector("active-directory", {
+    connectorId: "ad",
+    name: "Active Directory",
+    host: "dc1.corp.example.com:636",
+    rootCaPem: fs.readFileSync("corp-ca.pem", "utf8"),
+    bindDn: "CN=dex,CN=Users,DC=corp,DC=example,DC=com",
+    bindPassword: config.requireSecret("adBindPassword"),
+    usernamePrompt: "Email address",
+    userSearch: {
+        baseDn: "CN=Users,DC=corp,DC=example,DC=com",
+        filter: "(objectClass=person)",
+        usernameAttributes: ["userPrincipalName"],
+        idAttr: "DN",
+        emailAttr: "userPrincipalName",
+        nameAttr: "cn",
+    },
+    groupSearch: {
+        baseDn: "CN=Users,DC=corp,DC=example,DC=com",
+        filter: "(objectClass=group)",
+        userMatchers: [{ userAttr: "DN", groupAttr: "member" }],
+        nameAttr: "cn",
+    },
+}, { provider });
+```
+
 ### Generic Connector (OIDC)
 
 ```typescript
@@ -482,6 +547,29 @@ Adds a password login to Dex: a connector of type `local`, through which users l
 - `enabled` (bool, optional, deprecated) - Has no effect in Dex; `false` fails in preview
 
 **Note:** Dex offers password login through every connector of type `local`, even when `enablePasswordDB` is `false` in its configuration. There is no disabled state: to turn this password login off, remove the resource. Removing it does not delete password users. Users are managed separately, through Dex's static passwords or its gRPC API.
+
+### `dex.LdapConnector`
+
+Manages an LDAP connector in Dex (type `ldap`). Users log in with their directory username and password.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `host` (string, required) - `host:port` of the LDAP server. Without a port, Dex uses 389 with `insecureNoSsl` and 636 otherwise, also with `startTls`
+- `insecureNoSsl` (bool, optional) - Connect without TLS
+- `startTls` (bool, optional) - Connect without TLS, then upgrade with StartTLS; requires a port in `host`
+- `insecureSkipVerify` (bool, optional) - Do not verify the server's certificate
+- `rootCa` (string, optional) - Path of a CA file on the Dex host; or `rootCaPem` (string, optional) with the PEM inline
+- `clientCert`, `clientKey` (string, optional) - Paths on the Dex host, set together
+- `bindDn` (string, optional), `bindPassword` (string, optional, secret) - Search account, set together; without both, Dex searches anonymously
+- `usernamePrompt` (string, optional) - Label of the username field on the login page
+- `userSearch` (object, required) - `baseDn` (required), `usernameAttributes` (string[], required; more than one needs Dex v2.46), `filter`, `scope`, `idAttr`, `emailAttr`, `nameAttr`, `preferredUsernameAttr`, `emailSuffix`
+- `groupSearch` (object, optional) - `baseDn`, `userMatchers` (`userAttr`, `groupAttr`, `recursionGroupAttr`) and `nameAttr` (required), `filter`, `scope`
+
+**Notes:**
+- Dex stores an LDAP configuration without checking it and reports problems only at login. Preview rejects the combinations that cannot work: `insecureNoSsl` with `startTls` or `insecureSkipVerify`, `startTls` without a port, both `rootCa` and `rootCaPem`, a `rootCaPem` without a certificate, and only one of `clientCert`/`clientKey` or `bindDn`/`bindPassword`.
+- Refresh and import fail on settings in Dex that the resource does not model, such as `kerberos` or the deprecated `groupSearch.userAttr`, `groupAttr` and `recursionGroupAttr`; an update would remove them. Manage such a connector with `dex.Connector` and `rawConfig`.
+- Changing `userSearch.idAttr` changes the user ID of every user, so applications that use Dex see them as new users.
 
 ### `dex.LocalUser`
 

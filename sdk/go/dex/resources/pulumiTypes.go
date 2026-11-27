@@ -119,6 +119,458 @@ func (o GitHubOrgArrayOutput) Index(i pulumi.IntInput) GitHubOrgOutput {
 	}).(GitHubOrgOutput)
 }
 
+type LdapGroupSearch struct {
+	// DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+	BaseDn string `pulumi:"baseDn"`
+	// LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+	Filter *string `pulumi:"filter"`
+	// Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+	NameAttr string `pulumi:"nameAttr"`
+	// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+	Scope *string `pulumi:"scope"`
+	// How a group is matched to the user. A group belongs to the user if it matches any entry.
+	UserMatchers []LdapUserMatcher `pulumi:"userMatchers"`
+}
+
+// LdapGroupSearchInput is an input type that accepts LdapGroupSearchArgs and LdapGroupSearchOutput values.
+// You can construct a concrete instance of `LdapGroupSearchInput` via:
+//
+//	LdapGroupSearchArgs{...}
+type LdapGroupSearchInput interface {
+	pulumi.Input
+
+	ToLdapGroupSearchOutput() LdapGroupSearchOutput
+	ToLdapGroupSearchOutputWithContext(context.Context) LdapGroupSearchOutput
+}
+
+type LdapGroupSearchArgs struct {
+	// DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+	BaseDn pulumi.StringInput `pulumi:"baseDn"`
+	// LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+	Filter pulumi.StringPtrInput `pulumi:"filter"`
+	// Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+	NameAttr pulumi.StringInput `pulumi:"nameAttr"`
+	// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+	Scope pulumi.StringPtrInput `pulumi:"scope"`
+	// How a group is matched to the user. A group belongs to the user if it matches any entry.
+	UserMatchers LdapUserMatcherArrayInput `pulumi:"userMatchers"`
+}
+
+func (LdapGroupSearchArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapGroupSearch)(nil)).Elem()
+}
+
+func (i LdapGroupSearchArgs) ToLdapGroupSearchOutput() LdapGroupSearchOutput {
+	return i.ToLdapGroupSearchOutputWithContext(context.Background())
+}
+
+func (i LdapGroupSearchArgs) ToLdapGroupSearchOutputWithContext(ctx context.Context) LdapGroupSearchOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapGroupSearchOutput)
+}
+
+func (i LdapGroupSearchArgs) ToLdapGroupSearchPtrOutput() LdapGroupSearchPtrOutput {
+	return i.ToLdapGroupSearchPtrOutputWithContext(context.Background())
+}
+
+func (i LdapGroupSearchArgs) ToLdapGroupSearchPtrOutputWithContext(ctx context.Context) LdapGroupSearchPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapGroupSearchOutput).ToLdapGroupSearchPtrOutputWithContext(ctx)
+}
+
+// LdapGroupSearchPtrInput is an input type that accepts LdapGroupSearchArgs, LdapGroupSearchPtr and LdapGroupSearchPtrOutput values.
+// You can construct a concrete instance of `LdapGroupSearchPtrInput` via:
+//
+//	        LdapGroupSearchArgs{...}
+//
+//	or:
+//
+//	        nil
+type LdapGroupSearchPtrInput interface {
+	pulumi.Input
+
+	ToLdapGroupSearchPtrOutput() LdapGroupSearchPtrOutput
+	ToLdapGroupSearchPtrOutputWithContext(context.Context) LdapGroupSearchPtrOutput
+}
+
+type ldapGroupSearchPtrType LdapGroupSearchArgs
+
+func LdapGroupSearchPtr(v *LdapGroupSearchArgs) LdapGroupSearchPtrInput {
+	return (*ldapGroupSearchPtrType)(v)
+}
+
+func (*ldapGroupSearchPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**LdapGroupSearch)(nil)).Elem()
+}
+
+func (i *ldapGroupSearchPtrType) ToLdapGroupSearchPtrOutput() LdapGroupSearchPtrOutput {
+	return i.ToLdapGroupSearchPtrOutputWithContext(context.Background())
+}
+
+func (i *ldapGroupSearchPtrType) ToLdapGroupSearchPtrOutputWithContext(ctx context.Context) LdapGroupSearchPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapGroupSearchPtrOutput)
+}
+
+type LdapGroupSearchOutput struct{ *pulumi.OutputState }
+
+func (LdapGroupSearchOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapGroupSearch)(nil)).Elem()
+}
+
+func (o LdapGroupSearchOutput) ToLdapGroupSearchOutput() LdapGroupSearchOutput {
+	return o
+}
+
+func (o LdapGroupSearchOutput) ToLdapGroupSearchOutputWithContext(ctx context.Context) LdapGroupSearchOutput {
+	return o
+}
+
+func (o LdapGroupSearchOutput) ToLdapGroupSearchPtrOutput() LdapGroupSearchPtrOutput {
+	return o.ToLdapGroupSearchPtrOutputWithContext(context.Background())
+}
+
+func (o LdapGroupSearchOutput) ToLdapGroupSearchPtrOutputWithContext(ctx context.Context) LdapGroupSearchPtrOutput {
+	return o.ApplyTWithContext(ctx, func(_ context.Context, v LdapGroupSearch) *LdapGroupSearch {
+		return &v
+	}).(LdapGroupSearchPtrOutput)
+}
+
+// DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+func (o LdapGroupSearchOutput) BaseDn() pulumi.StringOutput {
+	return o.ApplyT(func(v LdapGroupSearch) string { return v.BaseDn }).(pulumi.StringOutput)
+}
+
+// LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+func (o LdapGroupSearchOutput) Filter() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapGroupSearch) *string { return v.Filter }).(pulumi.StringPtrOutput)
+}
+
+// Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+func (o LdapGroupSearchOutput) NameAttr() pulumi.StringOutput {
+	return o.ApplyT(func(v LdapGroupSearch) string { return v.NameAttr }).(pulumi.StringOutput)
+}
+
+// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+func (o LdapGroupSearchOutput) Scope() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapGroupSearch) *string { return v.Scope }).(pulumi.StringPtrOutput)
+}
+
+// How a group is matched to the user. A group belongs to the user if it matches any entry.
+func (o LdapGroupSearchOutput) UserMatchers() LdapUserMatcherArrayOutput {
+	return o.ApplyT(func(v LdapGroupSearch) []LdapUserMatcher { return v.UserMatchers }).(LdapUserMatcherArrayOutput)
+}
+
+type LdapGroupSearchPtrOutput struct{ *pulumi.OutputState }
+
+func (LdapGroupSearchPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**LdapGroupSearch)(nil)).Elem()
+}
+
+func (o LdapGroupSearchPtrOutput) ToLdapGroupSearchPtrOutput() LdapGroupSearchPtrOutput {
+	return o
+}
+
+func (o LdapGroupSearchPtrOutput) ToLdapGroupSearchPtrOutputWithContext(ctx context.Context) LdapGroupSearchPtrOutput {
+	return o
+}
+
+func (o LdapGroupSearchPtrOutput) Elem() LdapGroupSearchOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) LdapGroupSearch {
+		if v != nil {
+			return *v
+		}
+		var ret LdapGroupSearch
+		return ret
+	}).(LdapGroupSearchOutput)
+}
+
+// DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+func (o LdapGroupSearchPtrOutput) BaseDn() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) *string {
+		if v == nil {
+			return nil
+		}
+		return &v.BaseDn
+	}).(pulumi.StringPtrOutput)
+}
+
+// LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+func (o LdapGroupSearchPtrOutput) Filter() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) *string {
+		if v == nil {
+			return nil
+		}
+		return v.Filter
+	}).(pulumi.StringPtrOutput)
+}
+
+// Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+func (o LdapGroupSearchPtrOutput) NameAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) *string {
+		if v == nil {
+			return nil
+		}
+		return &v.NameAttr
+	}).(pulumi.StringPtrOutput)
+}
+
+// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+func (o LdapGroupSearchPtrOutput) Scope() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) *string {
+		if v == nil {
+			return nil
+		}
+		return v.Scope
+	}).(pulumi.StringPtrOutput)
+}
+
+// How a group is matched to the user. A group belongs to the user if it matches any entry.
+func (o LdapGroupSearchPtrOutput) UserMatchers() LdapUserMatcherArrayOutput {
+	return o.ApplyT(func(v *LdapGroupSearch) []LdapUserMatcher {
+		if v == nil {
+			return nil
+		}
+		return v.UserMatchers
+	}).(LdapUserMatcherArrayOutput)
+}
+
+type LdapUserMatcher struct {
+	// Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+	GroupAttr string `pulumi:"groupAttr"`
+	// If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+	RecursionGroupAttr *string `pulumi:"recursionGroupAttr"`
+	// Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+	UserAttr string `pulumi:"userAttr"`
+}
+
+// LdapUserMatcherInput is an input type that accepts LdapUserMatcherArgs and LdapUserMatcherOutput values.
+// You can construct a concrete instance of `LdapUserMatcherInput` via:
+//
+//	LdapUserMatcherArgs{...}
+type LdapUserMatcherInput interface {
+	pulumi.Input
+
+	ToLdapUserMatcherOutput() LdapUserMatcherOutput
+	ToLdapUserMatcherOutputWithContext(context.Context) LdapUserMatcherOutput
+}
+
+type LdapUserMatcherArgs struct {
+	// Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+	GroupAttr pulumi.StringInput `pulumi:"groupAttr"`
+	// If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+	RecursionGroupAttr pulumi.StringPtrInput `pulumi:"recursionGroupAttr"`
+	// Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+	UserAttr pulumi.StringInput `pulumi:"userAttr"`
+}
+
+func (LdapUserMatcherArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapUserMatcher)(nil)).Elem()
+}
+
+func (i LdapUserMatcherArgs) ToLdapUserMatcherOutput() LdapUserMatcherOutput {
+	return i.ToLdapUserMatcherOutputWithContext(context.Background())
+}
+
+func (i LdapUserMatcherArgs) ToLdapUserMatcherOutputWithContext(ctx context.Context) LdapUserMatcherOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapUserMatcherOutput)
+}
+
+// LdapUserMatcherArrayInput is an input type that accepts LdapUserMatcherArray and LdapUserMatcherArrayOutput values.
+// You can construct a concrete instance of `LdapUserMatcherArrayInput` via:
+//
+//	LdapUserMatcherArray{ LdapUserMatcherArgs{...} }
+type LdapUserMatcherArrayInput interface {
+	pulumi.Input
+
+	ToLdapUserMatcherArrayOutput() LdapUserMatcherArrayOutput
+	ToLdapUserMatcherArrayOutputWithContext(context.Context) LdapUserMatcherArrayOutput
+}
+
+type LdapUserMatcherArray []LdapUserMatcherInput
+
+func (LdapUserMatcherArray) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]LdapUserMatcher)(nil)).Elem()
+}
+
+func (i LdapUserMatcherArray) ToLdapUserMatcherArrayOutput() LdapUserMatcherArrayOutput {
+	return i.ToLdapUserMatcherArrayOutputWithContext(context.Background())
+}
+
+func (i LdapUserMatcherArray) ToLdapUserMatcherArrayOutputWithContext(ctx context.Context) LdapUserMatcherArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapUserMatcherArrayOutput)
+}
+
+type LdapUserMatcherOutput struct{ *pulumi.OutputState }
+
+func (LdapUserMatcherOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapUserMatcher)(nil)).Elem()
+}
+
+func (o LdapUserMatcherOutput) ToLdapUserMatcherOutput() LdapUserMatcherOutput {
+	return o
+}
+
+func (o LdapUserMatcherOutput) ToLdapUserMatcherOutputWithContext(ctx context.Context) LdapUserMatcherOutput {
+	return o
+}
+
+// Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+func (o LdapUserMatcherOutput) GroupAttr() pulumi.StringOutput {
+	return o.ApplyT(func(v LdapUserMatcher) string { return v.GroupAttr }).(pulumi.StringOutput)
+}
+
+// If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+func (o LdapUserMatcherOutput) RecursionGroupAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserMatcher) *string { return v.RecursionGroupAttr }).(pulumi.StringPtrOutput)
+}
+
+// Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+func (o LdapUserMatcherOutput) UserAttr() pulumi.StringOutput {
+	return o.ApplyT(func(v LdapUserMatcher) string { return v.UserAttr }).(pulumi.StringOutput)
+}
+
+type LdapUserMatcherArrayOutput struct{ *pulumi.OutputState }
+
+func (LdapUserMatcherArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]LdapUserMatcher)(nil)).Elem()
+}
+
+func (o LdapUserMatcherArrayOutput) ToLdapUserMatcherArrayOutput() LdapUserMatcherArrayOutput {
+	return o
+}
+
+func (o LdapUserMatcherArrayOutput) ToLdapUserMatcherArrayOutputWithContext(ctx context.Context) LdapUserMatcherArrayOutput {
+	return o
+}
+
+func (o LdapUserMatcherArrayOutput) Index(i pulumi.IntInput) LdapUserMatcherOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) LdapUserMatcher {
+		return vs[0].([]LdapUserMatcher)[vs[1].(int)]
+	}).(LdapUserMatcherOutput)
+}
+
+type LdapUserSearch struct {
+	// DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+	BaseDn string `pulumi:"baseDn"`
+	// Attribute that becomes the email claim. Defaults to 'mail'.
+	EmailAttr *string `pulumi:"emailAttr"`
+	// If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+	EmailSuffix *string `pulumi:"emailSuffix"`
+	// LDAP filter that users must match, e.g. '(objectClass=person)'.
+	Filter *string `pulumi:"filter"`
+	// Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+	IdAttr *string `pulumi:"idAttr"`
+	// Attribute that becomes the name claim, e.g. 'cn'.
+	NameAttr *string `pulumi:"nameAttr"`
+	// Attribute that becomes the preferred_username claim.
+	PreferredUsernameAttr *string `pulumi:"preferredUsernameAttr"`
+	// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+	Scope *string `pulumi:"scope"`
+	// Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+	UsernameAttributes []string `pulumi:"usernameAttributes"`
+}
+
+// LdapUserSearchInput is an input type that accepts LdapUserSearchArgs and LdapUserSearchOutput values.
+// You can construct a concrete instance of `LdapUserSearchInput` via:
+//
+//	LdapUserSearchArgs{...}
+type LdapUserSearchInput interface {
+	pulumi.Input
+
+	ToLdapUserSearchOutput() LdapUserSearchOutput
+	ToLdapUserSearchOutputWithContext(context.Context) LdapUserSearchOutput
+}
+
+type LdapUserSearchArgs struct {
+	// DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+	BaseDn pulumi.StringInput `pulumi:"baseDn"`
+	// Attribute that becomes the email claim. Defaults to 'mail'.
+	EmailAttr pulumi.StringPtrInput `pulumi:"emailAttr"`
+	// If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+	EmailSuffix pulumi.StringPtrInput `pulumi:"emailSuffix"`
+	// LDAP filter that users must match, e.g. '(objectClass=person)'.
+	Filter pulumi.StringPtrInput `pulumi:"filter"`
+	// Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+	IdAttr pulumi.StringPtrInput `pulumi:"idAttr"`
+	// Attribute that becomes the name claim, e.g. 'cn'.
+	NameAttr pulumi.StringPtrInput `pulumi:"nameAttr"`
+	// Attribute that becomes the preferred_username claim.
+	PreferredUsernameAttr pulumi.StringPtrInput `pulumi:"preferredUsernameAttr"`
+	// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+	Scope pulumi.StringPtrInput `pulumi:"scope"`
+	// Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+	UsernameAttributes pulumi.StringArrayInput `pulumi:"usernameAttributes"`
+}
+
+func (LdapUserSearchArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapUserSearch)(nil)).Elem()
+}
+
+func (i LdapUserSearchArgs) ToLdapUserSearchOutput() LdapUserSearchOutput {
+	return i.ToLdapUserSearchOutputWithContext(context.Background())
+}
+
+func (i LdapUserSearchArgs) ToLdapUserSearchOutputWithContext(ctx context.Context) LdapUserSearchOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(LdapUserSearchOutput)
+}
+
+type LdapUserSearchOutput struct{ *pulumi.OutputState }
+
+func (LdapUserSearchOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*LdapUserSearch)(nil)).Elem()
+}
+
+func (o LdapUserSearchOutput) ToLdapUserSearchOutput() LdapUserSearchOutput {
+	return o
+}
+
+func (o LdapUserSearchOutput) ToLdapUserSearchOutputWithContext(ctx context.Context) LdapUserSearchOutput {
+	return o
+}
+
+// DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+func (o LdapUserSearchOutput) BaseDn() pulumi.StringOutput {
+	return o.ApplyT(func(v LdapUserSearch) string { return v.BaseDn }).(pulumi.StringOutput)
+}
+
+// Attribute that becomes the email claim. Defaults to 'mail'.
+func (o LdapUserSearchOutput) EmailAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.EmailAttr }).(pulumi.StringPtrOutput)
+}
+
+// If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+func (o LdapUserSearchOutput) EmailSuffix() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.EmailSuffix }).(pulumi.StringPtrOutput)
+}
+
+// LDAP filter that users must match, e.g. '(objectClass=person)'.
+func (o LdapUserSearchOutput) Filter() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.Filter }).(pulumi.StringPtrOutput)
+}
+
+// Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+func (o LdapUserSearchOutput) IdAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.IdAttr }).(pulumi.StringPtrOutput)
+}
+
+// Attribute that becomes the name claim, e.g. 'cn'.
+func (o LdapUserSearchOutput) NameAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.NameAttr }).(pulumi.StringPtrOutput)
+}
+
+// Attribute that becomes the preferred_username claim.
+func (o LdapUserSearchOutput) PreferredUsernameAttr() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.PreferredUsernameAttr }).(pulumi.StringPtrOutput)
+}
+
+// Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+func (o LdapUserSearchOutput) Scope() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v LdapUserSearch) *string { return v.Scope }).(pulumi.StringPtrOutput)
+}
+
+// Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+func (o LdapUserSearchOutput) UsernameAttributes() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v LdapUserSearch) []string { return v.UsernameAttributes }).(pulumi.StringArrayOutput)
+}
+
 type OIDCClaimMapping struct {
 	// The OIDC claim key that contains the user's email address.
 	EmailKey *string `pulumi:"emailKey"`
@@ -586,12 +1038,22 @@ func (o OIDCConfigPtrOutput) UserNameKey() pulumi.StringPtrOutput {
 func init() {
 	pulumi.RegisterInputType(reflect.TypeOf((*GitHubOrgInput)(nil)).Elem(), GitHubOrgArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*GitHubOrgArrayInput)(nil)).Elem(), GitHubOrgArray{})
+	pulumi.RegisterInputType(reflect.TypeOf((*LdapGroupSearchInput)(nil)).Elem(), LdapGroupSearchArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*LdapGroupSearchPtrInput)(nil)).Elem(), LdapGroupSearchArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*LdapUserMatcherInput)(nil)).Elem(), LdapUserMatcherArgs{})
+	pulumi.RegisterInputType(reflect.TypeOf((*LdapUserMatcherArrayInput)(nil)).Elem(), LdapUserMatcherArray{})
+	pulumi.RegisterInputType(reflect.TypeOf((*LdapUserSearchInput)(nil)).Elem(), LdapUserSearchArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*OIDCClaimMappingInput)(nil)).Elem(), OIDCClaimMappingArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*OIDCClaimMappingPtrInput)(nil)).Elem(), OIDCClaimMappingArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*OIDCConfigInput)(nil)).Elem(), OIDCConfigArgs{})
 	pulumi.RegisterInputType(reflect.TypeOf((*OIDCConfigPtrInput)(nil)).Elem(), OIDCConfigArgs{})
 	pulumi.RegisterOutputType(GitHubOrgOutput{})
 	pulumi.RegisterOutputType(GitHubOrgArrayOutput{})
+	pulumi.RegisterOutputType(LdapGroupSearchOutput{})
+	pulumi.RegisterOutputType(LdapGroupSearchPtrOutput{})
+	pulumi.RegisterOutputType(LdapUserMatcherOutput{})
+	pulumi.RegisterOutputType(LdapUserMatcherArrayOutput{})
+	pulumi.RegisterOutputType(LdapUserSearchOutput{})
 	pulumi.RegisterOutputType(OIDCClaimMappingOutput{})
 	pulumi.RegisterOutputType(OIDCClaimMappingPtrOutput{})
 	pulumi.RegisterOutputType(OIDCConfigOutput{})

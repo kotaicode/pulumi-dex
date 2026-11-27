@@ -37,6 +37,8 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 		r = &GitLabConnector{}
 	case "dex:resources:GoogleConnector":
 		r = &GoogleConnector{}
+	case "dex:resources:LdapConnector":
+		r = &LdapConnector{}
 	case "dex:resources:LocalConnector":
 		r = &LocalConnector{}
 	case "dex:resources:LocalUser":

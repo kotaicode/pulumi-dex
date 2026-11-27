@@ -17,6 +17,83 @@ export namespace resources {
         teams?: string[];
     }
 
+    export interface LdapGroupSearch {
+        /**
+         * DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+         */
+        baseDn: string;
+        /**
+         * LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+         */
+        filter?: string;
+        /**
+         * Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+         */
+        nameAttr: string;
+        /**
+         * Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+         */
+        scope?: string;
+        /**
+         * How a group is matched to the user. A group belongs to the user if it matches any entry.
+         */
+        userMatchers: outputs.resources.LdapUserMatcher[];
+    }
+
+    export interface LdapUserMatcher {
+        /**
+         * Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+         */
+        groupAttr: string;
+        /**
+         * If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+         */
+        recursionGroupAttr?: string;
+        /**
+         * Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+         */
+        userAttr: string;
+    }
+
+    export interface LdapUserSearch {
+        /**
+         * DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+         */
+        baseDn: string;
+        /**
+         * Attribute that becomes the email claim. Defaults to 'mail'.
+         */
+        emailAttr?: string;
+        /**
+         * If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+         */
+        emailSuffix?: string;
+        /**
+         * LDAP filter that users must match, e.g. '(objectClass=person)'.
+         */
+        filter?: string;
+        /**
+         * Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+         */
+        idAttr?: string;
+        /**
+         * Attribute that becomes the name claim, e.g. 'cn'.
+         */
+        nameAttr?: string;
+        /**
+         * Attribute that becomes the preferred_username claim.
+         */
+        preferredUsernameAttr?: string;
+        /**
+         * Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+         */
+        scope?: string;
+        /**
+         * Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+         */
+        usernameAttributes: string[];
+    }
+
     export interface OIDCClaimMapping {
         /**
          * The OIDC claim key that contains the user's email address.
