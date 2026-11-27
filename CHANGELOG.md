@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Lookup functions `getClient`, `getConnector` and `getLocalUser` read one object from Dex without
+  managing or adopting it. A missing object is an error naming the ID; network and permission errors
+  are reported as such. The client secret and the connector configuration are returned as secrets.
 - New `LocalUser` resource (`dex:resources:LocalUser`) for users in Dex's password database. It takes
   a bcrypt hash, never a password; the hash is a secret and is never generated. `groups` needs Dex
   v2.46 and is refused on v2.45, which would drop it silently. Dex cannot change a user's email or

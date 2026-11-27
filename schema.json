@@ -1183,5 +1183,159 @@
         "userId"
       ]
     }
+  },
+  "functions": {
+    "dex:resources:getClient": {
+      "description": "Looks up an OAuth2 client in Dex by its client ID. Read-only: it does not manage or adopt the client. Fails if no client with this ID exists. The client secret is returned as a secret.",
+      "inputs": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Client ID to look up."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ]
+      },
+      "outputs": {
+        "properties": {
+          "clientId": {
+            "description": "The client ID.",
+            "type": "string"
+          },
+          "logoUrl": {
+            "description": "Logo URL, or empty.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "public": {
+            "description": "Whether the client is public (cannot keep a secret).",
+            "type": "boolean"
+          },
+          "redirectUris": {
+            "description": "Allowed redirect URIs.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "secret": {
+            "description": "Client secret.",
+            "secret": true,
+            "type": "string"
+          },
+          "trustedPeers": {
+            "description": "Client IDs that may exchange tokens for this client.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "clientId",
+          "name",
+          "secret",
+          "redirectUris",
+          "trustedPeers",
+          "public",
+          "logoUrl"
+        ],
+        "type": "object"
+      }
+    },
+    "dex:resources:getConnector": {
+      "description": "Looks up a connector in Dex by its ID, in the generic shape: type, name and the configuration as raw JSON. Read-only: it does not manage or adopt the connector. Fails if no connector with this ID exists. The configuration is returned as a secret because it may contain credentials.",
+      "inputs": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Connector ID to look up."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ]
+      },
+      "outputs": {
+        "properties": {
+          "connectorId": {
+            "description": "The connector ID.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "rawConfig": {
+            "description": "Connector configuration as stored in Dex, as JSON.",
+            "secret": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "Dex connector type, for example oidc, github or ldap.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connectorId",
+          "type",
+          "name",
+          "rawConfig"
+        ],
+        "type": "object"
+      }
+    },
+    "dex:resources:getLocalUser": {
+      "description": "Looks up a user in Dex's password database by email (case-insensitive). Read-only: it does not manage or adopt the user. Fails if no user with this email exists. Dex does not return password hashes, so the result has none.",
+      "inputs": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email of the user to look up."
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ]
+      },
+      "outputs": {
+        "properties": {
+          "email": {
+            "description": "Login email, as Dex stores it.",
+            "type": "string"
+          },
+          "groups": {
+            "description": "Groups of the user (Dex v2.46 or later; always empty on older servers).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "userId": {
+            "description": "Stable user ID, the subject of the user's tokens.",
+            "type": "string"
+          },
+          "username": {
+            "description": "Display name, or empty.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "userId",
+          "username",
+          "groups"
+        ],
+        "type": "object"
+      }
+    }
   }
 }

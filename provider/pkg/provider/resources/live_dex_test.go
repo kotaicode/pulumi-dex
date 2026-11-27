@@ -3,6 +3,7 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/integration"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
 
 	"github.com/kotaicode/pulumi-dex/pkg/provider"
@@ -282,5 +284,55 @@ func TestLive_LocalUserGroupsRefusedOnV245(t *testing.T) {
 	_, err = s.Create(p.CreateRequest{Urn: urn, Properties: checked.Inputs, DryRun: true})
 	if err == nil || !strings.Contains(err.Error(), "needs Dex v2.46") {
 		t.Errorf("preview with groups on Dex v2.45 = %v, want a refusal", err)
+	}
+}
+
+func TestLive_Functions(t *testing.T) {
+	c := &provider.DexConfig{Host: os.Getenv("DEX_LIVE_HOST"), Plaintext: ptrBool(true)}
+	if err := c.Configure(t.Context()); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	ctx := t.Context()
+	clientID, connectorID := liveID("fn-client"), liveID("fn-ldap")
+	email := liveID("fn-user") + "@example.com"
+	if _, err := c.Client.CreateClient(ctx, &api.CreateClientReq{Client: &api.Client{Id: clientID, Name: "Fn", Secret: "live-synthetic-fn-secret", RedirectUris: []string{"https://app.example.com/cb"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Client.CreateConnector(ctx, &api.CreateConnectorReq{Connector: &api.Connector{Id: connectorID, Type: "ldap", Name: "Fn LDAP", Config: []byte(`{"host":"ldap.example.com:636"}`)}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Client.CreatePassword(ctx, &api.CreatePasswordReq{Password: &api.Password{Email: email, Hash: []byte(testPasswordHash), UserId: "u-fn", Username: "Fn"}}); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		ctx := context.Background()
+		_, _ = c.Client.DeleteClient(ctx, &api.DeleteClientReq{Id: clientID})          //nolint:errcheck // best-effort cleanup
+		_, _ = c.Client.DeleteConnector(ctx, &api.DeleteConnectorReq{Id: connectorID}) //nolint:errcheck // best-effort cleanup
+		_, _ = c.Client.DeletePassword(ctx, &api.DeletePasswordReq{Email: email})      //nolint:errcheck // best-effort cleanup
+	})
+
+	s := liveProvider(t)
+	call := func(fn string, args map[string]property.Value) (property.Map, error) {
+		resp, err := s.Invoke(p.InvokeRequest{Token: tokens.Type("dex:resources:" + fn), Args: property.NewMap(args)})
+		return resp.Return, err
+	}
+	got, err := call("getClient", map[string]property.Value{"id": str(clientID)})
+	if err != nil || got.Get("name").AsString() != "Fn" || !got.Get("secret").IsSecret() {
+		t.Errorf("getClient = %v, %v", got, err)
+	}
+	got, err = call("getConnector", map[string]property.Value{"id": str(connectorID)})
+	if err != nil || got.Get("type").AsString() != "ldap" || !got.Get("rawConfig").IsSecret() {
+		t.Errorf("getConnector = %v, %v", got, err)
+	}
+	got, err = call("getLocalUser", map[string]property.Value{"email": str(email)})
+	if err != nil || got.Get("userId").AsString() != "u-fn" {
+		t.Errorf("getLocalUser = %v, %v", got, err)
+	}
+	for fn, args := range map[string]map[string]property.Value{
+		"getClient": {"id": str("live-missing")}, "getConnector": {"id": str("live-missing")}, "getLocalUser": {"email": str("live-missing@example.com")},
+	} {
+		if _, err := call(fn, args); err == nil || !strings.Contains(err.Error(), "live-missing") {
+			t.Errorf("%s of a missing object = %v, want an error naming it", fn, err)
+		}
 	}
 }

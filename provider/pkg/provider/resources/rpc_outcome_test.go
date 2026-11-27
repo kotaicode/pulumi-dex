@@ -40,6 +40,7 @@ type fakeDex struct {
 	getClientErr      error
 	listClientsErr    error
 	listConnectorsErr error
+	listPasswordsErr  error
 	// alreadyExistsStatus reports an existing ID on Create as gRPC AlreadyExists
 	// instead of Dex's already_exists response flag.
 	alreadyExistsStatus bool
@@ -168,6 +169,9 @@ func (f *fakeDex) DeletePassword(_ context.Context, req *api.DeletePasswordReq) 
 func (f *fakeDex) ListPasswords(context.Context, *api.ListPasswordReq) (*api.ListPasswordResp, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.listPasswordsErr != nil {
+		return nil, f.listPasswordsErr
+	}
 	out := make([]*api.Password, 0, len(f.passwords))
 	for _, pw := range f.passwords {
 		out = append(out, &api.Password{Email: pw.Email, Username: pw.Username, UserId: pw.UserId, Groups: slices.Clone(pw.Groups)})

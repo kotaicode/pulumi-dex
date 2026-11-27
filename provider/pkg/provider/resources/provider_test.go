@@ -30,6 +30,11 @@ func newTestProvider(t *testing.T) integration.Server {
 			infer.Resource(&LocalConnector{}),
 			infer.Resource(&LocalUser{}),
 		).
+		WithFunctions(
+			infer.Function(&GetClient{}),
+			infer.Function(&GetConnector{}),
+			infer.Function(&GetLocalUser{}),
+		).
 		WithConfig(infer.Config(&provider.DexConfig{})).
 		Build()
 	if err != nil {
