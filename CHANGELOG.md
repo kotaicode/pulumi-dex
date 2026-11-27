@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compatibility testing against real Dex servers: CI runs a lifecycle suite (create, refresh, preview
   without changes, update, delete) for `Client`, `GitHubConnector` and the generic `Connector` against
   Dex v2.45.1 and v2.46.1. The README lists the supported Dex lines.
+- Server version checks: the provider asks Dex for its version once per connection and refuses a
+  feature that needs a newer Dex with a message naming the required version. A Dex whose version
+  cannot be determined, or that is outside the supported lines, gets a warning; existing resources
+  keep working.
 
 ### Changed
 - `docker-compose.yml` runs Dex v2.46.1, pinned by digest, instead of the floating `latest-alpine`

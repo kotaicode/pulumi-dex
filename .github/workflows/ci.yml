@@ -116,6 +116,7 @@ jobs:
         run: cd provider && go test ./pkg/provider/resources/ -tags=dexlive -run Live -count=1 -v
         env:
           DEX_LIVE_HOST: 127.0.0.1:5557
+          DEX_LIVE_VERSION: ${{ matrix.dex.version }}
 
       - name: Dex logs
         if: failure()
