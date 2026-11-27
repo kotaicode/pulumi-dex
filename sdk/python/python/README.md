@@ -90,6 +90,12 @@ The provider reads no environment variables. To take connection settings from th
 
 ## Dex Compatibility
 
+| Provider | Dex servers | Tested in CI against |
+| --- | --- | --- |
+| 0.12.x | v2.45.x, v2.46.x | v2.45.1, v2.46.1 (release images, pinned by digest) |
+
+Every resource works on both lines unless noted here. CI runs a lifecycle suite (create, refresh, preview without changes, update, delete) against a real Dex of each line; to run it locally against your own Dex, see `provider/pkg/provider/resources/live_dex_test.go`.
+
 The provider talks to Dex through its gRPC API, using Dex's official Go bindings `github.com/dexidp/dex/api/v2`. Dex has not tagged these bindings since v2.4.0 (August 2025), although Dex v2.46.0 changed the API, so the provider pins them at the commit of the Dex v2.46.1 release (`75eb19238e10`, Go module version `v2.4.1-0.20261021142137-75eb19238e10`). When Dex publishes a tag (`api/v2.5.0` or later), the provider moves to it; Dependabot proposes that update.
 
 ## Usage Examples

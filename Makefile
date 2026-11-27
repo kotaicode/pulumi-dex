@@ -50,11 +50,11 @@ test:
 
 # Run linter (same as CI)
 lint:
-	@cd provider && golangci-lint run ./pkg/... --timeout=5m
+	@cd provider && golangci-lint run ./pkg/... --build-tags=dexlive --timeout=5m
 
 # Auto-fix linter issues (gci, gofmt, goimports)
 lint-fix:
-	@cd provider && golangci-lint run ./pkg/... --fix --timeout=5m
+	@cd provider && golangci-lint run ./pkg/... --build-tags=dexlive --fix --timeout=5m
 	@echo "✓ Lint fixes applied"
 
 # Quick local test before publishing: generate SDK (with fix scripts), build TS SDK, run test-npm-package with isolatedModules
