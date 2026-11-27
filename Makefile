@@ -3,7 +3,7 @@
 # Default version for local development only. Releases always pass the
 # version from the git tag (make build VERSION=x.y.z); never rely on this
 # default for anything that gets published.
-VERSION ?= 0.11.0
+VERSION ?= 0.12.0
 
 # Pulumi CLI version that generates the committed schema and SDKs. CI and the
 # release workflow install the same version from .pulumi.version; another CLI

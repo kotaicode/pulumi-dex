@@ -7,30 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-27
+
 ### Added
-- Lookup functions `getClient`, `getConnector` and `getLocalUser` read one object from Dex without
-  managing or adopting it. A missing object is an error naming the ID; network and permission errors
-  are reported as such. The client secret and the connector configuration are returned as secrets.
 - New `LocalUser` resource (`dex:resources:LocalUser`) for users in Dex's password database. It takes
   a bcrypt hash, never a password; the hash is a secret and is never generated. `groups` needs Dex
   v2.46 and is refused on v2.45, which would drop it silently. Dex cannot change a user's email or
   userId, remove its username or remove all its groups; those changes fail in preview. Import works
   without the password hash, and later updates leave the password unchanged. Deleting a user does not
   end its sessions or revoke issued tokens.
+- Lookup functions `getClient`, `getConnector` and `getLocalUser` read one object from Dex without
+  managing or adopting it. A missing object is an error naming the ID; network and permission errors
+  are reported as such. The client secret and the connector configuration are returned as secrets.
 - Compatibility testing against real Dex servers: CI runs a lifecycle suite (create, refresh, preview
-  without changes, update, delete) for `Client`, `GitHubConnector` and the generic `Connector` against
-  Dex v2.45.1 and v2.46.1. The README lists the supported Dex lines.
+  without changes, update, delete) for `Client`, `GitHubConnector`, the generic `Connector` and
+  `LocalUser`, plus the lookup functions and the version check, against Dex v2.45.1 and v2.46.1. The
+  README lists the supported Dex lines.
 - Server version checks: the provider asks Dex for its version once per connection and refuses a
   feature that needs a newer Dex with a message naming the required version. A Dex whose version
   cannot be determined, or that is outside the supported lines, gets a warning; existing resources
   keep working.
 
 ### Changed
-- `docker-compose.yml` runs Dex v2.46.1, pinned by digest, instead of the floating `latest-alpine`
-  image.
 - The provider uses Dex's API bindings from the Dex v2.46.1 release commit (`75eb19238e10`) instead of
   the `api/v2` v2.4.0 tag, which predates the API changes in Dex v2.46.0. Dex has not tagged the
   bindings since; the provider moves to a tag once one exists. Behaviour against Dex servers is
+  unchanged.
+- `docker-compose.yml` runs Dex v2.46.1, pinned by digest, instead of the floating `latest-alpine`
+  image.
+
+### Fixed
+- After `pulumi import` into a stack whose Dex provider had not been used yet, the next `pulumi up`
+  planned to replace every imported resource. The import stored the provider settings as strings (for
+  example `plaintext: "true"`), which counted as a change of the provider configuration; the
+  replacement then failed without deleting anything. Such a stack now updates normally. A real change
+  of a provider setting still replaces.
+- Importing an ID that does not exist in Dex succeeded and added an empty resource to the stack. It
+  now fails with a "not found in Dex" error naming the ID. `pulumi refresh` still removes resources
+  whose objects were deleted in Dex.
+- After `pulumi refresh`, every preview of a `Client` whose secret Dex generated proposed removing the
+  `secret` input. Refresh now keeps a generated secret in the state only. A stack refreshed with an
+  earlier version shows this change once more; one `pulumi up` settles it and leaves the secret in Dex
   unchanged.
 
 ## [0.11.0] - 2026-11-26
