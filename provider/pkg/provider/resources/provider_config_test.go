@@ -119,3 +119,42 @@ func TestProviderConfigure_acceptsStringEncodedValues(t *testing.T) {
 		t.Errorf("a string that is no boolean must fail and name the field, got %v", err)
 	}
 }
+
+// pulumi import into a stack whose dex provider is not registered yet stores
+// the provider's stack config as strings ("true"), while pulumi up stores the
+// checked values (true). The provider must not see that as a configuration
+// change: every provider change replaces the resources that use it.
+func TestProviderDiffConfig_stringEncodedValuesAreNoChange(t *testing.T) {
+	imported := property.NewMap(map[string]property.Value{
+		"host": property.New("127.0.0.1:5557"), "plaintext": property.New("true"),
+		"insecureSkipVerify": property.New("false"), "timeoutSeconds": property.New("7"),
+	})
+	checked := property.NewMap(map[string]property.Value{
+		"host": property.New("127.0.0.1:5557"), "plaintext": property.New(true),
+		"insecureSkipVerify": property.New(false), "timeoutSeconds": property.New(7.0),
+	})
+	diff := func(t *testing.T, olds, news property.Map) p.DiffResponse {
+		t.Helper()
+		resp, err := newTestProvider(t).DiffConfig(p.DiffRequest{State: olds, OldInputs: olds, Inputs: news})
+		if err != nil {
+			t.Fatalf("DiffConfig: %v", err)
+		}
+		return resp
+	}
+
+	if resp := diff(t, imported, checked); resp.HasChanges || resp.DeleteBeforeReplace || len(resp.DetailedDiff) > 0 {
+		t.Errorf("imported string values against the same checked values: %+v, want no change", resp)
+	}
+
+	// A real change is still a change, and still replaces.
+	for key, value := range map[string]property.Value{
+		"plaintext":      property.New(false),
+		"timeoutSeconds": property.New(8.0),
+		"host":           property.New("dex.example.com:5557"),
+	} {
+		resp := diff(t, imported, checked.Set(key, value))
+		if d, ok := resp.DetailedDiff[key]; !resp.HasChanges || !ok || d.Kind != p.UpdateReplace {
+			t.Errorf("changing %s after an import: %+v, want a replacement", key, resp)
+		}
+	}
+}
