@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The eight connector resources share one implementation of create, read, update and delete instead
+  of eight copies. Nothing changes for users: the schema is identical, and a stack created with
+  0.12.0 previews without changes after a refresh.
+
 ## [0.12.0] - 2026-11-27
 
 ### Added

@@ -4,14 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -95,27 +90,21 @@ func (c *GitLabConnector) Check(ctx context.Context, req infer.CheckRequest) (in
 	}, nil
 }
 
-// Create creates a new GitLab connector.
-func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[GitLabConnectorArgs]) (infer.CreateResponse[GitLabConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GitLabConnectorState{
-			GitLabConnectorArgs: args,
-		}
-		return infer.CreateResponse[GitLabConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *GitLabConnector) controller() connectorController[GitLabConnectorArgs, GitLabConnectorState] {
+	return connectorController[GitLabConnectorArgs, GitLabConnectorState]{
+		kind:    "gitlab-connector",
+		token:   tokenGitLabConnector,
+		dexType: "gitlab",
+		id:      func(a GitLabConnectorArgs) string { return a.ConnectorId },
+		name:    func(a GitLabConnectorArgs) string { return a.Name },
+		state:   func(a GitLabConnectorArgs) GitLabConnectorState { return GitLabConnectorState{GitLabConnectorArgs: a} },
+		args:    func(s GitLabConnectorState) GitLabConnectorArgs { return s.GitLabConnectorArgs },
+		encode:  encodeGitLabConfig,
+		decode:  decodeGitLabConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Build GitLab connector config
+func encodeGitLabConfig(args GitLabConnectorArgs) ([]byte, error) {
 	gitlabConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,
@@ -137,74 +126,15 @@ func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 
 	configBytes, err := json.Marshal(gitlabConfig)
 	if err != nil {
-		return infer.CreateResponse[GitLabConnectorState]{}, fmt.Errorf("failed to marshal GitLab config: %w", err)
+		return nil, fmt.Errorf("failed to marshal GitLab config: %w", err)
 	}
-
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "gitlab",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "gitlab-connector", token: tokenGitLabConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[GitLabConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[GitLabConnectorState]{}, target.alreadyExists()
-	}
-
-	state := GitLabConnectorState{
-		GitLabConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[GitLabConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing GitLab connector.
-func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLabConnectorArgs, GitLabConnectorState]) (infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, nil
-	}
-
-	if found.Type != "gitlab" {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, wrongConnectorType("gitlab-connector", found.Id, found.Type, "gitlab")
-	}
-
+func decodeGitLabConfig(found *api.Connector, _ GitLabConnectorArgs) (GitLabConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, unreadableConfigError("gitlab-connector", found.Id, err)
+		return GitLabConnectorArgs{}, err
 	}
 
 	args := GitLabConnectorArgs{
@@ -218,117 +148,25 @@ func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLab
 		UseLoginAsID:        conf.boolPtr("useLoginAsID"),
 		GetGroupsPermission: conf.boolPtr("getGroupsPermission"),
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{}, unreadableConfigError("gitlab-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := GitLabConnectorState{
-		GitLabConnectorArgs: args,
-	}
+// Create creates a new GitLab connector.
+func (c *GitLabConnector) Create(ctx context.Context, req infer.CreateRequest[GitLabConnectorArgs]) (infer.CreateResponse[GitLabConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing GitLab connector.
+func (c *GitLabConnector) Read(ctx context.Context, req infer.ReadRequest[GitLabConnectorArgs, GitLabConnectorState]) (infer.ReadResponse[GitLabConnectorArgs, GitLabConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing GitLab connector.
 func (c *GitLabConnector) Update(ctx context.Context, req infer.UpdateRequest[GitLabConnectorArgs, GitLabConnectorState]) (infer.UpdateResponse[GitLabConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GitLabConnectorState{
-			GitLabConnectorArgs: args,
-		}
-		return infer.UpdateResponse[GitLabConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-	gitlabConfig := map[string]any{
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-	}
-
-	if args.BaseURL != nil && *args.BaseURL != "" {
-		gitlabConfig["baseURL"] = *args.BaseURL
-	}
-	if len(args.Groups) > 0 {
-		gitlabConfig["groups"] = args.Groups
-	}
-	if args.UseLoginAsID != nil {
-		gitlabConfig["useLoginAsID"] = *args.UseLoginAsID
-	}
-	if args.GetGroupsPermission != nil {
-		gitlabConfig["getGroupsPermission"] = *args.GetGroupsPermission
-	}
-
-	configBytes, err := json.Marshal(gitlabConfig)
-	if err != nil {
-		return infer.UpdateResponse[GitLabConnectorState]{}, fmt.Errorf("failed to marshal GitLab config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "gitlab",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[GitLabConnectorState]{}, provider.WrapError("update", "gitlab-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[GitLabConnectorState]{}, provider.NotFoundError("update", "gitlab-connector", args.ConnectorId)
-	}
-
-	state := GitLabConnectorState{
-		GitLabConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[GitLabConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
 // Delete deletes a GitLab connector.
 func (c *GitLabConnector) Delete(ctx context.Context, req infer.DeleteRequest[GitLabConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "gitlab-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }

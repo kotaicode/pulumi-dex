@@ -6,16 +6,11 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -114,27 +109,23 @@ func (c *AzureOidcConnector) Check(ctx context.Context, req infer.CheckRequest) 
 	}, nil
 }
 
-// Create creates a new Azure OIDC connector.
-func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest[AzureOidcConnectorArgs]) (infer.CreateResponse[AzureOidcConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := AzureOidcConnectorState{
-			AzureOidcConnectorArgs: args,
-		}
-		return infer.CreateResponse[AzureOidcConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *AzureOidcConnector) controller() connectorController[AzureOidcConnectorArgs, AzureOidcConnectorState] {
+	return connectorController[AzureOidcConnectorArgs, AzureOidcConnectorState]{
+		kind:    "azure-oidc-connector",
+		token:   tokenAzureOidcConnector,
+		dexType: "oidc",
+		id:      func(a AzureOidcConnectorArgs) string { return a.ConnectorId },
+		name:    func(a AzureOidcConnectorArgs) string { return a.Name },
+		state: func(a AzureOidcConnectorArgs) AzureOidcConnectorState {
+			return AzureOidcConnectorState{AzureOidcConnectorArgs: a}
+		},
+		args:   func(s AzureOidcConnectorState) AzureOidcConnectorArgs { return s.AzureOidcConnectorArgs },
+		encode: encodeAzureOidcConfig,
+		decode: decodeAzureOidcConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
+func encodeAzureOidcConfig(args AzureOidcConnectorArgs) ([]byte, error) {
 	// Derive issuer from tenantId
 	issuer := fmt.Sprintf("https://login.microsoftonline.com/%s/v2.0", args.TenantId)
 
@@ -144,7 +135,6 @@ func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest
 		userNameKey = *args.UserNameSource
 	}
 
-	// Build OIDC config
 	oidcConfig := map[string]any{
 		"issuer":       issuer,
 		"clientID":     args.ClientId,
@@ -161,77 +151,15 @@ func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest
 
 	configBytes, err := json.Marshal(oidcConfig)
 	if err != nil {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, fmt.Errorf("failed to marshal OIDC config: %w", err)
+		return nil, fmt.Errorf("failed to marshal OIDC config: %w", err)
 	}
-
-	// Create connector
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "oidc",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "azure-oidc-connector", token: tokenAzureOidcConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[AzureOidcConnectorState]{}, target.alreadyExists()
-	}
-
-	state := AzureOidcConnectorState{
-		AzureOidcConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[AzureOidcConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing Azure OIDC connector.
-func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[AzureOidcConnectorArgs, AzureOidcConnectorState]) (infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// List connectors and find by ID
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		// Not found - return empty to indicate deletion
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, nil
-	}
-
-	if found.Type != "oidc" {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, wrongConnectorType("azure-oidc-connector", found.Id, found.Type, "oidc")
-	}
-
+func decodeAzureOidcConfig(found *api.Connector, prior AzureOidcConnectorArgs) (AzureOidcConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, unreadableConfigError("azure-oidc-connector", found.Id, err)
+		return AzureOidcConnectorArgs{}, err
 	}
 
 	// Extract tenantId from issuer
@@ -249,7 +177,6 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		scopes = []string{} // as before: absent scopes read back as an empty list
 	}
 
-	// Build args from config
 	args := AzureOidcConnectorArgs{
 		ConnectorId:  found.Id,
 		Name:         found.Name,
@@ -259,127 +186,30 @@ func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[Azu
 		RedirectUri:  conf.str("redirectURI"),
 		Scopes:       scopes,
 		// Create writes "preferred_username" when userNameSource is omitted.
-		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "preferred_username", req.Inputs.UserNameSource),
-		ExtraOidc:      extraOIDCFromConfig(conf.values, req.Inputs.ExtraOidc),
+		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "preferred_username", prior.UserNameSource),
+		ExtraOidc:      extraOIDCFromConfig(conf.values, prior.ExtraOidc),
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{}, unreadableConfigError("azure-oidc-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := AzureOidcConnectorState{
-		AzureOidcConnectorArgs: args,
-	}
+// Create creates a new Azure OIDC connector.
+func (c *AzureOidcConnector) Create(ctx context.Context, req infer.CreateRequest[AzureOidcConnectorArgs]) (infer.CreateResponse[AzureOidcConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing Azure OIDC connector.
+func (c *AzureOidcConnector) Read(ctx context.Context, req infer.ReadRequest[AzureOidcConnectorArgs, AzureOidcConnectorState]) (infer.ReadResponse[AzureOidcConnectorArgs, AzureOidcConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing Azure OIDC connector.
 func (c *AzureOidcConnector) Update(ctx context.Context, req infer.UpdateRequest[AzureOidcConnectorArgs, AzureOidcConnectorState]) (infer.UpdateResponse[AzureOidcConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := AzureOidcConnectorState{
-			AzureOidcConnectorArgs: args,
-		}
-		return infer.UpdateResponse[AzureOidcConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Validate immutable fields
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-	// Rebuild config (same as Create)
-	issuer := fmt.Sprintf("https://login.microsoftonline.com/%s/v2.0", args.TenantId)
-	userNameKey := "preferred_username"
-	if args.UserNameSource != nil {
-		userNameKey = *args.UserNameSource
-	}
-
-	oidcConfig := map[string]any{
-		"issuer":       issuer,
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-		"scopes":       args.Scopes,
-		"userNameKey":  userNameKey,
-	}
-
-	for k, v := range args.ExtraOidc {
-		oidcConfig[k] = v
-	}
-
-	configBytes, err := json.Marshal(oidcConfig)
-	if err != nil {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, fmt.Errorf("failed to marshal OIDC config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "oidc",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, provider.WrapError("update", "azure-oidc-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[AzureOidcConnectorState]{}, provider.NotFoundError("update", "azure-oidc-connector", args.ConnectorId)
-	}
-
-	state := AzureOidcConnectorState{
-		AzureOidcConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[AzureOidcConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
-// Delete deletes an Azure OIDC connector.
+// Delete deletes a Azure OIDC connector.
 func (c *AzureOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest[AzureOidcConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	// Note: Pulumi does not call Delete during preview, so no preview check needed
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil // Already deleted
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "azure-oidc-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }
 
 // ============================================================================
@@ -458,28 +288,23 @@ func (c *AzureMicrosoftConnector) Check(ctx context.Context, req infer.CheckRequ
 	}, nil
 }
 
-// Create creates a new Azure Microsoft connector.
-func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRequest[AzureMicrosoftConnectorArgs]) (infer.CreateResponse[AzureMicrosoftConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := AzureMicrosoftConnectorState{
-			AzureMicrosoftConnectorArgs: args,
-		}
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *AzureMicrosoftConnector) controller() connectorController[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState] {
+	return connectorController[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{
+		kind:    "azure-microsoft-connector",
+		token:   tokenAzureMicrosoftConnector,
+		dexType: "microsoft",
+		id:      func(a AzureMicrosoftConnectorArgs) string { return a.ConnectorId },
+		name:    func(a AzureMicrosoftConnectorArgs) string { return a.Name },
+		state: func(a AzureMicrosoftConnectorArgs) AzureMicrosoftConnectorState {
+			return AzureMicrosoftConnectorState{AzureMicrosoftConnectorArgs: a}
+		},
+		args:   func(s AzureMicrosoftConnectorState) AzureMicrosoftConnectorArgs { return s.AzureMicrosoftConnectorArgs },
+		encode: encodeAzureMicrosoftConfig,
+		decode: decodeAzureMicrosoftConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Build Microsoft connector config
+func encodeAzureMicrosoftConfig(args AzureMicrosoftConnectorArgs) ([]byte, error) {
 	microsoftConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,
@@ -493,74 +318,15 @@ func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRe
 
 	configBytes, err := json.Marshal(microsoftConfig)
 	if err != nil {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("failed to marshal Microsoft config: %w", err)
+		return nil, fmt.Errorf("failed to marshal Microsoft config: %w", err)
 	}
-
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "microsoft",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "azure-microsoft-connector", token: tokenAzureMicrosoftConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[AzureMicrosoftConnectorState]{}, target.alreadyExists()
-	}
-
-	state := AzureMicrosoftConnectorState{
-		AzureMicrosoftConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[AzureMicrosoftConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing Azure Microsoft connector.
-func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadRequest[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]) (infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, nil
-	}
-
-	if found.Type != "microsoft" {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, wrongConnectorType("azure-microsoft-connector", found.Id, found.Type, "microsoft")
-	}
-
+func decodeAzureMicrosoftConfig(found *api.Connector, _ AzureMicrosoftConnectorArgs) (AzureMicrosoftConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, unreadableConfigError("azure-microsoft-connector", found.Id, err)
+		return AzureMicrosoftConnectorArgs{}, err
 	}
 
 	args := AzureMicrosoftConnectorArgs{
@@ -580,114 +346,27 @@ func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadReques
 	} else if groups := conf.strList("groups"); len(groups) > 0 {
 		args.AllowedGroups = groups
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{}, unreadableConfigError("azure-microsoft-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := AzureMicrosoftConnectorState{
-		AzureMicrosoftConnectorArgs: args,
-	}
+// Create creates a new Azure Microsoft connector.
+func (c *AzureMicrosoftConnector) Create(ctx context.Context, req infer.CreateRequest[AzureMicrosoftConnectorArgs]) (infer.CreateResponse[AzureMicrosoftConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing Azure Microsoft connector.
+func (c *AzureMicrosoftConnector) Read(ctx context.Context, req infer.ReadRequest[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]) (infer.ReadResponse[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing Azure Microsoft connector.
 func (c *AzureMicrosoftConnector) Update(ctx context.Context, req infer.UpdateRequest[AzureMicrosoftConnectorArgs, AzureMicrosoftConnectorState]) (infer.UpdateResponse[AzureMicrosoftConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := AzureMicrosoftConnectorState{
-			AzureMicrosoftConnectorArgs: args,
-		}
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-	microsoftConfig := map[string]any{
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-		"tenant":       args.Tenant,
-	}
-
-	if len(args.AllowedGroups) > 0 {
-		microsoftConfig["groups"] = args.AllowedGroups
-	}
-
-	configBytes, err := json.Marshal(microsoftConfig)
-	if err != nil {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, fmt.Errorf("failed to marshal Microsoft config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "microsoft",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, provider.WrapError("update", "azure-microsoft-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[AzureMicrosoftConnectorState]{}, provider.NotFoundError("update", "azure-microsoft-connector", args.ConnectorId)
-	}
-
-	state := AzureMicrosoftConnectorState{
-		AzureMicrosoftConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[AzureMicrosoftConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
-// Delete deletes an Azure Microsoft connector.
+// Delete deletes a Azure Microsoft connector.
 func (c *AzureMicrosoftConnector) Delete(ctx context.Context, req infer.DeleteRequest[AzureMicrosoftConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	// Note: Pulumi does not call Delete during preview, so no preview check needed
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "azure-microsoft-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }
 
 // microsoftTenant matches the tenant forms Dex documents for its Microsoft
