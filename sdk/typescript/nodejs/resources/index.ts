@@ -30,6 +30,21 @@ export type Connector = import("./connector").Connector;
 export const Connector: typeof import("./connector").Connector = null as any;
 utilities.lazyLoad(exports, ["Connector"], () => require("./connector"));
 
+export { GetClientArgs, GetClientResult, GetClientOutputArgs } from "./getClient";
+export const getClient: typeof import("./getClient").getClient = null as any;
+export const getClientOutput: typeof import("./getClient").getClientOutput = null as any;
+utilities.lazyLoad(exports, ["getClient","getClientOutput"], () => require("./getClient"));
+
+export { GetConnectorArgs, GetConnectorResult, GetConnectorOutputArgs } from "./getConnector";
+export const getConnector: typeof import("./getConnector").getConnector = null as any;
+export const getConnectorOutput: typeof import("./getConnector").getConnectorOutput = null as any;
+utilities.lazyLoad(exports, ["getConnector","getConnectorOutput"], () => require("./getConnector"));
+
+export { GetLocalUserArgs, GetLocalUserResult, GetLocalUserOutputArgs } from "./getLocalUser";
+export const getLocalUser: typeof import("./getLocalUser").getLocalUser = null as any;
+export const getLocalUserOutput: typeof import("./getLocalUser").getLocalUserOutput = null as any;
+utilities.lazyLoad(exports, ["getLocalUser","getLocalUserOutput"], () => require("./getLocalUser"));
+
 export type { GitHubConnectorArgs } from "./gitHubConnector";
 export type GitHubConnector = import("./gitHubConnector").GitHubConnector;
 export const GitHubConnector: typeof import("./gitHubConnector").GitHubConnector = null as any;

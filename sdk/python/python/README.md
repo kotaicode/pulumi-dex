@@ -290,6 +290,17 @@ const githubConnector = new dex.Connector("github", {
 }, { provider });
 ```
 
+## Looking Up Dex Objects
+
+Three functions read one object from Dex without managing it: `getClient({ id })`, `getConnector({ id })` (the generic shape: type, name and the configuration as raw JSON) and `getLocalUser({ email })`. They never write to Dex and never take over an object. If the object does not exist, they fail with an error naming the ID; other failures, such as a refused or lost connection, are reported as such.
+
+```typescript
+const web = dex.resources.getClientOutput({ id: "my-web-app" }, { provider });
+export const webRedirects = web.redirectUris;
+```
+
+The client secret (`getClient`) and the connector configuration (`getConnector`) are returned as secrets. Use the `...Output` form (`getClientOutput`, `get_client_output`, `LookupClientOutput`) to keep them secret; the plain form (`getClient`, which returns a promise or value) hands back plain values, as Pulumi does for every function. In Pulumi YAML, `fn::invoke` marks the whole result secret. `getLocalUser` returns no password hash: Dex does not return it.
+
 ## Importing Existing Dex Objects
 
 Creating a resource whose ID already exists in Dex fails with a conflict, even when the existing object has an identical configuration. The provider never takes over an object it did not create: an equal ID is no proof that this stack owns it, and taking it over would let this stack delete an object that another stack or another tool manages. The error names the command to run instead:

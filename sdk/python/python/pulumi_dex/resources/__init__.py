@@ -11,6 +11,9 @@ from .azure_oidc_connector import *
 from .client import *
 from .cognito_oidc_connector import *
 from .connector import *
+from .get_client import *
+from .get_connector import *
+from .get_local_user import *
 from .git_hub_connector import *
 from .git_lab_connector import *
 from .google_connector import *

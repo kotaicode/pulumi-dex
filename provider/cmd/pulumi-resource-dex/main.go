@@ -52,6 +52,11 @@ func main() {
 			infer.Resource(&resources.LocalConnector{}),
 			infer.Resource(&resources.LocalUser{}),
 		).
+		WithFunctions(
+			infer.Function(&resources.GetClient{}),
+			infer.Function(&resources.GetConnector{}),
+			infer.Function(&resources.GetLocalUser{}),
+		).
 		WithConfig(infer.Config(&provider.DexConfig{})).
 		Build()
 	if err != nil {
