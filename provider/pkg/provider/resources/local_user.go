@@ -252,12 +252,6 @@ func (c *LocalUser) Read(ctx context.Context, req infer.ReadRequest[LocalUserArg
 		}
 	}
 	if found == nil {
-		if req.State.Email == "" && req.Inputs.Email == "" {
-			// An import: infer encodes the empty response as properties, and the
-			// Pulumi CLI would import an empty resource instead of failing.
-			return infer.ReadResponse[LocalUserArgs, LocalUserState]{}, provider.WrapError("import", "local-user", req.ID,
-				fmt.Errorf("no password user with this email exists in Dex"))
-		}
 		return infer.ReadResponse[LocalUserArgs, LocalUserState]{}, nil
 	}
 

@@ -51,7 +51,8 @@ func liveID(name string) string {
 }
 
 // lifecycle runs create, refresh, a clean preview, an update, a refresh that
-// shows the update, delete, and a refresh that finds nothing.
+// shows the update, delete, a refresh that finds nothing, and an import of the
+// deleted ID, which fails.
 func lifecycle(t *testing.T, token, id string, program, updated map[string]property.Value, check func(t *testing.T, inputs property.Map)) {
 	t.Helper()
 	s := liveProvider(t)
@@ -123,6 +124,9 @@ func lifecycle(t *testing.T, token, id string, program, updated map[string]prope
 	gone, err := s.Read(p.ReadRequest{ID: id, Urn: urn, Properties: upd.Properties, Inputs: next.Inputs})
 	if err != nil || gone.ID != "" {
 		t.Errorf("refresh after delete: id=%q err=%v, want the resource to be gone", gone.ID, err)
+	}
+	if _, err := s.Read(p.ReadRequest{ID: id, Urn: urn}); err == nil || !strings.Contains(err.Error(), "not found in Dex") {
+		t.Errorf("import after delete: %v, want a not-found error", err)
 	}
 }
 

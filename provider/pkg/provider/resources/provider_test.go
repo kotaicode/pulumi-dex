@@ -11,7 +11,7 @@ import (
 )
 
 // newTestProvider serves the provider as main.go builds it (same resources, config
-// and Read wrapper) through the framework's integration harness. It is not
+// and Read wrappers) through the framework's integration harness. It is not
 // configured, which is enough for GetSchema and preview; see newProviderAgainst
 // for a server talking to a fake Dex.
 func newTestProvider(t *testing.T) integration.Server {
@@ -41,7 +41,7 @@ func newTestProvider(t *testing.T) integration.Server {
 		t.Fatalf("build provider: %v", err)
 	}
 	s, err := integration.NewServer(t.Context(), "dex", semver.MustParse("0.0.0"),
-		integration.WithProvider(provider.WithTypedConfigValues(provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(prov)))))
+		integration.WithProvider(provider.WithTypedConfigValues(provider.WithPreviewSafeConfigure(provider.WithSecretReadInputs(WithMissingImportsFailing(prov))))))
 	if err != nil {
 		t.Fatalf("new integration server: %v", err)
 	}

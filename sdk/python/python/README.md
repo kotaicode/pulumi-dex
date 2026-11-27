@@ -326,6 +326,7 @@ pulumi import dex:resources:GitHubConnector github github
 | Password user | `dex:resources:LocalUser` (import ID: the email) |
 
 - Import only reads from Dex; it never creates or changes the object. Run `pulumi up` afterwards to apply your program's settings.
+- Importing an ID that Dex does not have fails with a "not found in Dex" error; nothing is added to the stack. `pulumi refresh` still removes resources whose objects were deleted in Dex from the stack.
 - A typed connector resource only imports a connector of the matching Dex type (for example `github` for `GitHubConnector`). Import a connector of any other type with `dex:resources:Connector`.
 - A generic `dex:resources:Connector` of type `oidc` is imported as `oidcConfig` when every stored field fits it (fields without a typed input go into `oidcConfig.extra`). Otherwise, for example when a known field has another type, it is imported as `rawConfig` with the stored configuration unchanged. Connectors of every other type are imported as `rawConfig`.
 - If a create times out or the connection drops, the object may or may not have been created. The error says so; check whether the ID exists in Dex and import it instead of running `pulumi up` again.
