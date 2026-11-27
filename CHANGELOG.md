@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The provider uses Dex's API bindings from the Dex v2.46.1 release commit (`75eb19238e10`) instead of
+  the `api/v2` v2.4.0 tag, which predates the API changes in Dex v2.46.0. Dex has not tagged the
+  bindings since; the provider moves to a tag once one exists. Behaviour against Dex servers is
+  unchanged.
+
 ## [0.11.0] - 2026-11-26
 
 **Security: a `LocalConnector` with `enabled: false` has password login enabled.** Dex offers password

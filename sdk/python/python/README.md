@@ -88,6 +88,10 @@ const localProvider = new dex.Provider("dex-local", {
 
 The provider reads no environment variables. To take connection settings from the environment, read them in your program (for example `process.env.DEX_HOST`) or use Pulumi config (`pulumi config set dex:host ...`, `pulumi config set --secret dex:caCert -- "$(cat ca.crt)"`).
 
+## Dex Compatibility
+
+The provider talks to Dex through its gRPC API, using Dex's official Go bindings `github.com/dexidp/dex/api/v2`. Dex has not tagged these bindings since v2.4.0 (August 2025), although Dex v2.46.0 changed the API, so the provider pins them at the commit of the Dex v2.46.1 release (`75eb19238e10`, Go module version `v2.4.1-0.20261021142137-75eb19238e10`). When Dex publishes a tag (`api/v2.5.0` or later), the provider moves to it; Dependabot proposes that update.
+
 ## Usage Examples
 
 ### Managing an OAuth2 Client

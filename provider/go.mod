@@ -6,7 +6,7 @@ toolchain go1.26.11
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/dexidp/dex/api/v2 v2.4.0
+	github.com/dexidp/dex/api/v2 v2.4.1-0.20261021142137-75eb19238e10
 	github.com/pulumi/pulumi-go-provider v1.8.1
 	github.com/pulumi/pulumi/sdk/v3 v3.278.0
 	google.golang.org/grpc v1.85.0
