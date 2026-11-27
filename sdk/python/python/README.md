@@ -390,6 +390,7 @@ pulumi import dex:resources:GitHubConnector github github
 | GitLab | `dex:resources:GitLabConnector` |
 | Google | `dex:resources:GoogleConnector` |
 | Password login | `dex:resources:LocalConnector` |
+| LDAP | `dex:resources:LdapConnector` |
 | Password user | `dex:resources:LocalUser` (import ID: the email) |
 
 - Import only reads from Dex; it never creates or changes the object. Run `pulumi up` afterwards to apply your program's settings.
@@ -398,6 +399,21 @@ pulumi import dex:resources:GitHubConnector github github
 - A generic `dex:resources:Connector` of type `oidc` is imported as `oidcConfig` when every stored field fits it (fields without a typed input go into `oidcConfig.extra`). Otherwise, for example when a known field has another type, it is imported as `rawConfig` with the stored configuration unchanged. Connectors of every other type are imported as `rawConfig`.
 - If a create times out or the connection drops, the object may or may not have been created. The error says so; check whether the ID exists in Dex and import it instead of running `pulumi up` again.
 - `pulumi import` prints the imported credentials in the generated program; see [Security Considerations](#security-considerations).
+
+### Moving an LDAP connector from `dex.Connector` to `dex.LdapConnector`
+
+The connector keeps its ID and configuration, and only one resource manages it at any time. This was tested with the Pulumi CLI against Dex v2.45 and v2.46.
+
+1. Set `retainOnDelete: true` on the `dex.Connector` and run `pulumi up`. Nothing changes in Dex.
+2. In the same program, remove the `dex.Connector` and add a `dex.LdapConnector` with the same `connectorId`, the `import` resource option set to that ID, and inputs that describe the stored configuration (`rawConfig.bindPW` becomes `bindPassword`, `rootCAData` becomes `rootCaPem` with the decoded PEM, `userSearch.username` becomes `usernameAttributes`).
+3. Run `pulumi preview`. It must show only `= import` for the `LdapConnector` and `- delete[retain]` for the `Connector`. If it also shows `~ update` for the `LdapConnector`, your inputs differ from what Dex has: the Pulumi CLI imports the connector and then applies the difference. Correct the inputs until the update disappears, unless you intend that change.
+4. Run `pulumi up`, then remove the `import` option.
+
+Instead of step 1, `pulumi state delete <urn of the Connector>` removes the old resource from the stack without touching Dex; then continue with step 2.
+
+- If the stored configuration has settings `LdapConnector` does not model, such as `kerberos`, the import fails and names them; keep such a connector on `dex.Connector`.
+- An alias from `dex.Connector` to `dex.LdapConnector` does not work: the preview fails because the old state cannot be read as an `LdapConnector`, and nothing changes.
+- Keep `userSearch.idAttr` as it was. A different `idAttr` gives every user a new user ID, and the applications that use Dex then treat them as new users.
 
 ## Resources
 
