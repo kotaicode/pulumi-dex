@@ -138,24 +138,33 @@ func wantString(t *testing.T, inputs property.Map, key, want string) {
 }
 
 func TestLive_Client(t *testing.T) {
-	id := liveID("client")
-	// An explicit secret: with a generated one, refresh currently reports the
-	// secret as an input and the next preview proposes removing it, on every
-	// Dex line (a known issue, tracked separately).
-	program := map[string]property.Value{
-		"clientId": str(id), "name": str("Live client"), "secret": str("live-synthetic-client-secret"),
-		"redirectUris": strs("https://app.example.com/cb"),
+	for name, secret := range map[string]*property.Value{
+		"explicit secret":  new(str("live-synthetic-client-secret")),
+		"generated secret": nil, // Dex generates it; refresh must not report it as an input
+	} {
+		t.Run(name, func(t *testing.T) {
+			id := liveID("client")
+			program := map[string]property.Value{
+				"clientId": str(id), "name": str("Live client"), "redirectUris": strs("https://app.example.com/cb"),
+			}
+			if secret != nil {
+				program["secret"] = *secret
+			}
+			updated := with(program, map[string]property.Value{
+				"name":         str("Live client renamed"),
+				"redirectUris": strs("https://app.example.com/cb", "https://app.example.com/cb2"),
+			})
+			lifecycle(t, "dex:resources:Client", id, program, updated, func(t *testing.T, in property.Map) {
+				wantString(t, in, "name", "Live client renamed")
+				if got := in.Get("redirectUris"); !got.IsArray() || got.AsArray().Len() != 2 {
+					t.Errorf("redirectUris after update = %v, want two URIs", got)
+				}
+				if _, ok := in.GetOk("secret"); ok != (secret != nil) {
+					t.Errorf("secret in the refreshed inputs = %v, want %v", ok, secret != nil)
+				}
+			})
+		})
 	}
-	updated := with(program, map[string]property.Value{
-		"name":         str("Live client renamed"),
-		"redirectUris": strs("https://app.example.com/cb", "https://app.example.com/cb2"),
-	})
-	lifecycle(t, "dex:resources:Client", id, program, updated, func(t *testing.T, in property.Map) {
-		wantString(t, in, "name", "Live client renamed")
-		if got := in.Get("redirectUris"); !got.IsArray() || got.AsArray().Len() != 2 {
-			t.Errorf("redirectUris after update = %v, want two URIs", got)
-		}
-	})
 }
 
 func TestLive_GitHubConnector(t *testing.T) {
