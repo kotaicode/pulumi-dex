@@ -94,7 +94,7 @@ The provider reads no environment variables. To take connection settings from th
 | --- | --- | --- |
 | 0.12.x | v2.45.x, v2.46.x | v2.45.1, v2.46.1 (release images, pinned by digest) |
 
-Every resource works on both lines unless noted here. When it connects, the provider asks Dex for its version (Dex v2.45 reports API version 3, v2.46 API version 4). A feature that needs a newer Dex is refused with a message naming the required version; if the version cannot be determined, such features are refused too, with the underlying error. For a Dex outside the supported lines, the provider prints a warning, and existing resources keep working. CI runs a lifecycle suite (create, refresh, preview without changes, update, delete) against a real Dex of each line; to run it locally against your own Dex, see `provider/pkg/provider/resources/live_dex_test.go`.
+Every resource works on both lines unless noted here: `LocalUser.groups` needs Dex v2.46 (Dex v2.45 would drop the groups silently, so the provider refuses them there). When it connects, the provider asks Dex for its version (Dex v2.45 reports API version 3, v2.46 API version 4). A feature that needs a newer Dex is refused with a message naming the required version; if the version cannot be determined, such features are refused too, with the underlying error. For a Dex outside the supported lines, the provider prints a warning, and existing resources keep working. CI runs a lifecycle suite (create, refresh, preview without changes, update, delete) against a real Dex of each line; to run it locally against your own Dex, see `provider/pkg/provider/resources/live_dex_test.go`.
 
 The provider talks to Dex through its gRPC API, using Dex's official Go bindings `github.com/dexidp/dex/api/v2`. Dex has not tagged these bindings since v2.4.0 (August 2025), although Dex v2.46.0 changed the API, so the provider pins them at the commit of the Dex v2.46.1 release (`75eb19238e10`, Go module version `v2.4.1-0.20261021142137-75eb19238e10`). When Dex publishes a tag (`api/v2.5.0` or later), the provider moves to it; Dependabot proposes that update.
 
@@ -236,6 +236,27 @@ const passwordLogin = new dex.LocalConnector("passwords", {
 }, { provider });
 ```
 
+### Password Users (LocalUser)
+
+```typescript
+// A user in Dex's password database. Dex needs a password login for it:
+// enablePasswordDB in its configuration, or a LocalConnector.
+const alice = new dex.LocalUser("alice", {
+    email: "alice@example.com",       // identifies the user; cannot change
+    userId: "8f3e6d1c-alice",          // subject of the user's tokens; cannot change
+    username: "Alice",
+    passwordHash: pulumi.secret(process.env.ALICE_PASSWORD_HASH!), // bcrypt, never the password
+    groups: ["dex-users"],             // needs Dex v2.46 or later
+}, { provider });
+```
+
+Create the bcrypt hash outside Pulumi, so the password itself never reaches the program or the state, for example with `htpasswd -nBC 12 "" | tr -d ':\n'` (prompts for the password) or `python3 -c 'import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt(12)).decode())'`. Dex accepts `$2a$`, `$2b$` and `$2y$` hashes with cost 10 to 16.
+
+- Dex does not return the hash, so the provider keeps the last one you supplied; a password changed directly in Dex is not detected. A new `passwordHash` changes the password.
+- Dex cannot change a user's `email` or `userId`, remove its `username`, or remove all its `groups`; such changes fail in preview. To change the email or userId, add a new `LocalUser` and remove the old one.
+- `pulumi import dex:resources:LocalUser <name> <email>` imports a user without its password hash. The program can omit `passwordHash` afterwards; updates then leave the password unchanged.
+- Deleting a `LocalUser` removes only its password record. Sessions and tokens that Dex already issued stay valid until they expire.
+
 ### Generic Connector (OIDC)
 
 ```typescript
@@ -291,6 +312,7 @@ pulumi import dex:resources:GitHubConnector github github
 | GitLab | `dex:resources:GitLabConnector` |
 | Google | `dex:resources:GoogleConnector` |
 | Password login | `dex:resources:LocalConnector` |
+| Password user | `dex:resources:LocalUser` (import ID: the email) |
 
 - Import only reads from Dex; it never creates or changes the object. Run `pulumi up` afterwards to apply your program's settings.
 - A typed connector resource only imports a connector of the matching Dex type (for example `github` for `GitHubConnector`). Import a connector of any other type with `dex:resources:Connector`.
@@ -448,6 +470,17 @@ Adds a password login to Dex: a connector of type `local`, through which users l
 - `enabled` (bool, optional, deprecated) - Has no effect in Dex; `false` fails in preview
 
 **Note:** Dex offers password login through every connector of type `local`, even when `enablePasswordDB` is `false` in its configuration. There is no disabled state: to turn this password login off, remove the resource. Removing it does not delete password users. Users are managed separately, through Dex's static passwords or its gRPC API.
+
+### `dex.LocalUser`
+
+Manages a user in Dex's password database.
+
+**Inputs:**
+- `email` (string, required) - Login email; identifies the user and is stored in lower case. Cannot change
+- `userId` (string, required) - Stable user ID, the subject of the user's tokens. Cannot change
+- `username` (string, optional) - Display name. Can change, but cannot be removed once set
+- `passwordHash` (string, secret) - bcrypt hash of the password. Required to create the user; optional after import
+- `groups` (string[], optional) - Groups added to the user's tokens. Needs Dex v2.46; cannot be removed entirely once set
 
 ## Local Development and Testing
 

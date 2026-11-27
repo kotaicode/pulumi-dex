@@ -34,7 +34,8 @@ _utilities.register(
    "dex:resources:GitHubConnector": "GitHubConnector",
    "dex:resources:GitLabConnector": "GitLabConnector",
    "dex:resources:GoogleConnector": "GoogleConnector",
-   "dex:resources:LocalConnector": "LocalConnector"
+   "dex:resources:LocalConnector": "LocalConnector",
+   "dex:resources:LocalUser": "LocalUser"
   }
  }
 ]

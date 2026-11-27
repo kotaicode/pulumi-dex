@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- New `LocalUser` resource (`dex:resources:LocalUser`) for users in Dex's password database. It takes
+  a bcrypt hash, never a password; the hash is a secret and is never generated. `groups` needs Dex
+  v2.46 and is refused on v2.45, which would drop it silently. Dex cannot change a user's email or
+  userId, remove its username or remove all its groups; those changes fail in preview. Import works
+  without the password hash, and later updates leave the password unchanged. Deleting a user does not
+  end its sessions or revoke issued tokens.
 - Compatibility testing against real Dex servers: CI runs a lifecycle suite (create, refresh, preview
   without changes, update, delete) for `Client`, `GitHubConnector` and the generic `Connector` against
   Dex v2.45.1 and v2.46.1. The README lists the supported Dex lines.

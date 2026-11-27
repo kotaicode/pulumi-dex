@@ -39,6 +39,8 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 		r = &GoogleConnector{}
 	case "dex:resources:LocalConnector":
 		r = &LocalConnector{}
+	case "dex:resources:LocalUser":
+		r = &LocalUser{}
 	default:
 		return nil, fmt.Errorf("unknown resource type: %s", typ)
 	}

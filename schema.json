@@ -1119,6 +1119,69 @@
         "connectorId",
         "name"
       ]
+    },
+    "dex:resources:LocalUser": {
+      "description": "Manages a user in Dex's password database, for logins through a password connector (enablePasswordDB in Dex's configuration, or a LocalConnector). The password is given as a bcrypt hash, never in plain text. Deleting the user removes only its password record: sessions and tokens that Dex already issued stay valid until they expire.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email the user logs in with; it identifies the user in Dex and is stored in lower case. Dex cannot change it: a different email fails at preview."
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups of the user, which Dex adds to its tokens. Requires Dex v2.46 or later. Dex stores them sorted and without duplicates; it cannot remove all groups from an existing user."
+        },
+        "passwordHash": {
+          "type": "string",
+          "description": "bcrypt hash of the password ($2a$, $2b$ or $2y$, cost 10 to 16). Required to create the user; optional after import. A new value changes the password; it is never generated. Dex does not return the hash, so a password changed directly in Dex is not detected.",
+          "secret": true
+        },
+        "userId": {
+          "type": "string",
+          "description": "Stable user ID, the subject of the tokens Dex issues for this user. Dex cannot change it: a different userId fails at preview."
+        },
+        "username": {
+          "type": "string",
+          "description": "Display name. Can be changed, but not removed once set: Dex keeps the old value."
+        }
+      },
+      "required": [
+        "email",
+        "userId"
+      ],
+      "inputProperties": {
+        "email": {
+          "type": "string",
+          "description": "Email the user logs in with; it identifies the user in Dex and is stored in lower case. Dex cannot change it: a different email fails at preview."
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups of the user, which Dex adds to its tokens. Requires Dex v2.46 or later. Dex stores them sorted and without duplicates; it cannot remove all groups from an existing user."
+        },
+        "passwordHash": {
+          "type": "string",
+          "description": "bcrypt hash of the password ($2a$, $2b$ or $2y$, cost 10 to 16). Required to create the user; optional after import. A new value changes the password; it is never generated. Dex does not return the hash, so a password changed directly in Dex is not detected.",
+          "secret": true
+        },
+        "userId": {
+          "type": "string",
+          "description": "Stable user ID, the subject of the tokens Dex issues for this user. Dex cannot change it: a different userId fails at preview."
+        },
+        "username": {
+          "type": "string",
+          "description": "Display name. Can be changed, but not removed once set: Dex keeps the old value."
+        }
+      },
+      "requiredInputs": [
+        "email",
+        "userId"
+      ]
     }
   }
 }

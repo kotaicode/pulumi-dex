@@ -50,6 +50,11 @@ export type LocalConnector = import("./localConnector").LocalConnector;
 export const LocalConnector: typeof import("./localConnector").LocalConnector = null as any;
 utilities.lazyLoad(exports, ["LocalConnector"], () => require("./localConnector"));
 
+export type { LocalUserArgs } from "./localUser";
+export type LocalUser = import("./localUser").LocalUser;
+export const LocalUser: typeof import("./localUser").LocalUser = null as any;
+utilities.lazyLoad(exports, ["LocalUser"], () => require("./localUser"));
+
 
 const _module = {
     version: utilities.getVersion(),
@@ -73,6 +78,8 @@ const _module = {
                 return new GoogleConnector(name, <any>undefined, { urn })
             case "dex:resources:LocalConnector":
                 return new LocalConnector(name, <any>undefined, { urn })
+            case "dex:resources:LocalUser":
+                return new LocalUser(name, <any>undefined, { urn })
             default:
                 throw new Error(`unknown resource type ${type}`);
         }

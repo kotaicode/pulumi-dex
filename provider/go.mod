@@ -9,6 +9,7 @@ require (
 	github.com/dexidp/dex/api/v2 v2.4.1-0.20261021142137-75eb19238e10
 	github.com/pulumi/pulumi-go-provider v1.8.1
 	github.com/pulumi/pulumi/sdk/v3 v3.278.0
+	golang.org/x/crypto v0.59.0
 	google.golang.org/grpc v1.85.0
 )
 
@@ -119,7 +120,6 @@ require (
 	go.uber.org/atomic v1.12.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/exp v0.0.0-20261113113407-e3970619a1a4 // indirect
 	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/net v0.63.0 // indirect

@@ -33,6 +33,7 @@
         "resources/googleConnector.ts",
         "resources/index.ts",
         "resources/localConnector.ts",
+        "resources/localUser.ts",
         "types/index.ts",
         "types/input.ts",
         "types/output.ts",
