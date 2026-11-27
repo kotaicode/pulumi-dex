@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `userSearch.usernameAttributes` entry needs Dex v2.46 and is refused on v2.45. Refresh and import
   fail on settings the resource does not model, such as `kerberos`, naming them; such connectors stay
   with the generic `Connector`. Grant types set directly in Dex are kept.
+- LDAP login tests: CI creates an `LdapConnector` and logs in through Dex's password grant against
+  OpenLDAP (`osixia/openldap:1.4.0`, pinned by digest, with certificates generated for each run) on
+  Dex v2.45.1 and v2.46.1. They cover LDAPS and StartTLS, anonymous and bound search, a bind password
+  with `$`, group claims including nested groups and a group cycle, and refused logins.
 
 ### Changed
 - The eight connector resources share one implementation of create, read, update and delete instead

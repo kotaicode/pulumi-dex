@@ -1,0 +1,107 @@
+# Synthetic directory for the LDAP login tests (LdapConnector). Every name and
+# password here is made up for the tests. The base entry dc=example,dc=org
+# exists already (osixia/openldap creates it).
+
+dn: ou=people,dc=example,dc=org
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=others,dc=example,dc=org
+objectClass: organizationalUnit
+ou: others
+
+dn: ou=services,dc=example,dc=org
+objectClass: organizationalUnit
+ou: services
+
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+# The account Dex searches with. Its password contains "$", which Dex must
+# take literally.
+dn: cn=dex-reader,ou=services,dc=example,dc=org
+objectClass: person
+cn: dex-reader
+sn: reader
+userPassword: reader$HOME$1-synthetic
+
+# In group devs.
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: alice
+cn: Alice Example
+sn: Example
+mail: alice@example.org
+userPassword: alice-synthetic-password
+
+# In group inner, which is in group outer.
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: bob
+cn: Bob Example
+sn: Example
+mail: bob@example.org
+userPassword: bob-synthetic-password
+
+# Excluded by the user search filter.
+dn: uid=carol,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: carol
+cn: Carol Example
+sn: Example
+mail: carol@example.org
+employeeType: excluded
+userPassword: carol-synthetic-password
+
+# In group cycle-a; cycle-a and cycle-b contain each other.
+dn: uid=dave,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: dave
+cn: Dave Example
+sn: Example
+mail: dave@example.org
+userPassword: dave-synthetic-password
+
+# Two entries with the same uid.
+dn: uid=dup,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: dup
+cn: Dup One
+sn: One
+mail: dup-one@example.org
+userPassword: dup-synthetic-password
+
+dn: uid=dup,ou=others,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: dup
+cn: Dup Two
+sn: Two
+mail: dup-two@example.org
+userPassword: dup-synthetic-password
+
+dn: cn=devs,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: devs
+member: uid=alice,ou=people,dc=example,dc=org
+
+dn: cn=inner,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: inner
+member: uid=bob,ou=people,dc=example,dc=org
+
+dn: cn=outer,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: outer
+member: cn=inner,ou=groups,dc=example,dc=org
+
+dn: cn=cycle-a,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: cycle-a
+member: uid=dave,ou=people,dc=example,dc=org
+member: cn=cycle-b,ou=groups,dc=example,dc=org
+
+dn: cn=cycle-b,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: cycle-b
+member: cn=cycle-a,ou=groups,dc=example,dc=org

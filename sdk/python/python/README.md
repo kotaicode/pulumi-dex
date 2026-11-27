@@ -292,6 +292,8 @@ const ldap = new dex.LdapConnector("ldap", {
 }, { provider });
 ```
 
+CI tests this kind of configuration with real logins through Dex's password grant against OpenLDAP, on Dex v2.45 and v2.46: LDAPS and StartTLS, anonymous and bound search, group claims including nested groups, and refused logins (wrong password, a user outside the filter, a username that matches two entries, a CA that did not sign the server certificate, StartTLS against a server without it).
+
 ### LDAP Connector (Active Directory, untested)
 
 This example follows Dex's documentation for Active Directory; the provider's tests do not cover Active Directory.
