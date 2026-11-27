@@ -165,6 +165,9 @@ func ptrBool(b bool) *bool { return &b }
 // the old one. The IDs differ, so creating first cannot collide.
 func TestIDChange_isReplacement(t *testing.T) {
 	for _, tc := range adoptionCases() {
+		if tc.user {
+			continue // Dex cannot rename a password user; see TestLocalUser_identityChangesFailAtPreview
+		}
 		t.Run(tc.token, func(t *testing.T) {
 			key := "connectorId"
 			if !tc.connect {

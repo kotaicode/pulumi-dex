@@ -23,6 +23,7 @@ const (
 	tokenGitLabConnector         = "dex:resources:GitLabConnector"
 	tokenGoogleConnector         = "dex:resources:GoogleConnector"
 	tokenLocalConnector          = "dex:resources:LocalConnector"
+	tokenLocalUser               = "dex:resources:LocalUser"
 )
 
 // createTarget identifies the object a Create was for, for its error messages.
@@ -34,10 +35,14 @@ type createTarget struct {
 }
 
 func (t createTarget) noun() string {
-	if t.token == tokenClient {
+	switch t.token {
+	case tokenClient:
 		return "client"
+	case tokenLocalUser:
+		return "local user"
+	default:
+		return "connector"
 	}
-	return "connector"
 }
 
 func (t createTarget) importCommand() string {
@@ -83,7 +88,8 @@ func isStaticObjectError(err error) bool {
 		return false
 	}
 	msg := status.Convert(err).Message()
-	return strings.Contains(msg, "static connectors: read-only") || strings.Contains(msg, "static clients: read-only")
+	return strings.Contains(msg, "static connectors: read-only") || strings.Contains(msg, "static clients: read-only") ||
+		strings.Contains(msg, "static passwords: read-only")
 }
 
 // definedInDexConfig explains that the ID belongs to an object from Dex's

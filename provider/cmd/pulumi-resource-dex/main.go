@@ -50,6 +50,7 @@ func main() {
 			infer.Resource(&resources.GitHubConnector{}),
 			infer.Resource(&resources.GoogleConnector{}),
 			infer.Resource(&resources.LocalConnector{}),
+			infer.Resource(&resources.LocalUser{}),
 		).
 		WithConfig(infer.Config(&provider.DexConfig{})).
 		Build()

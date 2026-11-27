@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -48,6 +49,10 @@ type fakeDex struct {
 	// staticConnectors are defined in Dex's configuration file; like Dex, the
 	// fake refuses to create them through the API with an untyped error.
 	staticConnectors map[string]bool
+	// passwords are keyed by lower-case email, as in Dex's storage; the fake
+	// keeps the hash, which Dex's ListPasswords never returns.
+	passwords       map[string]*api.Password
+	staticPasswords map[string]bool
 	// version is what GetVersion reports; nil means Dex v2.46.1 (API 4).
 	version    *api.VersionResp
 	versionErr error
@@ -67,8 +72,111 @@ func (f *fakeDex) GetVersion(context.Context, *api.VersionReq) (*api.VersionResp
 	return &api.VersionResp{Server: "v2.46.1", Api: 4}, nil
 }
 
+// groupsSupported mirrors the API change in Dex v2.46: an older server does
+// not know the groups fields and drops them without an error.
+func (f *fakeDex) groupsSupported() bool { return f.version == nil || f.version.Api >= 4 }
+
+// fakeNormalizeGroups sorts and de-duplicates like Dex v2.46.1.
+func fakeNormalizeGroups(groups []string) ([]string, error) {
+	if slices.Contains(groups, "") {
+		return nil, errors.New("group names must not be empty")
+	}
+	out := slices.Clone(groups)
+	slices.Sort(out)
+	return slices.Compact(out), nil
+}
+
+func (f *fakeDex) CreatePassword(_ context.Context, req *api.CreatePasswordReq) (*api.CreatePasswordResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writes++
+	pw := req.GetPassword()
+	if pw.GetUserId() == "" {
+		return nil, errors.New("no user ID supplied")
+	}
+	if len(pw.GetHash()) == 0 {
+		return nil, errors.New("no hash of password supplied")
+	}
+	key := strings.ToLower(pw.GetEmail())
+	if f.staticPasswords[key] {
+		return nil, status.Error(codes.Unknown, "create password: static passwords: read-only cannot create password")
+	}
+	if _, ok := f.passwords[key]; ok {
+		if f.alreadyExistsStatus {
+			return nil, status.Error(codes.AlreadyExists, "password already exists")
+		}
+		return &api.CreatePasswordResp{AlreadyExists: true}, nil
+	}
+	var groups []string
+	if f.groupsSupported() {
+		var err error
+		if groups, err = fakeNormalizeGroups(pw.GetGroups()); err != nil {
+			return nil, err
+		}
+	}
+	f.passwords[key] = &api.Password{Email: pw.GetEmail(), Hash: slices.Clone(pw.GetHash()), Username: pw.GetUsername(), UserId: pw.GetUserId(), Groups: groups}
+	if f.createErr != nil {
+		return nil, f.createErr
+	}
+	return &api.CreatePasswordResp{}, nil
+}
+
+func (f *fakeDex) UpdatePassword(_ context.Context, req *api.UpdatePasswordReq) (*api.UpdatePasswordResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writes++
+	newGroups := req.GetNewGroups()
+	if !f.groupsSupported() {
+		newGroups = nil
+	}
+	if req.GetNewHash() == nil && req.GetNewUsername() == "" && newGroups == nil {
+		return nil, status.Error(codes.Unknown, "nothing to update")
+	}
+	pw, ok := f.passwords[strings.ToLower(req.GetEmail())]
+	if !ok {
+		return &api.UpdatePasswordResp{NotFound: true}, nil
+	}
+	if req.GetNewHash() != nil {
+		pw.Hash = slices.Clone(req.GetNewHash())
+	}
+	if req.GetNewUsername() != "" {
+		pw.Username = req.GetNewUsername()
+	}
+	if newGroups != nil {
+		groups, err := fakeNormalizeGroups(newGroups)
+		if err != nil {
+			return nil, err
+		}
+		pw.Groups = groups
+	}
+	return &api.UpdatePasswordResp{}, nil
+}
+
+func (f *fakeDex) DeletePassword(_ context.Context, req *api.DeletePasswordReq) (*api.DeletePasswordResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writes++
+	key := strings.ToLower(req.GetEmail())
+	if _, ok := f.passwords[key]; !ok {
+		return &api.DeletePasswordResp{NotFound: true}, nil
+	}
+	delete(f.passwords, key)
+	return &api.DeletePasswordResp{}, nil
+}
+
+// ListPasswords returns the users without their hashes, like Dex.
+func (f *fakeDex) ListPasswords(context.Context, *api.ListPasswordReq) (*api.ListPasswordResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]*api.Password, 0, len(f.passwords))
+	for _, pw := range f.passwords {
+		out = append(out, &api.Password{Email: pw.Email, Username: pw.Username, UserId: pw.UserId, Groups: slices.Clone(pw.Groups)})
+	}
+	return &api.ListPasswordResp{Passwords: out}, nil
+}
+
 func newFakeDex() *fakeDex {
-	return &fakeDex{clients: map[string]*api.Client{}, connectors: map[string]*api.Connector{}}
+	return &fakeDex{clients: map[string]*api.Client{}, connectors: map[string]*api.Connector{}, passwords: map[string]*api.Password{}}
 }
 
 func (f *fakeDex) GetClient(_ context.Context, req *api.GetClientReq) (*api.GetClientResp, error) {

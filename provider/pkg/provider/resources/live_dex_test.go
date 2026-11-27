@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/integration"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
@@ -205,4 +206,81 @@ func TestLive_ServerVersion(t *testing.T) {
 		t.Errorf("Dex %s: LocalUser.groups gate = %v, want a refusal", want, gate)
 	}
 	t.Logf("Dex %s reports server %q, API %d", want, c.Server.Server, c.Server.API)
+}
+
+// liveMinor returns the minor version of the Dex in DEX_LIVE_VERSION (45 for
+// v2.45.1), or 0 when it is not set.
+func liveMinor(t *testing.T) int {
+	t.Helper()
+	v := os.Getenv("DEX_LIVE_VERSION")
+	if v == "" {
+		return 0
+	}
+	parts := strings.Split(strings.TrimPrefix(v, "v"), ".")
+	if len(parts) < 2 {
+		t.Fatalf("DEX_LIVE_VERSION %q is not vMAJOR.MINOR.PATCH", v)
+	}
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		t.Fatalf("DEX_LIVE_VERSION %q: %v", v, err)
+	}
+	return minor
+}
+
+// verifyPassword asks Dex whether password is the user's current password.
+func verifyPassword(t *testing.T, email, password string) bool {
+	t.Helper()
+	c := &provider.DexConfig{Host: os.Getenv("DEX_LIVE_HOST"), Plaintext: ptrBool(true)}
+	if err := c.Configure(t.Context()); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	resp, err := c.Client.VerifyPassword(t.Context(), &api.VerifyPasswordReq{Email: email, Password: password})
+	if err != nil {
+		t.Fatalf("VerifyPassword: %v", err)
+	}
+	return resp.GetVerified()
+}
+
+func TestLive_LocalUser(t *testing.T) {
+	groups := liveMinor(t) >= 46
+	email := liveID("user") + "@example.com"
+	program := map[string]property.Value{
+		"email": str(email), "userId": str("u-" + email), "username": str("Live user"), "passwordHash": str(testPasswordHash),
+	}
+	updated := with(program, map[string]property.Value{"username": str("Live user renamed"), "passwordHash": str(rotatedPasswordHash)})
+	if groups {
+		program["groups"] = strs("devs", "admins")
+		updated["groups"] = strs("admins", "ops")
+	}
+	lifecycle(t, userToken, email, program, updated, func(t *testing.T, in property.Map) {
+		wantString(t, in, "username", "Live user renamed")
+		if groups {
+			if got := in.Get("groups"); !got.IsArray() || got.AsArray().Len() != 2 {
+				t.Errorf("groups after update = %v, want [admins ops]", got)
+			}
+		}
+		if !verifyPassword(t, email, "synthetic-rotated-password") || verifyPassword(t, email, "synthetic-test-password") {
+			t.Error("the rotated password is not the one Dex verifies")
+		}
+	})
+}
+
+// On Dex v2.45, groups would be dropped silently, so they are refused.
+func TestLive_LocalUserGroupsRefusedOnV245(t *testing.T) {
+	if minor := liveMinor(t); minor == 0 || minor >= 46 {
+		t.Skip("only for Dex v2.45")
+	}
+	s := liveProvider(t)
+	urn := testURN(userToken)
+	email := liveID("groups") + "@example.com"
+	checked, err := s.Check(p.CheckRequest{Urn: urn, Inputs: property.NewMap(map[string]property.Value{
+		"email": str(email), "userId": str("u-groups"), "passwordHash": str(testPasswordHash), "groups": strs("admins"),
+	})})
+	if err != nil || len(checked.Failures) > 0 {
+		t.Fatalf("Check: %v %v", err, checked.Failures)
+	}
+	_, err = s.Create(p.CreateRequest{Urn: urn, Properties: checked.Inputs, DryRun: true})
+	if err == nil || !strings.Contains(err.Error(), "needs Dex v2.46") {
+		t.Errorf("preview with groups on Dex v2.45 = %v, want a refusal", err)
+	}
 }

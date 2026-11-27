@@ -29,6 +29,7 @@ type adoptionCase struct {
 	id      string
 	inputs  map[string]property.Value
 	connect bool // a connector (vs a client)
+	user    bool // a password user (vs a client)
 }
 
 func adoptionCases() []adoptionCase {
@@ -46,18 +47,21 @@ func adoptionCases() []adoptionCase {
 		{"dex:resources:Client", "shared", map[string]property.Value{
 			"clientId": str("shared"), "name": str("Ours"), "secret": str("our-secret"),
 			"redirectUris": strs("https://ours.example.com/callback"),
-		}, false},
+		}, false, false},
 		{"dex:resources:Connector", "shared", map[string]property.Value{
 			"connectorId": str("shared"), "type": str("oidc"), "name": str("Ours"),
 			"rawConfig": str(`{"issuer":"https://issuer.example.com","clientSecret":"our-secret"}`),
-		}, true},
-		{"dex:resources:AzureOidcConnector", "shared", oauth(map[string]property.Value{"tenantId": str("00000000-0000-0000-0000-000000000000")}), true},
-		{"dex:resources:AzureMicrosoftConnector", "shared", oauth(map[string]property.Value{"tenant": str("organizations")}), true},
-		{"dex:resources:CognitoOidcConnector", "shared", oauth(map[string]property.Value{"region": str("eu-central-1"), "userPoolId": str("eu-central-1_pool")}), true},
-		{"dex:resources:GitHubConnector", "shared", oauth(nil), true},
-		{"dex:resources:GitLabConnector", "shared", oauth(nil), true},
-		{"dex:resources:GoogleConnector", "shared", oauth(nil), true},
-		{"dex:resources:LocalConnector", "shared", map[string]property.Value{"connectorId": str("shared"), "name": str("Ours")}, true},
+		}, true, false},
+		{"dex:resources:AzureOidcConnector", "shared", oauth(map[string]property.Value{"tenantId": str("00000000-0000-0000-0000-000000000000")}), true, false},
+		{"dex:resources:AzureMicrosoftConnector", "shared", oauth(map[string]property.Value{"tenant": str("organizations")}), true, false},
+		{"dex:resources:CognitoOidcConnector", "shared", oauth(map[string]property.Value{"region": str("eu-central-1"), "userPoolId": str("eu-central-1_pool")}), true, false},
+		{"dex:resources:GitHubConnector", "shared", oauth(nil), true, false},
+		{"dex:resources:GitLabConnector", "shared", oauth(nil), true, false},
+		{"dex:resources:GoogleConnector", "shared", oauth(nil), true, false},
+		{"dex:resources:LocalConnector", "shared", map[string]property.Value{"connectorId": str("shared"), "name": str("Ours")}, true, false},
+		{token: "dex:resources:LocalUser", id: "shared@example.com", user: true, inputs: map[string]property.Value{
+			"email": str("shared@example.com"), "userId": str("ours"), "passwordHash": str(testPasswordHash),
+		}},
 	}
 }
 
@@ -65,6 +69,10 @@ func adoptionCases() []adoptionCase {
 func seedForeign(dex *fakeDex, tc adoptionCase) {
 	dex.mu.Lock()
 	defer dex.mu.Unlock()
+	if tc.user {
+		dex.passwords[tc.id] = &api.Password{Email: tc.id, Hash: []byte(existingCanary), UserId: "theirs", Username: "Theirs"}
+		return
+	}
 	if tc.connect {
 		dex.connectors[tc.id] = &api.Connector{Id: tc.id, Type: "ldap", Name: "Theirs",
 			Config: []byte(`{"host":"ldap.example.com:636","bindPW":"` + existingCanary + `"}`)}
@@ -82,6 +90,9 @@ func snapshot(t *testing.T, dex *fakeDex, tc adoptionCase) string {
 	var v any = dex.clients[tc.id]
 	if tc.connect {
 		v = dex.connectors[tc.id]
+	}
+	if tc.user {
+		v = dex.passwords[tc.id]
 	}
 	b, err := json.Marshal(v)
 	if err != nil {
