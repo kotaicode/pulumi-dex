@@ -166,3 +166,45 @@ func TestClientRefreshRoundTrip_publicChangedInDexFailsPreview(t *testing.T) {
 		})
 	}
 }
+
+// A client whose secret Dex generated must refresh cleanly: the refreshed
+// inputs keep the secret out when the program had none, and the state keeps
+// the generated secret. An import, which has no prior inputs, still reads the
+// secret into the inputs.
+func TestClientRefresh_generatedSecret(t *testing.T) {
+	program := clientProgram(nil).Delete("secret")
+	if diff, failures := clientRefreshDiff(t, program, nil); len(failures) > 0 || diff.HasChanges {
+		t.Errorf("preview after refresh of a client with a generated secret: failures %v, changes %s", failures, diffKeys(diff))
+	}
+
+	dex := newFakeDex()
+	s := newProviderAgainst(t, dex)
+	urn := testURN("dex:resources:Client")
+	checked, err := s.Check(p.CheckRequest{Urn: urn, Inputs: program})
+	if err != nil || len(checked.Failures) > 0 {
+		t.Fatalf("Check: %v %v", err, checked.Failures)
+	}
+	created, err := s.Create(p.CreateRequest{Urn: urn, Properties: checked.Inputs})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	generated := dex.clients[created.ID].Secret
+	refreshed, err := s.Read(p.ReadRequest{ID: created.ID, Urn: urn, Properties: created.Properties, Inputs: checked.Inputs})
+	if err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+	if _, ok := refreshed.Inputs.GetOk("secret"); ok {
+		t.Error("refresh added the generated secret to the inputs")
+	}
+	if v := refreshed.Properties.Get("secret"); !v.IsSecret() || v.AsString() != generated {
+		t.Error("refresh must keep the generated secret in the state, as a secret")
+	}
+
+	imported, err := s.Read(p.ReadRequest{ID: created.ID, Urn: urn})
+	if err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	if v := imported.Inputs.Get("secret"); !v.IsSecret() || v.AsString() != generated {
+		t.Error("import must read the secret into the inputs, as a secret")
+	}
+}

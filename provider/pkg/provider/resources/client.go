@@ -229,6 +229,12 @@ func (c *Client) Read(ctx context.Context, req infer.ReadRequest[ClientArgs, Cli
 		Public:       state.Public,
 		LogoUrl:      state.LogoUrl,
 	}
+	// A secret that Dex generated is state, not an input: on refresh, report it
+	// as an input only if the program set one, or the next preview would
+	// propose removing it. An import has no prior inputs and reads it in.
+	if req.Inputs.ClientId != "" && req.Inputs.Secret == nil {
+		inputs.Secret = nil
+	}
 
 	return infer.ReadResponse[ClientArgs, ClientState]{
 		ID:     client.Id,
