@@ -5,6 +5,7 @@ package resources
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,8 @@ import (
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/integration"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
+
+	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // =============================================================================
@@ -174,4 +177,32 @@ func TestLive_GenericConnector(t *testing.T) {
 			t.Errorf("rawConfig after update does not contain the new host")
 		}
 	})
+}
+
+// TestLive_ServerVersion checks what the server reports and the feature gate.
+// DEX_LIVE_VERSION names the server's release, for example v2.45.1.
+func TestLive_ServerVersion(t *testing.T) {
+	want := os.Getenv("DEX_LIVE_VERSION")
+	if want == "" {
+		t.Skip("DEX_LIVE_VERSION is not set")
+	}
+	c := &provider.DexConfig{Host: os.Getenv("DEX_LIVE_HOST"), Plaintext: ptrBool(true)}
+	if err := c.Configure(t.Context()); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	if c.Server == nil || c.Server.Err != nil || c.Server.Server != want {
+		t.Fatalf("server info = %+v, want server %q", c.Server, want)
+	}
+	minor, err := strconv.Atoi(strings.Split(strings.TrimPrefix(want, "v"), ".")[1])
+	if err != nil {
+		t.Fatalf("DEX_LIVE_VERSION %q is not vMAJOR.MINOR.PATCH", want)
+	}
+	gate := c.Require(provider.LocalUserGroups)
+	switch {
+	case minor >= 46 && gate != nil:
+		t.Errorf("Dex %s: LocalUser.groups refused: %v", want, gate)
+	case minor < 46 && (gate == nil || !strings.Contains(gate.Error(), "needs Dex v2.46")):
+		t.Errorf("Dex %s: LocalUser.groups gate = %v, want a refusal", want, gate)
+	}
+	t.Logf("Dex %s reports server %q, API %d", want, c.Server.Server, c.Server.API)
 }

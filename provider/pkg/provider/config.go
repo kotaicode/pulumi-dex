@@ -37,6 +37,9 @@ type DexConfig struct {
 
 	// internal fields are not exposed in schema and are used at runtime only.
 	Client api.DexClient
+	// Server is what the connected Dex reported through GetVersion; nil until
+	// Configure has connected.
+	Server *ServerInfo
 }
 
 // Annotate config fields with descriptions & defaults for the schema.
@@ -119,6 +122,16 @@ func (c *DexConfig) Configure(ctx context.Context) error {
 	}
 
 	c.Client = api.NewDexClient(conn)
+
+	// Ask for the server version once per provider configuration, for the
+	// feature checks in Require. A failure does not fail the connection.
+	versionCtx, cancelVersion := context.WithTimeout(ctx, time.Duration(PtrOr(c.TimeoutSeconds, 5))*time.Second)
+	defer cancelVersion()
+	info := fetchServerInfo(versionCtx, c.Client)
+	c.Server = &info
+	if warning := serverWarning(c.Host, info); warning != "" {
+		p.GetLogger(ctx).Warning(warning)
+	}
 
 	return nil
 }

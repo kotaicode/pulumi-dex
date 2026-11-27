@@ -48,8 +48,23 @@ type fakeDex struct {
 	// staticConnectors are defined in Dex's configuration file; like Dex, the
 	// fake refuses to create them through the API with an untyped error.
 	staticConnectors map[string]bool
+	// version is what GetVersion reports; nil means Dex v2.46.1 (API 4).
+	version    *api.VersionResp
+	versionErr error
 
 	writes int // Create, Update and Delete calls, to prove read-only paths
+}
+
+func (f *fakeDex) GetVersion(context.Context, *api.VersionReq) (*api.VersionResp, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.versionErr != nil {
+		return nil, f.versionErr
+	}
+	if f.version != nil {
+		return f.version, nil
+	}
+	return &api.VersionResp{Server: "v2.46.1", Api: 4}, nil
 }
 
 func newFakeDex() *fakeDex {
