@@ -263,7 +263,7 @@ func TestLocalUser_importOfMissingUserFails(t *testing.T) {
 	dex := newFakeDex()
 	s := newProviderAgainst(t, dex)
 	urn := testURN(userToken)
-	if _, err := s.Read(p.ReadRequest{ID: "nobody@example.com", Urn: urn}); err == nil || !strings.Contains(err.Error(), "no password user") {
+	if _, err := s.Read(p.ReadRequest{ID: "nobody@example.com", Urn: urn}); err == nil || !strings.Contains(err.Error(), "not found in Dex") {
 		t.Errorf("import of a missing user = %v, want an error", err)
 	}
 	_, created, old := createFor(t, dex, userToken, userInputs(nil))

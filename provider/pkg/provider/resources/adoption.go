@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	p "github.com/pulumi/pulumi-go-provider"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -115,4 +117,30 @@ func wrongConnectorType(kind, id, got, want string) error {
 		"the connector in Dex has type %q, not %q, so this resource cannot manage it; "+
 			"import it as %s, or as the resource for type %q",
 		got, want, tokenConnector, got))
+}
+
+// WithMissingImportsFailing makes the import of an ID that Dex does not have
+// fail with a not-found error. Read reports a missing object with an empty ID,
+// which on refresh removes the resource from the state. An import sends no
+// prior state, and there infer still encodes the empty response as
+// properties, so the Pulumi CLI would import an empty resource instead.
+func WithMissingImportsFailing(prov p.Provider) p.Provider {
+	read := prov.Read
+	if read == nil {
+		return prov
+	}
+	prov.Read = func(ctx context.Context, req p.ReadRequest) (p.ReadResponse, error) {
+		resp, err := read(ctx, req)
+		if err != nil || resp.ID != "" || req.Properties.Len() > 0 {
+			return resp, err
+		}
+		t := createTarget{token: string(req.Urn.Type())}
+		key := "ID"
+		if t.token == tokenLocalUser {
+			key = "email"
+		}
+		return p.ReadResponse{}, provider.WrapError("import", t.noun(), req.ID,
+			fmt.Errorf("%w: no %s with this %s exists", provider.ErrNotFound, t.noun(), key))
+	}
+	return prov
 }
