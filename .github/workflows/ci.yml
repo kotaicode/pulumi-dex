@@ -28,7 +28,7 @@ jobs:
         with:
           version: v2.15.0
           working-directory: provider
-          args: --timeout=5m
+          args: --timeout=5m --build-tags=dexlive
 
       - name: Run tests
         run: cd provider && go test ./pkg/... -v -race -coverprofile=coverage.out
@@ -70,6 +70,56 @@ jobs:
         with:
           name: pulumi-resource-dex-${{ matrix.os }}
           path: bin/pulumi-resource-dex*
+
+  # Lifecycle suite (provider/pkg/provider/resources/live_dex_test.go) against
+  # each supported Dex line. Images are pinned by digest; Dex serves its API
+  # without TLS, published only on the runner's loopback.
+  dex-compatibility:
+    name: Dex compatibility (${{ matrix.dex.version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        dex:
+          - version: v2.45.1
+            image: ghcr.io/dexidp/dex:v2.45.1@sha256:8499afd690c437f52301efd2b05b2455da5bd2dfc20332cd697dc9937f808462
+          - version: v2.46.1
+            image: ghcr.io/dexidp/dex:v2.46.1@sha256:65b72ca0f4b0bf6d4ada84ec21da8851782563404ac7b8f926923d27ceced9ab
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: provider/go.mod
+          cache-dependency-path: provider/go.sum
+
+      - name: Start Dex ${{ matrix.dex.version }}
+        run: |
+          docker run -d --name dex -p 127.0.0.1:5557:5557 -e DEX_API_CONNECTORS_CRUD=true \
+            -v "$PWD/test/dex/config.yaml:/etc/dex/config.yaml:ro" \
+            "${{ matrix.dex.image }}" dex serve /etc/dex/config.yaml
+          for i in $(seq 1 30); do
+            if timeout 1 bash -c "echo > /dev/tcp/127.0.0.1/5557" 2>/dev/null; then
+              echo "Dex is ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Dex ${{ matrix.dex.version }} did not start"; docker logs dex; exit 1
+
+      - name: Run the lifecycle suite
+        run: cd provider && go test ./pkg/provider/resources/ -tags=dexlive -run Live -count=1 -v
+        env:
+          DEX_LIVE_HOST: 127.0.0.1:5557
+
+      - name: Dex logs
+        if: failure()
+        run: docker logs dex
 
   integration-test:
     name: Integration Tests

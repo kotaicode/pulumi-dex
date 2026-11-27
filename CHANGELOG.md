@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Compatibility testing against real Dex servers: CI runs a lifecycle suite (create, refresh, preview
+  without changes, update, delete) for `Client`, `GitHubConnector` and the generic `Connector` against
+  Dex v2.45.1 and v2.46.1. The README lists the supported Dex lines.
+
 ### Changed
+- `docker-compose.yml` runs Dex v2.46.1, pinned by digest, instead of the floating `latest-alpine`
+  image.
 - The provider uses Dex's API bindings from the Dex v2.46.1 release commit (`75eb19238e10`) instead of
   the `api/v2` v2.4.0 tag, which predates the API changes in Dex v2.46.0. Dex has not tagged the
   bindings since; the provider moves to a tag once one exists. Behaviour against Dex servers is

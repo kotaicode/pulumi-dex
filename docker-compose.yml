@@ -1,7 +1,8 @@
 
 services:
   dex:
-    image: ghcr.io/dexidp/dex:latest-alpine
+    # Pinned to the Dex v2.46.1 release by digest (the alpine variant: the healthcheck needs wget).
+    image: ghcr.io/dexidp/dex:v2.46.1-alpine@sha256:65b72ca0f4b0bf6d4ada84ec21da8851782563404ac7b8f926923d27ceced9ab
     container_name: dex
     ports:
       - "5556:5556"  # Dex web UI
