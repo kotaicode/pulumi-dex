@@ -30,3 +30,11 @@ func TestLive_ConnectorContract(t *testing.T) {
 		return contractDex{addr: host, grantTypes: grantTypes, id: liveID}
 	})
 }
+
+func TestLive_GoogleDomainToAdminEmailRoundTrip(t *testing.T) {
+	host := os.Getenv("DEX_LIVE_HOST")
+	if host == "" {
+		t.Fatal("DEX_LIVE_HOST is not set; the dexlive suite needs a running Dex")
+	}
+	runGoogleDomainToAdminEmailRoundTrip(t, contractDex{addr: host, id: liveID})
+}

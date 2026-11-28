@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of eight copies. Nothing changes for users: the schema is identical, and a stack created with
   0.12.0 previews without changes after a refresh.
 
+### Fixed
+- `GoogleConnector`: a program without `domainToAdminEmail` now previews without changes after a
+  refresh or an import. Refresh read the missing map as an empty one, so every preview after it
+  proposed an update. A stack refreshed with 0.12.0 keeps the empty map in its state and still
+  proposes removing it until the next `pulumi up`, which sends the unchanged configuration to Dex;
+  after that, refreshes stay clean. Dex stores nothing for an empty map, so a program that sets
+  `domainToAdminEmail: {}` gets a preview proposing to add it after an import; leave the empty map
+  out.
+
 ## [0.12.0] - 2026-11-27
 
 ### Added

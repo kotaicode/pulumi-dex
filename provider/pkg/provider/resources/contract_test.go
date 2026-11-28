@@ -124,10 +124,7 @@ func connectorContracts() []connectorContract {
 			}},
 		{token: tokenGitHubConnector, dexType: "github", secret: "clientSecret", inputs: oauth(nil)},
 		{token: tokenGitLabConnector, dexType: "gitlab", secret: "clientSecret", inputs: oauth(nil)},
-		// Read reports an absent domainToAdminEmail as an empty map, so a program
-		// without it never gets a clean preview after a refresh (as of 0.12.0).
-		{token: tokenGoogleConnector, dexType: "google", secret: "clientSecret", inputs: oauth(nil),
-			drift: "domainToAdminEmail(delete)"},
+		{token: tokenGoogleConnector, dexType: "google", secret: "clientSecret", inputs: oauth(nil)},
 		{token: tokenAzureOidcConnector, dexType: "oidc", secret: "clientSecret",
 			inputs: oauth(map[string]property.Value{"tenantId": str("00000000-0000-0000-0000-000000000000")})},
 		{token: tokenAzureMicrosoftConnector, dexType: "microsoft", secret: "clientSecret",

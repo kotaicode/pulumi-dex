@@ -134,11 +134,6 @@ func decodeGoogleConfig(found *api.Connector, _ GoogleConnectorArgs) (GoogleConn
 		return GoogleConnectorArgs{}, err
 	}
 
-	domainToAdminEmail := conf.strMap("domainToAdminEmail")
-	if domainToAdminEmail == nil {
-		domainToAdminEmail = map[string]string{} // as before: absent reads back as an empty map
-	}
-
 	args := GoogleConnectorArgs{
 		ConnectorId:            found.Id,
 		Name:                   found.Name,
@@ -149,7 +144,7 @@ func decodeGoogleConfig(found *api.Connector, _ GoogleConnectorArgs) (GoogleConn
 		HostedDomains:          conf.strList("hostedDomains"),
 		Groups:                 conf.strList("groups"),
 		ServiceAccountFilePath: conf.strPtr("serviceAccountFilePath"),
-		DomainToAdminEmail:     domainToAdminEmail,
+		DomainToAdminEmail:     conf.strMap("domainToAdminEmail"),
 	}
 	return args, conf.Err()
 }
