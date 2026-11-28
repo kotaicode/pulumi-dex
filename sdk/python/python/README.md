@@ -15,6 +15,7 @@ A Pulumi provider for managing Dex (https://dexidp.io/) resources via the Dex gR
 - **GitHub Integration**: `GitHubConnector` for GitHub.com and GitHub Enterprise
 - **Google Integration**: `GoogleConnector` for Google Workspace and Google accounts
 - **Password login**: `LocalConnector` adds a login with passwords stored in Dex
+- **LDAP Integration**: `LdapConnector` for OpenLDAP, Active Directory and other LDAP directories
 
 ## Installation
 
@@ -92,9 +93,10 @@ The provider reads no environment variables. To take connection settings from th
 
 | Provider | Dex servers | Tested in CI against |
 | --- | --- | --- |
+| 0.13.x | v2.45.x, v2.46.x | v2.45.1, v2.46.1 (release images, pinned by digest); LDAP logins against OpenLDAP |
 | 0.12.x | v2.45.x, v2.46.x | v2.45.1, v2.46.1 (release images, pinned by digest) |
 
-Every resource works on both lines unless noted here: `LocalUser.groups` needs Dex v2.46 (Dex v2.45 would drop the groups silently, so the provider refuses them there). When it connects, the provider asks Dex for its version (Dex v2.45 reports API version 3, v2.46 API version 4). A feature that needs a newer Dex is refused with a message naming the required version; if the version cannot be determined, such features are refused too, with the underlying error. For a Dex outside the supported lines, the provider prints a warning, and existing resources keep working. CI runs a lifecycle suite (create, refresh, preview without changes, update, delete) against a real Dex of each line; to run it locally against your own Dex, see `provider/pkg/provider/resources/live_dex_test.go`.
+Every resource, including `LdapConnector`, works on both lines unless noted here: `LocalUser.groups` needs Dex v2.46 (Dex v2.45 would drop the groups silently, so the provider refuses them there), and so does `LdapConnector` with more than one `userSearch.usernameAttributes` entry (Dex v2.45 would store the list and then fail every login). When it connects, the provider asks Dex for its version (Dex v2.45 reports API version 3, v2.46 API version 4). A feature that needs a newer Dex is refused with a message naming the required version; if the version cannot be determined, such features are refused too, with the underlying error. For a Dex outside the supported lines, the provider prints a warning, and existing resources keep working. CI runs a lifecycle suite (create, refresh, preview without changes, update, delete) against a real Dex of each line; to run it locally against your own Dex, see `provider/pkg/provider/resources/live_dex_test.go`.
 
 The provider talks to Dex through its gRPC API, using Dex's official Go bindings `github.com/dexidp/dex/api/v2`. Dex has not tagged these bindings since v2.4.0 (August 2025), although Dex v2.46.0 changed the API, so the provider pins them at the commit of the Dex v2.46.1 release (`75eb19238e10`, Go module version `v2.4.1-0.20261021142137-75eb19238e10`). When Dex publishes a tag (`api/v2.5.0` or later), the provider moves to it; Dependabot proposes that update.
 
@@ -257,6 +259,72 @@ Create the bcrypt hash outside Pulumi, so the password itself never reaches the 
 - `pulumi import dex:resources:LocalUser <name> <email>` imports a user without its password hash. The program can omit `passwordHash` afterwards; updates then leave the password unchanged.
 - Deleting a `LocalUser` removes only its password record. Sessions and tokens that Dex already issued stay valid until they expire.
 
+### LDAP Connector (OpenLDAP)
+
+```typescript
+import * as fs from "fs";
+
+const config = new pulumi.Config();
+
+// Users under ou=people, groupOfNames groups under ou=groups. Dex checks this
+// configuration only when someone logs in: test a login after every change.
+const ldap = new dex.LdapConnector("ldap", {
+    connectorId: "ldap",
+    name: "OpenLDAP",
+    host: "ldap.example.com:636",                     // LDAPS; for StartTLS: "ldap.example.com:389" and startTls: true
+    rootCaPem: fs.readFileSync("ldap-ca.pem", "utf8"), // CA that signed the LDAP server's certificate
+    bindDn: "cn=dex,ou=services,dc=example,dc=org",   // leave out bindDn and bindPassword to search anonymously
+    bindPassword: config.requireSecret("ldapBindPassword"),
+    userSearch: {
+        baseDn: "ou=people,dc=example,dc=org",
+        filter: "(objectClass=inetOrgPerson)",
+        usernameAttributes: ["uid"],                  // several attributes need Dex v2.46
+        idAttr: "uid",                                // the user ID in Dex: changing it changes every user's identity
+        emailAttr: "mail",
+        nameAttr: "cn",
+    },
+    groupSearch: {
+        baseDn: "ou=groups,dc=example,dc=org",
+        filter: "(objectClass=groupOfNames)",
+        // recursionGroupAttr adds groups that contain the user's groups, at any depth
+        userMatchers: [{ userAttr: "DN", groupAttr: "member", recursionGroupAttr: "member" }],
+        nameAttr: "cn",
+    },
+}, { provider });
+```
+
+CI tests this kind of configuration with real logins through Dex's password grant against OpenLDAP, on Dex v2.45 and v2.46: LDAPS and StartTLS, anonymous and bound search, group claims including nested groups, and refused logins (wrong password, a user outside the filter, a username that matches two entries, a CA that did not sign the server certificate, StartTLS against a server without it).
+
+### LDAP Connector (Active Directory, untested)
+
+This example follows Dex's documentation for Active Directory; the provider's tests do not cover Active Directory.
+
+```typescript
+const activeDirectory = new dex.LdapConnector("active-directory", {
+    connectorId: "ad",
+    name: "Active Directory",
+    host: "dc1.corp.example.com:636",
+    rootCaPem: fs.readFileSync("corp-ca.pem", "utf8"),
+    bindDn: "CN=dex,CN=Users,DC=corp,DC=example,DC=com",
+    bindPassword: config.requireSecret("adBindPassword"),
+    usernamePrompt: "Email address",
+    userSearch: {
+        baseDn: "CN=Users,DC=corp,DC=example,DC=com",
+        filter: "(objectClass=person)",
+        usernameAttributes: ["userPrincipalName"],
+        idAttr: "DN",
+        emailAttr: "userPrincipalName",
+        nameAttr: "cn",
+    },
+    groupSearch: {
+        baseDn: "CN=Users,DC=corp,DC=example,DC=com",
+        filter: "(objectClass=group)",
+        userMatchers: [{ userAttr: "DN", groupAttr: "member" }],
+        nameAttr: "cn",
+    },
+}, { provider });
+```
+
 ### Generic Connector (OIDC)
 
 ```typescript
@@ -323,6 +391,7 @@ pulumi import dex:resources:GitHubConnector github github
 | GitLab | `dex:resources:GitLabConnector` |
 | Google | `dex:resources:GoogleConnector` |
 | Password login | `dex:resources:LocalConnector` |
+| LDAP | `dex:resources:LdapConnector` |
 | Password user | `dex:resources:LocalUser` (import ID: the email) |
 
 - Import only reads from Dex; it never creates or changes the object. Run `pulumi up` afterwards to apply your program's settings.
@@ -331,6 +400,21 @@ pulumi import dex:resources:GitHubConnector github github
 - A generic `dex:resources:Connector` of type `oidc` is imported as `oidcConfig` when every stored field fits it (fields without a typed input go into `oidcConfig.extra`). Otherwise, for example when a known field has another type, it is imported as `rawConfig` with the stored configuration unchanged. Connectors of every other type are imported as `rawConfig`.
 - If a create times out or the connection drops, the object may or may not have been created. The error says so; check whether the ID exists in Dex and import it instead of running `pulumi up` again.
 - `pulumi import` prints the imported credentials in the generated program; see [Security Considerations](#security-considerations).
+
+### Moving an LDAP connector from `dex.Connector` to `dex.LdapConnector`
+
+The connector keeps its ID and configuration, and only one resource manages it at any time. This was tested with the Pulumi CLI against Dex v2.45 and v2.46.
+
+1. Set `retainOnDelete: true` on the `dex.Connector` and run `pulumi up`. Nothing changes in Dex.
+2. In the same program, remove the `dex.Connector` and add a `dex.LdapConnector` with the same `connectorId`, the `import` resource option set to that ID, and inputs that describe the stored configuration (`rawConfig.bindPW` becomes `bindPassword`, `rootCAData` becomes `rootCaPem` with the decoded PEM, `userSearch.username` becomes `usernameAttributes`).
+3. Run `pulumi preview`. It must show only `= import` for the `LdapConnector` and `- delete[retain]` for the `Connector`. If it also shows `~ update` for the `LdapConnector`, your inputs differ from what Dex has: the Pulumi CLI imports the connector and then applies the difference. Correct the inputs until the update disappears, unless you intend that change.
+4. Run `pulumi up`, then remove the `import` option.
+
+Instead of step 1, `pulumi state delete <urn of the Connector>` removes the old resource from the stack without touching Dex; then continue with step 2.
+
+- If the stored configuration has settings `LdapConnector` does not model, such as `kerberos`, the import fails and names them; keep such a connector on `dex.Connector`.
+- An alias from `dex.Connector` to `dex.LdapConnector` does not work: the preview fails because the old state cannot be read as an `LdapConnector`, and nothing changes.
+- Keep `userSearch.idAttr` as it was. A different `idAttr` gives every user a new user ID, and the applications that use Dex then treat them as new users.
 
 ## Resources
 
@@ -482,6 +566,29 @@ Adds a password login to Dex: a connector of type `local`, through which users l
 - `enabled` (bool, optional, deprecated) - Has no effect in Dex; `false` fails in preview
 
 **Note:** Dex offers password login through every connector of type `local`, even when `enablePasswordDB` is `false` in its configuration. There is no disabled state: to turn this password login off, remove the resource. Removing it does not delete password users. Users are managed separately, through Dex's static passwords or its gRPC API.
+
+### `dex.LdapConnector`
+
+Manages an LDAP connector in Dex (type `ldap`). Users log in with their directory username and password.
+
+**Inputs:**
+- `connectorId` (string, required)
+- `name` (string, required)
+- `host` (string, required) - `host:port` of the LDAP server. Without a port, Dex uses 389 with `insecureNoSsl` and 636 otherwise, also with `startTls`
+- `insecureNoSsl` (bool, optional) - Connect without TLS
+- `startTls` (bool, optional) - Connect without TLS, then upgrade with StartTLS; requires a port in `host`
+- `insecureSkipVerify` (bool, optional) - Do not verify the server's certificate
+- `rootCa` (string, optional) - Path of a CA file on the Dex host; or `rootCaPem` (string, optional) with the PEM inline
+- `clientCert`, `clientKey` (string, optional) - Paths on the Dex host, set together
+- `bindDn` (string, optional), `bindPassword` (string, optional, secret) - Search account, set together; without both, Dex searches anonymously
+- `usernamePrompt` (string, optional) - Label of the username field on the login page
+- `userSearch` (object, required) - `baseDn` (required), `usernameAttributes` (string[], required; more than one needs Dex v2.46), `filter`, `scope`, `idAttr`, `emailAttr`, `nameAttr`, `preferredUsernameAttr`, `emailSuffix`
+- `groupSearch` (object, optional) - `baseDn`, `userMatchers` (`userAttr`, `groupAttr`, `recursionGroupAttr`) and `nameAttr` (required), `filter`, `scope`
+
+**Notes:**
+- Dex stores an LDAP configuration without checking it and reports problems only at login. Preview rejects the combinations that cannot work: `insecureNoSsl` with `startTls` or `insecureSkipVerify`, `startTls` without a port, both `rootCa` and `rootCaPem`, a `rootCaPem` without a certificate, and only one of `clientCert`/`clientKey` or `bindDn`/`bindPassword`.
+- Refresh and import fail on settings in Dex that the resource does not model, such as `kerberos` or the deprecated `groupSearch.userAttr`, `groupAttr` and `recursionGroupAttr`; an update would remove them. Manage such a connector with `dex.Connector` and `rawConfig`.
+- Changing `userSearch.idAttr` changes the user ID of every user, so applications that use Dex see them as new users.
 
 ### `dex.LocalUser`
 

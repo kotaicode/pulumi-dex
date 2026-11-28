@@ -1,0 +1,10 @@
+# Access rules for the LDAP login tests in osixia/openldap: Dex may search the
+# test directory anonymously or as cn=dex-reader. userPassword can only be
+# used to log in. The first rule keeps the image's own setup working; the
+# image fills in {{ LDAP_BACKEND }}.
+dn: olcDatabase={1}{{ LDAP_BACKEND }},cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth manage by * break
+olcAccess: {1}to attrs=userPassword by self write by anonymous auth by * none
+olcAccess: {2}to * by * read

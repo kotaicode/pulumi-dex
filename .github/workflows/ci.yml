@@ -72,8 +72,9 @@ jobs:
           path: bin/pulumi-resource-dex*
 
   # Lifecycle suite (provider/pkg/provider/resources/live_dex_test.go) against
-  # each supported Dex line. Images are pinned by digest; Dex serves its API
-  # without TLS, published only on the runner's loopback.
+  # each supported Dex line, and LDAP logins against OpenLDAP. Images are
+  # pinned by digest; Dex serves its API without TLS, published only on the
+  # runner's loopback. The LDAP certificates are generated for each run.
   dex-compatibility:
     name: Dex compatibility (${{ matrix.dex.version }})
     runs-on: ubuntu-latest
@@ -99,9 +100,38 @@ jobs:
           go-version-file: provider/go.mod
           cache-dependency-path: provider/go.sum
 
+      - name: Start OpenLDAP
+        run: |
+          bash test/ldap/gen-certs.sh "$RUNNER_TEMP/ldap-certs" ldap
+          docker network create dex-test
+          # ldap offers LDAPS and StartTLS; ldap-notls offers neither.
+          for name in ldap ldap-notls; do
+            tls=true; [ "$name" = ldap-notls ] && tls=false
+            docker run -d --name "$name" --hostname "$name" --network dex-test \
+              -e LDAP_TLS="$tls" -e LDAP_TLS_VERIFY_CLIENT=try \
+              -v "$RUNNER_TEMP/ldap-certs:/container/service/slapd/assets/certs" \
+              -v "$PWD/test/ldap/acl.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/50-acl.ldif:ro" \
+              -v "$PWD/test/ldap/seed.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/60-seed.ldif:ro" \
+              "$OPENLDAP_IMAGE" --copy-service
+          done
+          for name in ldap ldap-notls; do
+            for i in $(seq 1 60); do
+              # Anonymous search works only once the access rules and the seed are in place.
+              # grep reads all the output: grep -q would stop early, docker exec would
+              # exit on SIGPIPE, and the step's pipefail would fail every attempt.
+              if docker exec "$name" ldapsearch -x -H ldap://localhost -b ou=people,dc=example,dc=org -LLL "(uid=alice)" dn 2>/dev/null | grep '^dn:' >/dev/null; then
+                echo "$name is ready"; continue 2
+              fi
+              sleep 1
+            done
+            echo "::error::$name did not start"; docker logs "$name"; exit 1
+          done
+        env:
+          OPENLDAP_IMAGE: osixia/openldap:1.4.0@sha256:ccd95cc6e61effc1bbc4fff8b09d358ee9d6739a43f4124d6219ac18d82879d1
+
       - name: Start Dex ${{ matrix.dex.version }}
         run: |
-          docker run -d --name dex -p 127.0.0.1:5557:5557 -e DEX_API_CONNECTORS_CRUD=true \
+          docker run -d --name dex --network dex-test -p 127.0.0.1:5556:5556 -p 127.0.0.1:5557:5557 -e DEX_API_CONNECTORS_CRUD=true \
             -v "$PWD/test/dex/config.yaml:/etc/dex/config.yaml:ro" \
             "${{ matrix.dex.image }}" dex serve /etc/dex/config.yaml
           for i in $(seq 1 30); do
@@ -112,15 +142,25 @@ jobs:
           done
           echo "::error::Dex ${{ matrix.dex.version }} did not start"; docker logs dex; exit 1
 
-      - name: Run the lifecycle suite
+      - name: Run the lifecycle and LDAP login suites
         run: cd provider && go test ./pkg/provider/resources/ -tags=dexlive -run Live -count=1 -v
         env:
           DEX_LIVE_HOST: 127.0.0.1:5557
           DEX_LIVE_VERSION: ${{ matrix.dex.version }}
+          DEX_LIVE_ISSUER: http://127.0.0.1:5556/dex
+          # LDAP addresses as Dex sees them on the dex-test network
+          LDAP_LIVE_HOST: ldap:389
+          LDAP_LIVE_TLS_HOST: ldap:636
+          LDAP_LIVE_NO_STARTTLS_HOST: ldap-notls:389
+          LDAP_LIVE_CA: ${{ runner.temp }}/ldap-certs/ca.crt
+          LDAP_LIVE_WRONG_CA: ${{ runner.temp }}/ldap-certs/wrong-ca.crt
 
-      - name: Dex logs
+      - name: Dex and OpenLDAP logs
         if: failure()
-        run: docker logs dex
+        run: |
+          docker logs dex
+          docker logs ldap
+          docker logs ldap-notls
 
   integration-test:
     name: Integration Tests

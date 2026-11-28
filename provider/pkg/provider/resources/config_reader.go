@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"sort"
 
 	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
@@ -68,6 +70,21 @@ func (c *connectorConfig) strPtr(key string) *string {
 	return nil
 }
 
+// optStr returns a string field, or nil if it is absent or null. Unlike
+// strPtr, it returns an empty string as such.
+func (c *connectorConfig) optStr(key string) *string {
+	v, ok := c.values[key]
+	if !ok || v == nil {
+		return nil
+	}
+	s, ok := v.(string)
+	if !ok {
+		c.fail(key, "a string", v)
+		return nil
+	}
+	return &s
+}
+
 // boolPtr returns a boolean field, or nil if it is absent or null.
 func (c *connectorConfig) boolPtr(key string) *bool {
 	v, ok := c.values[key]
@@ -121,6 +138,33 @@ func (c *connectorConfig) strMap(key string) map[string]string {
 		out[k] = s
 	}
 	return out
+}
+
+// object returns a reader for an object field, or nil if it is absent or null.
+func (c *connectorConfig) object(key string) *connectorConfig {
+	v, ok := c.values[key]
+	if !ok || v == nil {
+		return nil
+	}
+	m, ok := v.(map[string]any)
+	if !ok {
+		c.fail(key, "an object", v)
+		return nil
+	}
+	return &connectorConfig{values: m, path: c.path + key + ".", err: c.err}
+}
+
+// unknownKeys returns the paths of the fields that are not in known, such as
+// "groupSearch.userAttr", sorted. Keys are compared exactly.
+func (c *connectorConfig) unknownKeys(known ...string) []string {
+	var unknown []string
+	for key := range c.values {
+		if !slices.Contains(known, key) {
+			unknown = append(unknown, c.path+key)
+		}
+	}
+	sort.Strings(unknown)
+	return unknown
 }
 
 // objects returns readers for an array of objects, or nil if it is absent or null.

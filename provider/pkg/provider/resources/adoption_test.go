@@ -59,6 +59,10 @@ func adoptionCases() []adoptionCase {
 		{"dex:resources:GitLabConnector", "shared", oauth(nil), true, false},
 		{"dex:resources:GoogleConnector", "shared", oauth(nil), true, false},
 		{"dex:resources:LocalConnector", "shared", map[string]property.Value{"connectorId": str("shared"), "name": str("Ours")}, true, false},
+		{"dex:resources:LdapConnector", "shared", map[string]property.Value{
+			"connectorId": str("shared"), "name": str("Ours"), "host": str("ldap.example.com:636"),
+			"userSearch": obj(map[string]property.Value{"baseDn": str("dc=example,dc=org"), "usernameAttributes": strs("uid")}),
+		}, true, false},
 		{token: "dex:resources:LocalUser", id: "shared@example.com", user: true, inputs: map[string]property.Value{
 			"email": str("shared@example.com"), "userId": str("ours"), "passwordHash": str(testPasswordHash),
 		}},
@@ -238,6 +242,9 @@ func TestImport_rejectsConnectorOfAnotherType(t *testing.T) {
 	for _, tc := range adoptionCases() {
 		if !tc.connect || tc.token == "dex:resources:Connector" {
 			continue // the generic connector represents any type
+		}
+		if tc.token == tokenLdapConnector {
+			continue // the foreign connector is an "ldap" one; the contract suite checks this resource's type
 		}
 		t.Run(tc.token, func(t *testing.T) {
 			dex := newFakeDex()

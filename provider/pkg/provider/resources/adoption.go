@@ -25,6 +25,7 @@ const (
 	tokenGitLabConnector         = "dex:resources:GitLabConnector"
 	tokenGoogleConnector         = "dex:resources:GoogleConnector"
 	tokenLocalConnector          = "dex:resources:LocalConnector"
+	tokenLdapConnector           = "dex:resources:LdapConnector"
 	tokenLocalUser               = "dex:resources:LocalUser"
 )
 

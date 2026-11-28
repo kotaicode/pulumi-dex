@@ -4,12 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
@@ -113,203 +110,57 @@ func (c *Connector) Check(ctx context.Context, req infer.CheckRequest) (infer.Ch
 	return infer.CheckResponse[ConnectorArgs]{Inputs: args, Failures: failures}, nil
 }
 
+// controller is the shared lifecycle with the generic Connector's
+// rules: the type is an input, any type is read back, and an "oidc" config
+// decodes into oidcConfig unless the prior inputs used rawConfig.
+func (c *Connector) controller() connectorController[ConnectorArgs, ConnectorState] {
+	return connectorController[ConnectorArgs, ConnectorState]{
+		kind:   "connector",
+		token:  tokenConnector,
+		id:     func(a ConnectorArgs) string { return a.ConnectorId },
+		name:   func(a ConnectorArgs) string { return a.Name },
+		state:  func(a ConnectorArgs) ConnectorState { return ConnectorState{ConnectorArgs: a} },
+		args:   func(s ConnectorState) ConnectorArgs { return s.ConnectorArgs },
+		encode: buildConnectorConfigBytes,
+		decode: func(found *api.Connector, prior ConnectorArgs) (ConnectorArgs, error) {
+			args := decodeConnector(found)
+			// decodeConnector maps every "oidc" config to oidcConfig. If the prior inputs
+			// used rawConfig, keep that representation so refresh does not switch modes.
+			// Import has no prior inputs and still gets the typed decoding.
+			if prior.RawConfig != nil && *prior.RawConfig != "" {
+				raw := rawConfigFromRemote(found.Config, prior.RawConfig)
+				args.OIDCConfig, args.RawConfig = nil, &raw
+			}
+			return args, nil
+		},
+		typeOf:      func(a ConnectorArgs) string { return a.Type },
+		validate:    validateConnectorArgs,
+		listFailure: "failed to list Dex connectors",
+		idChanged: func(old, id string) error {
+			return fmt.Errorf("connectorId cannot be changed (was %q, got %q)", old, id)
+		},
+		requireDeleteID: true,
+	}
+}
+
 // Create creates a new connector in Dex.
 func (c *Connector) Create(ctx context.Context, req infer.CreateRequest[ConnectorArgs]) (infer.CreateResponse[ConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := ConnectorState{
-			ConnectorArgs: args,
-		}
-		return infer.CreateResponse[ConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[ConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if err := validateConnectorArgs(args); err != nil {
-		return infer.CreateResponse[ConnectorState]{}, err
-	}
-
-	configBytes, err := buildConnectorConfigBytes(args)
-	if err != nil {
-		return infer.CreateResponse[ConnectorState]{}, err
-	}
-
-	conn := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   args.Type,
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	callCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(callCtx, &api.CreateConnectorReq{
-		Connector: conn,
-	})
-	target := createTarget{kind: "connector", token: tokenConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[ConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[ConnectorState]{}, target.alreadyExists()
-	}
-
-	state := ConnectorState{
-		ConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[ConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return c.controller().create(ctx, req)
 }
 
 // Read reads an existing connector from Dex.
 func (c *Connector) Read(ctx context.Context, req infer.ReadRequest[ConnectorArgs, ConnectorState]) (infer.ReadResponse[ConnectorArgs, ConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Dex API doesn't expose GetConnector; we list and filter by ID.
-	callCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(callCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, fmt.Errorf("failed to list Dex connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, con := range listResp.Connectors {
-		if con.Id == req.ID {
-			found = con
-			break
-		}
-	}
-
-	if found == nil {
-		// Connector not found => resource should be deleted.
-		return infer.ReadResponse[ConnectorArgs, ConnectorState]{}, nil
-	}
-
-	args, state := decodeConnector(found)
-
-	// decodeConnector maps every "oidc" config to oidcConfig. If the prior inputs
-	// used rawConfig, keep that representation so refresh does not switch modes.
-	// Import has no prior inputs and still gets the typed decoding.
-	if prior := req.Inputs.RawConfig; prior != nil && *prior != "" {
-		raw := rawConfigFromRemote(found.Config, prior)
-		args.OIDCConfig, args.RawConfig = nil, &raw
-		state = ConnectorState{ConnectorArgs: args}
-	}
-
-	return infer.ReadResponse[ConnectorArgs, ConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing connector in Dex.
 func (c *Connector) Update(ctx context.Context, req infer.UpdateRequest[ConnectorArgs, ConnectorState]) (infer.UpdateResponse[ConnectorState], error) {
-	args := req.Inputs
-	old := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := ConnectorState{
-			ConnectorArgs: args,
-		}
-		return infer.UpdateResponse[ConnectorState]{Output: state}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[ConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != old.ConnectorId {
-		return infer.UpdateResponse[ConnectorState]{}, fmt.Errorf("connectorId cannot be changed (was %q, got %q)", old.ConnectorId, args.ConnectorId)
-	}
-
-	if err := validateConnectorArgs(args); err != nil {
-		return infer.UpdateResponse[ConnectorState]{}, err
-	}
-
-	configBytes, err := buildConnectorConfigBytes(args)
-	if err != nil {
-		return infer.UpdateResponse[ConnectorState]{}, err
-	}
-
-	updateReq := &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   args.Type,
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	}
-
-	callCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(callCtx, updateReq)
-	if err != nil {
-		return infer.UpdateResponse[ConnectorState]{}, provider.WrapError("update", "connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[ConnectorState]{}, provider.NotFoundError("update", "connector", args.ConnectorId)
-	}
-
-	state := ConnectorState{
-		ConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[ConnectorState]{Output: state}, nil
+	return c.controller().update(ctx, req)
 }
 
 // Delete deletes a connector from Dex.
 func (c *Connector) Delete(ctx context.Context, req infer.DeleteRequest[ConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-	if deleteID == "" {
-		return infer.DeleteResponse{}, fmt.Errorf("cannot delete connector: no ID provided in request or state")
-	}
-
-	// Note: Pulumi does not call Delete during preview, so no preview check needed
-
-	callCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(callCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			// Already deleted; treat as success.
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }
 
 // validateConnectorArgs enforces high-level invariants for connectors.
@@ -375,8 +226,8 @@ func buildConnectorConfigBytes(args ConnectorArgs) ([]byte, error) {
 	return []byte(provider.PtrOr(args.RawConfig, "")), nil
 }
 
-// decodeConnector converts a Dex Connector into ConnectorArgs/State.
-func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
+// decodeConnector converts a Dex Connector into ConnectorArgs.
+func decodeConnector(con *api.Connector) ConnectorArgs {
 	args := ConnectorArgs{
 		ConnectorId: con.Id,
 		Type:        con.Type,
@@ -426,9 +277,5 @@ func decodeConnector(con *api.Connector) (ConnectorArgs, ConnectorState) {
 		rc := string(con.Config)
 		args.RawConfig = &rc
 	}
-
-	state := ConnectorState{
-		ConnectorArgs: args,
-	}
-	return args, state
+	return args
 }

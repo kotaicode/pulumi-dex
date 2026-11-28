@@ -17,6 +17,83 @@ export namespace resources {
         teams?: pulumi.Input<pulumi.Input<string>[] | undefined>;
     }
 
+    export interface LdapGroupSearchArgs {
+        /**
+         * DN to search groups under, e.g. 'ou=groups,dc=example,dc=org'.
+         */
+        baseDn: pulumi.Input<string>;
+        /**
+         * LDAP filter that groups must match, e.g. '(objectClass=groupOfNames)'.
+         */
+        filter?: pulumi.Input<string | undefined>;
+        /**
+         * Attribute of the group that becomes the group name in the groups claim, e.g. 'cn'.
+         */
+        nameAttr: pulumi.Input<string>;
+        /**
+         * Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+         */
+        scope?: pulumi.Input<string | undefined>;
+        /**
+         * How a group is matched to the user. A group belongs to the user if it matches any entry.
+         */
+        userMatchers: pulumi.Input<pulumi.Input<inputs.resources.LdapUserMatcherArgs>[]>;
+    }
+
+    export interface LdapUserMatcherArgs {
+        /**
+         * Attribute of the group that holds the user's value, e.g. 'member' or 'memberUid'.
+         */
+        groupAttr: pulumi.Input<string>;
+        /**
+         * If set, groups whose attribute of this name holds the DN of one of the user's groups are the user's groups too, at any depth, e.g. 'member'.
+         */
+        recursionGroupAttr?: pulumi.Input<string | undefined>;
+        /**
+         * Attribute of the user whose value the group must hold, e.g. 'DN' or 'uid'.
+         */
+        userAttr: pulumi.Input<string>;
+    }
+
+    export interface LdapUserSearchArgs {
+        /**
+         * DN to search users under, e.g. 'ou=people,dc=example,dc=org'.
+         */
+        baseDn: pulumi.Input<string>;
+        /**
+         * Attribute that becomes the email claim. Defaults to 'mail'.
+         */
+        emailAttr?: pulumi.Input<string | undefined>;
+        /**
+         * If set, the email claim is the idAttr value, '@' and this suffix, e.g. 'example.org'.
+         */
+        emailSuffix?: pulumi.Input<string | undefined>;
+        /**
+         * LDAP filter that users must match, e.g. '(objectClass=person)'.
+         */
+        filter?: pulumi.Input<string | undefined>;
+        /**
+         * Attribute that becomes the user ID in Dex, e.g. 'uid' (Dex's default). Changing it changes the identity of every user in the applications that use Dex.
+         */
+        idAttr?: pulumi.Input<string | undefined>;
+        /**
+         * Attribute that becomes the name claim, e.g. 'cn'.
+         */
+        nameAttr?: pulumi.Input<string | undefined>;
+        /**
+         * Attribute that becomes the preferred_username claim.
+         */
+        preferredUsernameAttr?: pulumi.Input<string | undefined>;
+        /**
+         * Search scope: 'sub' (the whole subtree, Dex's default) or 'one' (one level).
+         */
+        scope?: pulumi.Input<string | undefined>;
+        /**
+         * Attributes that the username entered at login is matched against, e.g. ['uid']. With several, a user matches through any of them; that requires Dex v2.46 or later. A username that matches more than one entry cannot log in.
+         */
+        usernameAttributes: pulumi.Input<pulumi.Input<string>[]>;
+    }
+
     export interface OIDCClaimMappingArgs {
         /**
          * The OIDC claim key that contains the user's email address.

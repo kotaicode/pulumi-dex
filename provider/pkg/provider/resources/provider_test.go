@@ -28,6 +28,7 @@ func newTestProvider(t *testing.T) integration.Server {
 			infer.Resource(&GitHubConnector{}),
 			infer.Resource(&GoogleConnector{}),
 			infer.Resource(&LocalConnector{}),
+			infer.Resource(&LdapConnector{}),
 			infer.Resource(&LocalUser{}),
 		).
 		WithFunctions(

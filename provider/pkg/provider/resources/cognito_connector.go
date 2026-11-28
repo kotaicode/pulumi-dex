@@ -6,15 +6,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -115,27 +110,23 @@ func (c *CognitoOidcConnector) Check(ctx context.Context, req infer.CheckRequest
 	}, nil
 }
 
-// Create creates a new Cognito OIDC connector.
-func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateRequest[CognitoOidcConnectorArgs]) (infer.CreateResponse[CognitoOidcConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := CognitoOidcConnectorState{
-			CognitoOidcConnectorArgs: args,
-		}
-		return infer.CreateResponse[CognitoOidcConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *CognitoOidcConnector) controller() connectorController[CognitoOidcConnectorArgs, CognitoOidcConnectorState] {
+	return connectorController[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{
+		kind:    "cognito-oidc-connector",
+		token:   tokenCognitoOidcConnector,
+		dexType: "oidc",
+		id:      func(a CognitoOidcConnectorArgs) string { return a.ConnectorId },
+		name:    func(a CognitoOidcConnectorArgs) string { return a.Name },
+		state: func(a CognitoOidcConnectorArgs) CognitoOidcConnectorState {
+			return CognitoOidcConnectorState{CognitoOidcConnectorArgs: a}
+		},
+		args:   func(s CognitoOidcConnectorState) CognitoOidcConnectorArgs { return s.CognitoOidcConnectorArgs },
+		encode: encodeCognitoConfig,
+		decode: decodeCognitoConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
+func encodeCognitoConfig(args CognitoOidcConnectorArgs) ([]byte, error) {
 	// Derive issuer from region and userPoolId
 	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", args.Region, args.UserPoolId)
 
@@ -145,7 +136,6 @@ func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateReque
 		userNameKey = *args.UserNameSource
 	}
 
-	// Build OIDC config
 	oidcConfig := map[string]any{
 		"issuer":       issuer,
 		"clientID":     args.ClientId,
@@ -161,74 +151,15 @@ func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateReque
 
 	configBytes, err := json.Marshal(oidcConfig)
 	if err != nil {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("failed to marshal OIDC config: %w", err)
+		return nil, fmt.Errorf("failed to marshal OIDC config: %w", err)
 	}
-
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "oidc",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "cognito-oidc-connector", token: tokenCognitoOidcConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[CognitoOidcConnectorState]{}, target.alreadyExists()
-	}
-
-	state := CognitoOidcConnectorState{
-		CognitoOidcConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[CognitoOidcConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing Cognito OIDC connector.
-func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[CognitoOidcConnectorArgs, CognitoOidcConnectorState]) (infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, nil
-	}
-
-	if found.Type != "oidc" {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, wrongConnectorType("cognito-oidc-connector", found.Id, found.Type, "oidc")
-	}
-
+func decodeCognitoConfig(found *api.Connector, prior CognitoOidcConnectorArgs) (CognitoOidcConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, unreadableConfigError("cognito-oidc-connector", found.Id, err)
+		return CognitoOidcConnectorArgs{}, err
 	}
 
 	// Extract region and userPoolId from issuer
@@ -261,123 +192,28 @@ func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[C
 		RedirectUri:  conf.str("redirectURI"),
 		Scopes:       scopes,
 		// Create writes "email" when userNameSource is omitted.
-		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "email", req.Inputs.UserNameSource),
-		ExtraOidc:      extraOIDCFromConfig(conf.values, req.Inputs.ExtraOidc),
+		UserNameSource: userNameSourceFromConfig(conf.str("userNameKey"), "email", prior.UserNameSource),
+		ExtraOidc:      extraOIDCFromConfig(conf.values, prior.ExtraOidc),
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{}, unreadableConfigError("cognito-oidc-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := CognitoOidcConnectorState{
-		CognitoOidcConnectorArgs: args,
-	}
+// Create creates a new Cognito OIDC connector.
+func (c *CognitoOidcConnector) Create(ctx context.Context, req infer.CreateRequest[CognitoOidcConnectorArgs]) (infer.CreateResponse[CognitoOidcConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing Cognito OIDC connector.
+func (c *CognitoOidcConnector) Read(ctx context.Context, req infer.ReadRequest[CognitoOidcConnectorArgs, CognitoOidcConnectorState]) (infer.ReadResponse[CognitoOidcConnectorArgs, CognitoOidcConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing Cognito OIDC connector.
 func (c *CognitoOidcConnector) Update(ctx context.Context, req infer.UpdateRequest[CognitoOidcConnectorArgs, CognitoOidcConnectorState]) (infer.UpdateResponse[CognitoOidcConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	// This check MUST be first, before any other operations or config checks
-	if req.DryRun {
-		state := CognitoOidcConnectorState{
-			CognitoOidcConnectorArgs: args,
-		}
-		return infer.UpdateResponse[CognitoOidcConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", args.Region, args.UserPoolId)
-	userNameKey := "email"
-	if args.UserNameSource != nil {
-		userNameKey = *args.UserNameSource
-	}
-
-	oidcConfig := map[string]any{
-		"issuer":       issuer,
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-		"scopes":       args.Scopes,
-		"userNameKey":  userNameKey,
-	}
-
-	for k, v := range args.ExtraOidc {
-		oidcConfig[k] = v
-	}
-
-	configBytes, err := json.Marshal(oidcConfig)
-	if err != nil {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, fmt.Errorf("failed to marshal OIDC config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "oidc",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, provider.WrapError("update", "cognito-oidc-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[CognitoOidcConnectorState]{}, provider.NotFoundError("update", "cognito-oidc-connector", args.ConnectorId)
-	}
-
-	state := CognitoOidcConnectorState{
-		CognitoOidcConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[CognitoOidcConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
 // Delete deletes a Cognito OIDC connector.
 func (c *CognitoOidcConnector) Delete(ctx context.Context, req infer.DeleteRequest[CognitoOidcConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	// Note: Pulumi does not call Delete during preview, so no preview check needed
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "cognito-oidc-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }

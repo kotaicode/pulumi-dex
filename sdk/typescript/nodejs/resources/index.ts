@@ -60,6 +60,11 @@ export type GoogleConnector = import("./googleConnector").GoogleConnector;
 export const GoogleConnector: typeof import("./googleConnector").GoogleConnector = null as any;
 utilities.lazyLoad(exports, ["GoogleConnector"], () => require("./googleConnector"));
 
+export type { LdapConnectorArgs } from "./ldapConnector";
+export type LdapConnector = import("./ldapConnector").LdapConnector;
+export const LdapConnector: typeof import("./ldapConnector").LdapConnector = null as any;
+utilities.lazyLoad(exports, ["LdapConnector"], () => require("./ldapConnector"));
+
 export type { LocalConnectorArgs } from "./localConnector";
 export type LocalConnector = import("./localConnector").LocalConnector;
 export const LocalConnector: typeof import("./localConnector").LocalConnector = null as any;
@@ -91,6 +96,8 @@ const _module = {
                 return new GitLabConnector(name, <any>undefined, { urn })
             case "dex:resources:GoogleConnector":
                 return new GoogleConnector(name, <any>undefined, { urn })
+            case "dex:resources:LdapConnector":
+                return new LdapConnector(name, <any>undefined, { urn })
             case "dex:resources:LocalConnector":
                 return new LocalConnector(name, <any>undefined, { urn })
             case "dex:resources:LocalUser":

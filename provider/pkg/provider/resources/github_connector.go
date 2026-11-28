@@ -4,15 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -125,27 +120,21 @@ func (c *GitHubConnector) Check(ctx context.Context, req infer.CheckRequest) (in
 	}, nil
 }
 
-// Create creates a new GitHub connector.
-func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[GitHubConnectorArgs]) (infer.CreateResponse[GitHubConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GitHubConnectorState{
-			GitHubConnectorArgs: args,
-		}
-		return infer.CreateResponse[GitHubConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *GitHubConnector) controller() connectorController[GitHubConnectorArgs, GitHubConnectorState] {
+	return connectorController[GitHubConnectorArgs, GitHubConnectorState]{
+		kind:    "github-connector",
+		token:   tokenGitHubConnector,
+		dexType: "github",
+		id:      func(a GitHubConnectorArgs) string { return a.ConnectorId },
+		name:    func(a GitHubConnectorArgs) string { return a.Name },
+		state:   func(a GitHubConnectorArgs) GitHubConnectorState { return GitHubConnectorState{GitHubConnectorArgs: a} },
+		args:    func(s GitHubConnectorState) GitHubConnectorArgs { return s.GitHubConnectorArgs },
+		encode:  encodeGitHubConfig,
+		decode:  decodeGitHubConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Build GitHub connector config
+func encodeGitHubConfig(args GitHubConnectorArgs) ([]byte, error) {
 	githubConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,
@@ -184,74 +173,15 @@ func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[Gi
 
 	configBytes, err := json.Marshal(githubConfig)
 	if err != nil {
-		return infer.CreateResponse[GitHubConnectorState]{}, fmt.Errorf("failed to marshal GitHub config: %w", err)
+		return nil, fmt.Errorf("failed to marshal GitHub config: %w", err)
 	}
-
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "github",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "github-connector", token: tokenGitHubConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[GitHubConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[GitHubConnectorState]{}, target.alreadyExists()
-	}
-
-	state := GitHubConnectorState{
-		GitHubConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[GitHubConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing GitHub connector.
-func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHubConnectorArgs, GitHubConnectorState]) (infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, nil
-	}
-
-	if found.Type != "github" {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, wrongConnectorType("github-connector", found.Id, found.Type, "github")
-	}
-
+func decodeGitHubConfig(found *api.Connector, _ GitHubConnectorArgs) (GitHubConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, unreadableConfigError("github-connector", found.Id, err)
+		return GitHubConnectorArgs{}, err
 	}
 
 	var orgs []GitHubOrg
@@ -273,134 +203,25 @@ func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHub
 		HostName:             conf.strPtr("hostName"),
 		RootCA:               conf.strPtr("rootCA"),
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{}, unreadableConfigError("github-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := GitHubConnectorState{
-		GitHubConnectorArgs: args,
-	}
+// Create creates a new GitHub connector.
+func (c *GitHubConnector) Create(ctx context.Context, req infer.CreateRequest[GitHubConnectorArgs]) (infer.CreateResponse[GitHubConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing GitHub connector.
+func (c *GitHubConnector) Read(ctx context.Context, req infer.ReadRequest[GitHubConnectorArgs, GitHubConnectorState]) (infer.ReadResponse[GitHubConnectorArgs, GitHubConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing GitHub connector.
 func (c *GitHubConnector) Update(ctx context.Context, req infer.UpdateRequest[GitHubConnectorArgs, GitHubConnectorState]) (infer.UpdateResponse[GitHubConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GitHubConnectorState{
-			GitHubConnectorArgs: args,
-		}
-		return infer.UpdateResponse[GitHubConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-	githubConfig := map[string]any{
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-	}
-
-	if len(args.Orgs) > 0 {
-		orgsConfig := make([]map[string]any, 0, len(args.Orgs))
-		for _, org := range args.Orgs {
-			orgConfig := map[string]any{"name": org.Name}
-			if len(org.Teams) > 0 {
-				orgConfig["teams"] = org.Teams
-			}
-			orgsConfig = append(orgsConfig, orgConfig)
-		}
-		githubConfig["orgs"] = orgsConfig
-	}
-	if args.LoadAllGroups != nil {
-		githubConfig["loadAllGroups"] = *args.LoadAllGroups
-	}
-	if args.TeamNameField != nil {
-		githubConfig["teamNameField"] = *args.TeamNameField
-	}
-	if args.UseLoginAsID != nil {
-		githubConfig["useLoginAsID"] = *args.UseLoginAsID
-	}
-	if args.PreferredEmailDomain != nil {
-		githubConfig["preferredEmailDomain"] = *args.PreferredEmailDomain
-	}
-	if args.HostName != nil {
-		githubConfig["hostName"] = *args.HostName
-	}
-	if args.RootCA != nil {
-		githubConfig["rootCA"] = *args.RootCA
-	}
-
-	configBytes, err := json.Marshal(githubConfig)
-	if err != nil {
-		return infer.UpdateResponse[GitHubConnectorState]{}, fmt.Errorf("failed to marshal GitHub config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "github",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[GitHubConnectorState]{}, provider.WrapError("update", "github-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[GitHubConnectorState]{}, provider.NotFoundError("update", "github-connector", args.ConnectorId)
-	}
-
-	state := GitHubConnectorState{
-		GitHubConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[GitHubConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
 // Delete deletes a GitHub connector.
 func (c *GitHubConnector) Delete(ctx context.Context, req infer.DeleteRequest[GitHubConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "github-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }

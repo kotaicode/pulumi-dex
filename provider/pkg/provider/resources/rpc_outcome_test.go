@@ -41,6 +41,9 @@ type fakeDex struct {
 	listClientsErr    error
 	listConnectorsErr error
 	listPasswordsErr  error
+	// connectorWriteErr fails UpdateConnector and DeleteConnector without
+	// changing anything, like a transport failure.
+	connectorWriteErr error
 	// alreadyExistsStatus reports an existing ID on Create as gRPC AlreadyExists
 	// instead of Dex's already_exists response flag.
 	alreadyExistsStatus bool
@@ -285,6 +288,7 @@ func (f *fakeDex) CreateConnector(_ context.Context, req *api.CreateConnectorReq
 	}
 	f.connectors[c.GetId()] = &api.Connector{
 		Id: c.GetId(), Type: c.GetType(), Name: c.GetName(), Config: append([]byte(nil), c.GetConfig()...),
+		GrantTypes: append([]string(nil), c.GetGrantTypes()...),
 	}
 	if f.createErr != nil {
 		return nil, f.createErr
@@ -296,12 +300,15 @@ func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.writes++
+	if f.connectorWriteErr != nil {
+		return nil, f.connectorWriteErr
+	}
 	c, ok := f.connectors[req.Id]
 	if !ok {
 		return &api.UpdateConnectorResp{NotFound: true}, nil
 	}
-	// Same as Dex v2.46.1's UpdateConnector: type, name and the whole config
-	// change when set; the ID never changes.
+	// Same as Dex v2.46.1's UpdateConnector: type, name, the whole config and
+	// the grant types change when set; the ID never changes.
 	if req.NewType != "" {
 		c.Type = req.NewType
 	}
@@ -311,6 +318,9 @@ func (f *fakeDex) UpdateConnector(_ context.Context, req *api.UpdateConnectorReq
 	if len(req.NewConfig) != 0 {
 		c.Config = req.NewConfig
 	}
+	if req.NewGrantTypes != nil {
+		c.GrantTypes = req.NewGrantTypes.GrantTypes
+	}
 	return &api.UpdateConnectorResp{}, nil
 }
 
@@ -318,6 +328,9 @@ func (f *fakeDex) DeleteConnector(_ context.Context, req *api.DeleteConnectorReq
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.writes++
+	if f.connectorWriteErr != nil {
+		return nil, f.connectorWriteErr
+	}
 	if _, ok := f.connectors[req.Id]; !ok {
 		return &api.DeleteConnectorResp{NotFound: true}, nil
 	}

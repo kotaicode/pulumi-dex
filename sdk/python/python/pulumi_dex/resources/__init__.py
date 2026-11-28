@@ -17,6 +17,7 @@ from .get_local_user import *
 from .git_hub_connector import *
 from .git_lab_connector import *
 from .google_connector import *
+from .ldap_connector import *
 from .local_connector import *
 from .local_user import *
 from ._inputs import *

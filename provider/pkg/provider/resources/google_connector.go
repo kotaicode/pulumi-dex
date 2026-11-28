@@ -4,14 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	api "github.com/dexidp/dex/api/v2"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/kotaicode/pulumi-dex/pkg/provider"
 )
 
 // ============================================================================
@@ -89,27 +84,21 @@ func (c *GoogleConnector) Check(ctx context.Context, req infer.CheckRequest) (in
 	}, nil
 }
 
-// Create creates a new Google connector.
-func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[GoogleConnectorArgs]) (infer.CreateResponse[GoogleConnectorState], error) {
-	args := req.Inputs
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GoogleConnectorState{
-			GoogleConnectorArgs: args,
-		}
-		return infer.CreateResponse[GoogleConnectorState]{
-			ID:     args.ConnectorId,
-			Output: state,
-		}, nil
+func (c *GoogleConnector) controller() connectorController[GoogleConnectorArgs, GoogleConnectorState] {
+	return connectorController[GoogleConnectorArgs, GoogleConnectorState]{
+		kind:    "google-connector",
+		token:   tokenGoogleConnector,
+		dexType: "google",
+		id:      func(a GoogleConnectorArgs) string { return a.ConnectorId },
+		name:    func(a GoogleConnectorArgs) string { return a.Name },
+		state:   func(a GoogleConnectorArgs) GoogleConnectorState { return GoogleConnectorState{GoogleConnectorArgs: a} },
+		args:    func(s GoogleConnectorState) GoogleConnectorArgs { return s.GoogleConnectorArgs },
+		encode:  encodeGoogleConfig,
+		decode:  decodeGoogleConfig,
 	}
+}
 
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.CreateResponse[GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	// Build Google connector config
+func encodeGoogleConfig(args GoogleConnectorArgs) ([]byte, error) {
 	googleConfig := map[string]any{
 		"clientID":     args.ClientId,
 		"clientSecret": args.ClientSecret,
@@ -134,79 +123,15 @@ func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[Go
 
 	configBytes, err := json.Marshal(googleConfig)
 	if err != nil {
-		return infer.CreateResponse[GoogleConnectorState]{}, fmt.Errorf("failed to marshal Google config: %w", err)
+		return nil, fmt.Errorf("failed to marshal Google config: %w", err)
 	}
-
-	connector := &api.Connector{
-		Id:     args.ConnectorId,
-		Type:   "google",
-		Name:   args.Name,
-		Config: configBytes,
-	}
-
-	createCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.CreateConnector(createCtx, &api.CreateConnectorReq{
-		Connector: connector,
-	})
-	target := createTarget{kind: "google-connector", token: tokenGoogleConnector, name: req.Name, id: args.ConnectorId}
-	if err != nil {
-		return infer.CreateResponse[GoogleConnectorState]{}, target.failed(err)
-	}
-	if resp.GetAlreadyExists() {
-		return infer.CreateResponse[GoogleConnectorState]{}, target.alreadyExists()
-	}
-
-	state := GoogleConnectorState{
-		GoogleConnectorArgs: args,
-	}
-
-	return infer.CreateResponse[GoogleConnectorState]{
-		ID:     args.ConnectorId,
-		Output: state,
-	}, nil
+	return configBytes, nil
 }
 
-// Read retrieves an existing Google connector.
-func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[GoogleConnectorArgs, GoogleConnectorState]) (infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState], error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	listCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	listResp, err := cfg.Client.ListConnectors(listCtx, &api.ListConnectorReq{})
-	if err != nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, fmt.Errorf("failed to list connectors: %w", err)
-	}
-
-	var found *api.Connector
-	for _, conn := range listResp.Connectors {
-		if conn.Id == req.ID {
-			found = conn
-			break
-		}
-	}
-
-	if found == nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, nil
-	}
-
-	if found.Type != "google" {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, wrongConnectorType("google-connector", found.Id, found.Type, "google")
-	}
-
+func decodeGoogleConfig(found *api.Connector, _ GoogleConnectorArgs) (GoogleConnectorArgs, error) {
 	conf, err := parseConnectorConfig(found.Config)
 	if err != nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, unreadableConfigError("google-connector", found.Id, err)
-	}
-
-	domainToAdminEmail := conf.strMap("domainToAdminEmail")
-	if domainToAdminEmail == nil {
-		domainToAdminEmail = map[string]string{} // as before: absent reads back as an empty map
+		return GoogleConnectorArgs{}, err
 	}
 
 	args := GoogleConnectorArgs{
@@ -219,123 +144,27 @@ func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[Google
 		HostedDomains:          conf.strList("hostedDomains"),
 		Groups:                 conf.strList("groups"),
 		ServiceAccountFilePath: conf.strPtr("serviceAccountFilePath"),
-		DomainToAdminEmail:     domainToAdminEmail,
+		DomainToAdminEmail:     conf.strMap("domainToAdminEmail"),
 	}
-	if err := conf.Err(); err != nil {
-		return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{}, unreadableConfigError("google-connector", found.Id, err)
-	}
+	return args, conf.Err()
+}
 
-	state := GoogleConnectorState{
-		GoogleConnectorArgs: args,
-	}
+// Create creates a new Google connector.
+func (c *GoogleConnector) Create(ctx context.Context, req infer.CreateRequest[GoogleConnectorArgs]) (infer.CreateResponse[GoogleConnectorState], error) {
+	return c.controller().create(ctx, req)
+}
 
-	return infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState]{
-		ID:     found.Id,
-		Inputs: args,
-		State:  state,
-	}, nil
+// Read retrieves an existing Google connector.
+func (c *GoogleConnector) Read(ctx context.Context, req infer.ReadRequest[GoogleConnectorArgs, GoogleConnectorState]) (infer.ReadResponse[GoogleConnectorArgs, GoogleConnectorState], error) {
+	return c.controller().read(ctx, req)
 }
 
 // Update updates an existing Google connector.
 func (c *GoogleConnector) Update(ctx context.Context, req infer.UpdateRequest[GoogleConnectorArgs, GoogleConnectorState]) (infer.UpdateResponse[GoogleConnectorState], error) {
-	args := req.Inputs
-	oldState := req.State
-
-	// In preview/dry-run mode, skip actual Dex API calls and return expected state
-	if req.DryRun {
-		state := GoogleConnectorState{
-			GoogleConnectorArgs: args,
-		}
-		return infer.UpdateResponse[GoogleConnectorState]{
-			Output: state,
-		}, nil
-	}
-
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.UpdateResponse[GoogleConnectorState]{}, fmt.Errorf("dex client not configured")
-	}
-
-	if args.ConnectorId != oldState.ConnectorId {
-		return infer.UpdateResponse[GoogleConnectorState]{}, fmt.Errorf("connectorId cannot be changed")
-	}
-
-	googleConfig := map[string]any{
-		"clientID":     args.ClientId,
-		"clientSecret": args.ClientSecret,
-		"redirectURI":  args.RedirectUri,
-	}
-
-	if args.PromptType != nil {
-		googleConfig["promptType"] = *args.PromptType
-	}
-	if len(args.HostedDomains) > 0 {
-		googleConfig["hostedDomains"] = args.HostedDomains
-	}
-	if len(args.Groups) > 0 {
-		googleConfig["groups"] = args.Groups
-	}
-	if args.ServiceAccountFilePath != nil {
-		googleConfig["serviceAccountFilePath"] = *args.ServiceAccountFilePath
-	}
-	if len(args.DomainToAdminEmail) > 0 {
-		googleConfig["domainToAdminEmail"] = args.DomainToAdminEmail
-	}
-
-	configBytes, err := json.Marshal(googleConfig)
-	if err != nil {
-		return infer.UpdateResponse[GoogleConnectorState]{}, fmt.Errorf("failed to marshal Google config: %w", err)
-	}
-
-	updateCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	resp, err := cfg.Client.UpdateConnector(updateCtx, &api.UpdateConnectorReq{
-		Id:        args.ConnectorId,
-		NewType:   "google",
-		NewName:   args.Name,
-		NewConfig: configBytes,
-	})
-	if err != nil {
-		return infer.UpdateResponse[GoogleConnectorState]{}, provider.WrapError("update", "google-connector", args.ConnectorId, err)
-	}
-	if resp.GetNotFound() {
-		return infer.UpdateResponse[GoogleConnectorState]{}, provider.NotFoundError("update", "google-connector", args.ConnectorId)
-	}
-
-	state := GoogleConnectorState{
-		GoogleConnectorArgs: args,
-	}
-
-	return infer.UpdateResponse[GoogleConnectorState]{
-		Output: state,
-	}, nil
+	return c.controller().update(ctx, req)
 }
 
 // Delete deletes a Google connector.
 func (c *GoogleConnector) Delete(ctx context.Context, req infer.DeleteRequest[GoogleConnectorState]) (infer.DeleteResponse, error) {
-	cfg := infer.GetConfig[provider.DexConfig](ctx)
-	if cfg.Client == nil {
-		return infer.DeleteResponse{}, fmt.Errorf("dex client not configured")
-	}
-
-	deleteID := req.ID
-	if deleteID == "" && req.State.ConnectorId != "" {
-		deleteID = req.State.ConnectorId
-	}
-
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Duration(provider.PtrOr(cfg.TimeoutSeconds, 5))*time.Second)
-	defer cancel()
-
-	_, err := cfg.Client.DeleteConnector(deleteCtx, &api.DeleteConnectorReq{
-		Id: deleteID,
-	})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return infer.DeleteResponse{}, nil
-		}
-		return infer.DeleteResponse{}, provider.WrapError("delete", "google-connector", deleteID, err)
-	}
-
-	return infer.DeleteResponse{}, nil
+	return c.controller().delete(ctx, req)
 }

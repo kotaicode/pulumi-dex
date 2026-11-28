@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-28
+
+### Added
+- New `LdapConnector` resource (`dex:resources:LdapConnector`) for Dex's LDAP connector. Dex stores an
+  LDAP configuration without checking it and fails only at login, so preview rejects the combinations
+  that cannot work: `insecureNoSsl` with `startTls` or `insecureSkipVerify`, `startTls` without a port
+  in `host`, both `rootCa` and `rootCaPem`, a `rootCaPem` without a certificate, and only one of
+  `clientCert`/`clientKey` or `bindDn`/`bindPassword`. `bindPassword` is a secret. More than one
+  `userSearch.usernameAttributes` entry needs Dex v2.46 and is refused on v2.45. Refresh and import
+  fail on settings the resource does not model, such as `kerberos`, naming them; such connectors stay
+  with the generic `Connector`. Grant types set directly in Dex are kept. The README describes how
+  to move an LDAP connector from `Connector` to `LdapConnector` without recreating it.
+- LDAP login tests: CI creates an `LdapConnector` and logs in through Dex's password grant against
+  OpenLDAP (`osixia/openldap:1.4.0`, pinned by digest, with certificates generated for each run) on
+  Dex v2.45.1 and v2.46.1. They cover LDAPS and StartTLS, anonymous and bound search, a bind password
+  with `$`, group claims including nested groups and a group cycle, and refused logins.
+
+### Changed
+- The eight connector resources share one implementation of create, read, update and delete instead
+  of eight copies. Nothing changes for users: their schema is unchanged, and a stack created with
+  0.12.0 previews without changes after a refresh.
+
+### Fixed
+- `GoogleConnector`: a program without `domainToAdminEmail` now previews without changes after a
+  refresh or an import. Refresh read the missing map as an empty one, so every preview after it
+  proposed an update. A stack refreshed with 0.12.0 keeps the empty map in its state and still
+  proposes removing it until the next `pulumi up`, which sends the unchanged configuration to Dex;
+  after that, refreshes stay clean. Dex stores nothing for an empty map, so a program that sets
+  `domainToAdminEmail: {}` gets a preview proposing to add it after an import; leave the empty map
+  out.
+
 ## [0.12.0] - 2026-11-27
 
 ### Added

@@ -1,5 +1,7 @@
 # Dex for the compatibility suite in CI (.github/workflows/ci.yml, job dex-compatibility).
 # Disposable: memory storage, no TLS, reachable only on the runner's loopback.
+# The LDAP login tests log in through the password grant with the connector
+# "ldap-login", which they create through the API.
 issuer: http://127.0.0.1:5556/dex
 storage:
   type: memory
@@ -8,3 +10,5 @@ web:
 grpc:
   addr: 0.0.0.0:5557
 enablePasswordDB: true
+oauth2:
+  passwordConnector: ldap-login
